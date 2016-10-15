@@ -1,0 +1,8 @@
+/.classpath
+/.project
+dependencies/*
+mapData/*
+bin/*
+release/*
+client-bridge*
+export*
