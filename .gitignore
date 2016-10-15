@@ -6,3 +6,4 @@ bin/*
 release/*
 client-bridge*
 export*
+/bin/
