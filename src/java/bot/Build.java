@@ -26,9 +26,11 @@ public class Build extends Action {
 			int x = ((JohnDoe)this.handler).posBuild.getBX();
 			int y = ((JohnDoe)this.handler).posBuild.getBY();
 			if (edificio == UnitTypes.Terran_Missile_Turret){
+				//La influencia debe ser menor de 3
 				if (influencias.mapa[y][x] > 3) {
 					return State.FAILURE;
 				}
+				//Deben estar espaciadas las torretas
 				for (Unit u : ((JohnDoe)this.handler).edificiosConstruidos) {
 					if (u.getType() == UnitTypes.Terran_Missile_Turret && 
 							u.getDistance(((JohnDoe)this.handler).posBuild) < 300) {

@@ -8,7 +8,6 @@ public class CheckPositionUnits extends Conditional {
 
 	public CheckPositionUnits(String name, GameHandler gh) {
 		super(name, gh);
-		// TODO Apéndice de constructor generado automáticamente
 	}
 
 	@Override

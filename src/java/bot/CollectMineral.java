@@ -8,7 +8,6 @@ public class CollectMineral extends Action {
 
 	public CollectMineral(String name, GameHandler gh) {
 		super(name, gh);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override

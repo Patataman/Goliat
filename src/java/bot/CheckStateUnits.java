@@ -8,7 +8,6 @@ public class CheckStateUnits extends Conditional {
 
 	public CheckStateUnits(String name, GameHandler gh) {
 		super(name, gh);
-		// TODO Apéndice de constructor generado automáticamente
 	}
 
 	@Override

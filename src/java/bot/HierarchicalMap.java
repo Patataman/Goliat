@@ -13,7 +13,9 @@ public class HierarchicalMap {
 	
 	/*Lista que contiene en cada posición (Id de la region)
 	Las regiones (Point) con las que se encuentra conectada esa región*/
+	
 //	private List<List<Successor>> conexiones;
+	
 	/* Matriz que contiene por cada par X-Y de regiones, la lista de
 	 * chokePoints que las conectan. Si no hay conexión, esa lista 
 	 * estará vacia.

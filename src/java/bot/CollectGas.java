@@ -8,7 +8,6 @@ public class CollectGas extends Action {
 
 	public CollectGas(String name, GameHandler gh) {
 		super(name, gh);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override

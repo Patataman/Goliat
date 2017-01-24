@@ -8,7 +8,6 @@ public class SendUnits extends Action {
 
 	public SendUnits(String name, GameHandler gh) {
 		super(name, gh);
-		// TODO Apéndice de constructor generado automáticamente
 	}
 
 	@Override

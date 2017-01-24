@@ -8,7 +8,6 @@ public class ChooseDestination extends Action {
 
 	public ChooseDestination(String name, GameHandler gh) {
 		super(name, gh);
-		// TODO Apéndice de constructor generado automáticamente
 	}
 
 	@Override

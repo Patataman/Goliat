@@ -489,19 +489,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			//Por defecto trae CREATE y TRUNCATE
 			BufferedWriter writer = Files.newBufferedWriter(p, charset);
 			for(int f = 0; f < mydah_mapa.length; f++){
-				for (int c=0; c < mydah_mapa[f].length; c++){
-//					if (gh.mapa[f][c] == -1){
-//						writer.write("M;");
-//					}
-//					else if (gh.mapa[f][c] == -2){
-//						writer.write("V;");
-//					}
-//					else if (gh.mapa[f][c] < 10){
-//						writer.write("0"+gh.mapa[f][c]+";");
-//					} 
-//					else {						
-						writer.write(mydah_mapa[f][c]+";");
-//					}
+				for (int c=0; c < mydah_mapa[f].length; c++){			
+					writer.write(mydah_mapa[f][c]+";");
 				}
 				writer.write("\n");
 			}

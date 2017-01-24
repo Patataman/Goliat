@@ -11,8 +11,8 @@ import jnibwapi.types.UnitType.UnitTypes;
 public class InfluenceMap {
 
 	double mapa[][];
-	final int umbral = 3;
-	final int radio = 2;
+	final byte umbral = 3;
+	final byte radio = 2;
 	
 	// array de las unidades que est�n en juego, cada posici�n es una tupla de tres posiciones con
 	// el id de la unidad, y sus coordenadas x e y para un momento dado
