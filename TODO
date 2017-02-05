@@ -9,15 +9,6 @@ TODO:
 - Construir añadidos a los edificios.
 -- Contemplarlo a la hora de construir el edificio y contemplarlo en el mapa.
 
-- Contruir expansiones.
--- Hacer un árbol para controlar la gestión de expansiones (??)
-
-- Defender correctamente los choke points y la base.
-
 - Refactorizar y reducir al máximo todo lo posible los bucles y variables.
-
-- Crear correctamente el mapa de influencia.
--- Actualizarlo correctamente.
--- Utilizarlo para atacar, defender y construir edificios defensivos.
 
 - Separar árboles de ataque, construcción y entrenamiento.
