@@ -14,7 +14,7 @@ public class InfluenceMap {
 	final byte umbral = 3;
 	final byte radio = 2;
 	
-	// array de las unidades que est�n en juego, cada posici�n es una tupla de tres posiciones con
+	// array de las unidades que están en juego, cada posición es una tupla de tres posiciones con
 	// el id de la unidad, y sus coordenadas x e y para un momento dado
 	List<ArrayList<Integer>> unidades;
 	
@@ -25,15 +25,15 @@ public class InfluenceMap {
 	
 	
 	/*
-	 * Este m�todo modificar� el valor de la influencia de una casilla.
-	 * Tiene dos par�metros de entrada que se corresponden con la celda sobre la que se
-	 * va a realizar la actualizaci�n mediante un objeto de tipo Point y el valor de influencia de la casilla que ser�
-	 * de tipo int. La modificaci�n de la influencia de una casilla se realizar� mediante una operaci�n de adici�n.
-	 * Hay que tener en cuenta que la modificaci�n de la influencia de una casilla supone tambi�n la propagaci�n
+	 * Este método modificará el valor de la influencia de una casilla.
+	 * Tiene dos parámetros de entrada que se corresponden con la celda sobre la que se
+	 * va a realizar la actualización mediante un objeto de tipo Point y el valor de influencia de la casilla que será
+	 * de tipo int. La modificación de la influencia de una casilla se realizará mediante una operación de adición.
+	 * Hay que tener en cuenta que la modificación de la influencia de una casilla supone también la propagación
 	 * de la influencia a las casillas que la rodean
 	 */
 	public void updateCellInfluence(Point punto, int influencia){
-		// Obtenemos el area de efecto limitada a la dimensi�n del mapa en esa posici�n.
+		// Obtenemos el area de efecto limitada a la dimensión del mapa en esa posición.
 		int n = ((int)punto.getY()-radio>0) ? (int)punto.getY()-radio : 0;
 		int s = ((int)punto.getY()+radio<mapa.length) ? (int)punto.getY()+radio : mapa.length-1;
 		int w = ((int)punto.getX()-radio>0) ? (int)punto.getX()-radio : 0;
@@ -46,12 +46,13 @@ public class InfluenceMap {
 		}
 	}
 	
-	/*
-	 * Este m�todo modificar� el valor de influencia de un conjunto de casillas.
-	 * Este m�todo tiene dos par�metros de entrada que se corresponden con
-	 * un conjunto de celdas sobre las que se va a realizar la actualizaci�n mediante una lista de objetos de tipo
-	 * Point y el valor de influencia para cada una de las casillas que ser� un valor de tipo int. La modificaci�n de
-	 * la influencia de cada una de las casillas se realizar� mediante una llamada al m�todo updateCellInfluence
+	/**
+	 * Este método modificará el valor de influencia de un conjunto de casillas.
+	 * Este método tiene dos parámetros de entrada que se corresponden con un conjunto
+	 * de celdas sobre las que se va a realizar la actualización mediante una lista de 
+	 * objetos de tipo Point y el valor de influencia para cada una de las casillas que
+	 * será un valor de tipo int. La modificación de la influencia de cada una de las 
+	 * casillas se realizará mediante una llamada al método updateCellInfluence
 	 */
 	public void updateCellsInfluence(List<Point> puntos, int influencia){
 		for(Point p : puntos){
@@ -59,16 +60,16 @@ public class InfluenceMap {
 		}
 	}
 	
-	/*
-	 * Este m�todo devolver� el valor de influencia de una casilla.
-	 * Este m�todo tiene un par�metro de entrada de tipo Point que se corresponde con la posici�n
+	/**
+	 * Este método devolverá el valor de influencia de una casilla.
+	 * Este método tiene un parámetro de entrada de tipo Point que se corresponde con la posición
 	 * de la casilla de la que se quiere obtener el valor de influencia
 	 */
 	public double getInfluence(Point punto){	
 		return mapa[(int)punto.getY()][(int)punto.getX()];
 	}
 	
-	/*
+	/**
 	 * Auto-explicativo
 	 */
 	public double distanciaEuclidea(Point inicio, int i, int j){
@@ -81,10 +82,11 @@ public class InfluenceMap {
 	}
 	
 	
-	/*
-	 * Este m�todo deber� calcular el valor
-	 * de influencia del jugador sobre el mapa. El valor de influencia del jugador ser� la suma de los valores de
-	 * influencia de las casillas pertenecientes al jugador.
+	/**
+	 * Este método deberá calcular el valor de influencia 
+	 * del jugador sobre el mapa. El valor de influencia 
+	 * del jugador será la suma de los valores de influencia
+	 * de las casillas pertenecientes al jugador.
 	 */
 	public double getMyInfluenceLevel(){
 		double InfluenceLevel = 0.0;
@@ -99,10 +101,11 @@ public class InfluenceMap {
 	}
 
 
-	/*
-	 * Este m�todo deber� obtener el
-	 * valor de influencia del jugador o jugadores enemigos sobre el mapa. El valor de influencia del enemigo ser� la
-	 * suma de los valores de influencia de las casillas pertenecientes al enemigo.
+	/**
+	 * Este método deberá obtener el valor de influencia 
+	 * del jugador o jugadores enemigos sobre el mapa. 
+	 * El valor de influencia del enemigo será la suma de 
+	 * los valores de influencia de las casillas pertenecientes al enemigo.
 	 */
 	public double getEnemyInfluenceLevel(){
 		double InfluenceLevel = 0.0;
@@ -117,10 +120,10 @@ public class InfluenceMap {
 	}
 
 
-	/*
-	 *  Este m�todo deber� calcular el n�mero de casillas sobre las 
-	 *  cuales el jugador tiene el control. Se sumar� 1 unidad por cada casilla perteneciente al
-	 *  jugador.
+	/**
+	 *  Este método deberá calcular el número de casillas sobre las 
+	 *  cuales el jugador tiene el control. Se sumará 1 unidad por 
+	 *  cada casilla perteneciente al jugador.
 	 */
 	public int getMyInfluenceArea(){
 		int count = 0;
@@ -135,10 +138,10 @@ public class InfluenceMap {
 	}
 
 	
-	/*
-	 * Este m�todo deber� calcular el n�mero de casillas sobre 
+	/**
+	 * Este método deberá calcular el número de casillas sobre 
 	 * las cuales el jugador o jugadores enemigos tienen el control.
-	 * Se sumar� 1 unidad por cada casilla perteneciente al enemigo
+	 * Se sumará 1 unidad por cada casilla perteneciente al enemigo
 	 */
 	public int getEnemyInfluenceArea(){
 		int count = 0;
@@ -156,7 +159,7 @@ public class InfluenceMap {
 	/**
 	 * 
 	 * Cuando se crea una nueva unidad, se calcula su influencia y se guarda en la lista de unidades
-	 * su id, posici�n e influencia. Esto sirve para actualizar periodicamente las unidades que se han
+	 * su id, posición e influencia. Esto sirve para actualizar periodicamente las unidades que se han
 	 * movido o han muerto.
 	 * 
 	 * @param unit: Unidad que genera la influencia
@@ -180,7 +183,7 @@ public class InfluenceMap {
 			} else if (unit.getType() == UnitTypes.Terran_Bunker ||
 					unit.getType() == UnitTypes.Terran_Missile_Turret ||
 					unit.getType() == UnitTypes.Zerg_Spore_Colony) {
-				//Estas son los �nicos edificios que se 
+				//Estas son los únicos edificios que se 
 				//pueden considerar verdaderamente defensivas en el juego
 				updateCellInfluence(new Point(x,y), 5*influencia);
 				tupla.add(5*influencia);
@@ -202,7 +205,7 @@ public class InfluenceMap {
 				tupla.add(6*influencia);
 				unidades.add(tupla);
 			} else {
-				//Si no es mec�nica ni voladora, es normal
+				//Si no es mecánica ni voladora, es normal
 				updateCellInfluence(new Point(x,y), 1*influencia);
 				tupla.add(1*influencia);
 				unidades.add(tupla);
@@ -227,7 +230,7 @@ public class InfluenceMap {
 			if(x != unitTupla.get(1) || y != unitTupla.get(2)){ // Y se ha desplazado, se actualiza la influencia
 				updateCellInfluence(new Point(x,y), unitTupla.get(3));// Actualizamos la nueva influencia
 				updateCellInfluence(new Point(unitTupla.get(1),unitTupla.get(2)), 0);// Retiramos la influencia anterior
-				unitTupla.set(1, x); // actualizamos la nueva posici�n de la unidad.
+				unitTupla.set(1, x); // actualizamos la nueva posición de la unidad.
 				unitTupla.set(2, y);
 			}
 

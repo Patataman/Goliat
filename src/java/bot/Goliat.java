@@ -35,17 +35,17 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	
 	public Goliat() {            
 
-        // Generaci�n del objeto de tipo agente
+        // Generación del objeto de tipo agente
 
-        // Creaci�n de la superclase Agent de la que extiende el agente, en este m�todo se cargan            
-        // ciertas variables de de control referentes a los par�metros que han sido introducidos 
+        // Creación de la superclase Agent de la que extiende el agente, en este método se cargan            
+        // ciertas variables de de control referentes a los parámetros que han sido introducidos 
         // por teclado. 
         super();
-        // Creaci�n de una instancia del connector JNIBWAPI. Esta instancia s�lo puede ser creada
-        // una vez ya que ha sido desarrollada mediante la utilizaci�n del patr�n de dise�o singlenton.
+        // Creación de una instancia del connector JNIBWAPI. Esta instancia sólo puede ser creada
+        // una vez ya que ha sido desarrollada mediante la utilización del patrón de diseño singlenton.
         this.bwapi = new JNIBWAPI(this, true);
-        // Inicia la conexi�n en modo cliente con el servidor BWAPI que est� conectado directamente al videojuego.
-        // Este proceso crea una conexi�n mediante el uso de socket TCP con el servidor. 
+        // Inicia la conexión en modo cliente con el servidor BWAPI que está conectado directamente al videojuego.
+        // Este proceso crea una conexión mediante el uso de socket TCP con el servidor. 
         this.bwapi.start();
     }
 	
@@ -56,18 +56,18 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	@Override
 	public void matchStart() {
 		 
-        // Mediante est� metodo se puede obtener informaci�n del usuario. 
+        // Mediante este metodo se puede obtener información del usuario. 
         if (Options.getInstance().getUserInput()) this.bwapi.enableUserInput();
 
         if (Options.getInstance().getInformation()) this.bwapi.enablePerfectInformation();
-        // Mediante este m�todo se define la velocidad de ejecuci�n del videojuego. 
-        // Los valores posibles van desde 0 (velocidad est�ndar) a 10 (velocidad m�xima).
+        // Mediante este método se define la velocidad de ejecución del videojuego. 
+        // Los valores posibles van desde 0 (velocidad estándar) a 10 (velocidad máxima).
         this.bwapi.setGameSpeed(Options.getInstance().getSpeed());
 		
 		gh = new JohnDoe(bwapi);
 		
 		//Se establece la variable del centro de mando,
-		//ya que se va a usar bastante y as� evitamos recorrer
+		//ya que se va a usar bastante y así evitamos recorrer
 		//la lista de myUnits
 		for (Unit cc : bwapi.getMyUnits()){
 			if (cc.getType() == UnitTypes.Terran_Command_Center){
@@ -282,7 +282,6 @@ public class Goliat extends Agent implements BWAPIEventListener {
 
 	@Override
 	public void unitDestroy(int unitID) {
-//		System.out.println("muere " + unitID);
 		gh.dah_mapa.removeUnitDead(unitID);
 		Predicate<Unit> predicado = new Predicate<Unit>() {
 			public boolean test(Unit u) {
@@ -295,7 +294,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			//Casting a array de unidades (?)
 			for(Object u : gh.edificiosConstruidos.stream().filter(predicado).toArray()) {
 				//No es necesario comprobar el ID ya que la sublista que se recorre es la que cumple lo del ID
-				//Aunque s�lo deber�a haber 1 elemento
+				//Aunque sólo debería haber 1 elemento
 				gh.edificiosConstruidos.remove(u);
 				if (((Unit) u).getType() == UnitTypes.Terran_Academy) gh.academia--;
 				if (((Unit) u).getType() == UnitTypes.Terran_Barracks) gh.barracones--;
@@ -366,7 +365,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				this.bwapi.getUnit(unitID).getPosition().getBX(), this.bwapi.getUnit(unitID).getPosition().getBY());
 		/////////////////////////////////////
 		
-		//Secci�n de c�digo para escribir en un fichero el mapa y verificar que se crea bien.
+		//Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
 //		String workingDirectory = System.getProperty("user.dir");
 //		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
 //		createANDwriteInfluencia(path);
@@ -381,7 +380,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			if (gh.unidadesPendientes.contains(bwapi.getUnit(unitID).getType())){
 				gh.unidadesPendientes.remove(bwapi.getUnit(unitID).getType());
 				gh.supplies += bwapi.getUnit(unitID).getType().getSupplyRequired();
-				//Los terran s�lo poseen 1 unidad no militar, los VCEs.
+				//Los terran sólo poseen 1 unidad no militar, los VCEs.
 				if (bwapi.getUnit(unitID).getType() != UnitTypes.Terran_SCV) {
 					gh.soldadosAburridos.add(bwapi.getUnit(unitID));
 				}
@@ -411,7 +410,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
 						new Position(bwapi.getUnit(unitID).getTopLeft().getBX()+bwapi.getUnit(unitID).getType().getTileWidth(),
 									bwapi.getUnit(unitID).getTopLeft().getBY()+bwapi.getUnit(unitID).getType().getTileHeight(),
 									PosType.BUILD));
-				//Secci�n de c�digo para escribir en un fichero el mapa y verificar que se crea bien.
+				
+				//Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
 //				String workingDirectory = System.getProperty("user.dir");
 //				String path = workingDirectory + File.separator + "mapa.txt";
 //				createANDwrite(path);
@@ -421,11 +421,6 @@ public class Goliat extends Agent implements BWAPIEventListener {
 
 	@Override
 	public void unitMorph(int unitID) {
-		//Se actualiza el mapa de ingluencias
-//		int influencia = (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) ? 1 : -1;
-//		gh.dah_mapa.newUnit(this.bwapi.getUnit(unitID), influencia, 
-//				this.bwapi.getUnit(unitID).getPosition().getBX(), this.bwapi.getUnit(unitID).getPosition().getBY());
-		/////////////////////////////////////
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
 			if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Refinery) gh.refineria++;
 		}
@@ -474,8 +469,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	public void saveGame(String gameName) {	}
 	
 	/**
-	 * M�todo que crea un archivo nuevo,
-	 * si ya exist�a lo resetea y escribe en �l
+	 * Método que crea un archivo nuevo,
+	 * si ya existía lo resetea y escribe en él
 	 * @param path: ruta donde se localiza el archivo
 	 * @param texto: texto a escribir
 	 * @return 0 -> Correcto; 1 -> Error
