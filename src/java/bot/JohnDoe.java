@@ -60,9 +60,9 @@ public class JohnDoe extends GameHandler {
 	public JohnDoe(JNIBWAPI bwapi) {
 		super(bwapi);
 		
-		worker = null;
-		cc = null;
-		cc_select = null;
+		worker 					= null;
+		cc 						= null;
+		cc_select 				= null;
 		CCs 					= new ArrayList<Integer>();
 		VCEs 					= new ArrayList<ArrayList<Unit>>();
 		trabajadoresMineral 	= new ArrayList<ArrayList<Integer>>();
@@ -89,7 +89,7 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	//Obtiene un trabajador que se encuentra libre
-	//Un trabajador est� libre cuando no recolecta mineral/vespeno o no hace nada con su vida
+	//Un trabajador está libre cuando no recolecta mineral/vespeno o no hace nada con su vida
 	public boolean getWorker() {
 		for (ArrayList<Unit> vces_cc : VCEs) {
 			for (Unit vce : vces_cc) {
@@ -129,7 +129,7 @@ public class JohnDoe extends GameHandler {
 	//Se manda a recolectar minerales al trabajador seleccionado, 
 	// ya que antes de llamar a esta funci�n se llama a getWorker
 	public boolean aCurrarMina(){
-		//Se verifica que no se pase del n�mero de trabajadores y que el VCE est�
+		//Se verifica que no se pase del n�mero de trabajadores y que el VCE está
 		//completado, ya que a veces se selecciona sin haber completado el entrenamiento.
 		if ((trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).size() < max_vce-3) && worker.isCompleted()){
 			//Se buscan los minerales cercanos a la base.
@@ -164,7 +164,7 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
-	//Se comprueba si se posee m�s mineral y gas que el pasado por par�metro
+	//Se comprueba si se posee más mineral y gas que el pasado por par�metro
 	public boolean checkResources(int mineral, int gas){
 		if (this.connector.getSelf().getMinerals() >= mineral &&
 				this.connector.getSelf().getGas() >= gas){
@@ -205,7 +205,7 @@ public class JohnDoe extends GameHandler {
 		return worker.build(posBuild, edificio);
 	}
 	
-	//Comprueba si se puede investigar la investigaci�n (valga la redundancia)
+	//Comprueba si se puede investigar la investigación (valga la redundancia)
 	public boolean checkResearch(UpgradeType res) {
 		if (this.researching.contains(res)) {
 			return false;
@@ -363,32 +363,44 @@ public class JohnDoe extends GameHandler {
 		//Caso especial de que sea una refinería
 		if (edificio == UnitTypes.Terran_Refinery) {
 			for (Unit vespeno : this.connector.getNeutralUnits()){
+				//Se construirá la refinería si está en la misma región que el CC
 				if (vespeno.getType() == UnitTypes.Resource_Vespene_Geyser &&
-						vespeno.getDistance(cc_select.getPosition()) < 300){                              
+						this.connector.getMap().getRegion(vespeno.getPosition()) ==
+						this.connector.getMap().getRegion(cc_select.getPosition())) {                              
 						//Se obtiene la pos. del vespeno.
 						posBuild = vespeno.getTopLeft();
 						return true;
 				}
 			}
-			//No se encuentra para una refiner�a, asique fuera
+			//No se encuentra posición para una refinería, asique fuera
 			return false;
 		}
-		//Caso especial de que sea una expansi�n
+		//Caso especial de que sea una expansión
 		if (edificio == UnitTypes.Terran_Command_Center) {
-			//Nos quedamos con la expansi�n m�s cercana a la base
-			BaseLocation pos = this.connector.getMap().getBaseLocations().get(0);
-			int dist = cc.getPosition().getApproxWDistance(pos.getCenter());
+			//Nos quedamos con la expansión más cercana a la base
+			int dist = 9999;
+			BaseLocation pos = null;
 			for (BaseLocation aux : this.connector.getMap().getBaseLocations()) {
-				//Se comprueba que no sean la misma posici�n, que la distancia sea menor que la anterior
-				//y que se pueda construir
+				//Se comprueba que no sean la misma posición, que la distancia 
+				//sea menor que la anterior y que se pueda construir
 				if (!aux.isStartLocation() &&
 						cc.getPosition().getApproxWDistance(aux.getCenter()) < dist &&
-						this.connector.canBuildHere(pos.getPosition(), edificio, false) &&
-						(aux.isIsland() || aux.isMineralOnly())) {
+						this.connector.canBuildHere(aux.getPosition(), edificio, false) &&
+						!(aux.isIsland() || aux.isMineralOnly())) {
+					//Si es mas cercano se actualiza la distancia
+					dist = cc.getPosition().getApproxWDistance(aux.getCenter());
+					//Se guarda
 					pos = aux;
 				}
-				posBuild = pos.getPosition();
-				return true;
+				//Ha encontrado una posición
+				if (pos != null) {
+					posBuild = pos.getPosition();
+					return true;
+				}
+				//No ha encontrado posición
+				else {
+					return false;
+				}
 			}
 			//No se encuentra para un CC, asique fuera
 			return false;
@@ -402,7 +414,7 @@ public class JohnDoe extends GameHandler {
 						new Point((cc.getPosition().getBX()+1+edificio.getTileWidth()*pruebas[j][0]*i),
 								(cc.getPosition().getBY()+1+edificio.getTileHeight()*pruebas[j][1]*i)),
 						edificio);
-				//Si la posici�n es v�lida...
+				//Si la posición es válida...
 				if (this.connector.canBuildHere(pos, edificio, true)){
 					posBuild = pos;
 					return true;
@@ -426,7 +438,7 @@ public class JohnDoe extends GameHandler {
 	 */
 	public Position getPosToAttack() {
 		ArrayList<int[]> posiciones = dah_mapa.getEnemyPositions(); //Posiciones enemigas
-		Position ret = new Position(posiciones.get(0)[1], posiciones.get(0)[0], PosType.BUILD); //Posici�n por defecto
+		Position ret = new Position(posiciones.get(0)[1], posiciones.get(0)[0], PosType.BUILD); //Posición por defecto
 		double infl = dah_mapa.mapa[posiciones.get(0)[0]][posiciones.get(0)[1]]; //Influencia por defecto
 		int dist = cc.getPosition().getApproxWDistance(ret); //Distancia inicial
 		
@@ -443,18 +455,17 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	/**
-	 * Se comprueba si hay edificios da�ados
+	 * Se comprueba si hay edificios dañados
 	 * @return True si hay edificio, false si no
 	 */
 	public boolean checkBuildings() {
-		//Para ahorrar ciclos, si la lista de edificios da�ados contiene algo
+		//Para ahorrar ciclos, si la lista de edificios dañados contiene algo
 		//se evita el mirar todos los edificios.
 		if (!damageBuildings.isEmpty()) {
 			return true;
 		}
 		for (Unit u : edificiosConstruidos){
-			//Si el edificio ha sido da�ado y no se est� reparando ni guardado
-			//System.out.println(u.getType().getMaxHitPoints());
+			//Si el edificio ha sido dañado y no se está reparando ni guardado
 			if (u.getHitPoints() - u.getType().getMaxHitPoints() != 0 &&
 					!u.isRepairing() && !damageBuildings.contains(u)) {
 				damageBuildings.add(u);
@@ -483,49 +494,48 @@ public class JohnDoe extends GameHandler {
      * M -> Minerales
      * 0 -> No se puede construir
      * 
-     * Se genera una posici�n inicial (0,0) y se va recorriendo
-     * todo el mapa mirando si es construible/caminable una posici�n
+     * Se genera una posición inicial (0,0) y se va recorriendo
+     * todo el mapa mirando si es construible/caminable una posición
      * 
      * Una vez se tiene generado el mapa se miran todos los recursos
-     * y se sit�an en el mapa.
+     * y se sitúan en el mapa.
      */
     public void createMap() {
-    	//La posici�n hay que desplazarla de 32 en 32 (tama�o de las casillas)
-    	Position pos_aux = new Position(0,0, PosType.BUILD);
-    	//Altura m�xima del mapa en pixeles
+    	//La posición hay que desplazarla de 32 en 32 (tamaño de las casillas)
+    	//Position pos_aux = new Position(0,0, PosType.BUILD);
+    	//Altura máxima del mapa en pixeles (Build)
 		int maxHeight = this.connector.getMap().getSize().getBY();
-		//Anchura m�xima del mapa en pixeles
+		//Anchura máxima del mapa en pixeles (Build)
 		int maxWidth = this.connector.getMap().getSize().getBX();
 		//Altura de la casilla actual
-		int altura = this.connector.getMap().getGroundHeight(pos_aux);
+		//int altura = this.connector.getMap().getGroundHeight(pos_aux);
 		//Mapa a devolver
 		mapa = new int[maxHeight][maxWidth];
-		//Tama�o m�ximo del edificio que se puede construir
+		//Tamaño máximo del edificio que se puede construir
 		int dimension;
-		//Variable que detiene la b�squeda si se encuentra un obst�culo
-		boolean zonaLibre;
-		//Indica si la siguiente posici�n es un cambio de altura
-		
-		// new Position(c,f, PosType.BUILD) 
+		//Variable que detiene la búsqueda si se encuentra un obstáculo
+		//boolean zonaLibre;
+
 		for(int f = 0; f < maxHeight; f++){
 			for(int c = 0; c < maxWidth; c++){
-				pos_aux = new Position(c, f, PosType.BUILD);
+				//Posición a evaluar
+				Position pos_aux = new Position(c, f, PosType.BUILD);
+				//Tamaño máximo posible a construir
 				dimension = 0;
-				zonaLibre = true;
+				//Variable que detiene la búsqueda si se encuentra un obstáculo
+				boolean zonaLibre = true;
 				
-				//para cada posici�n se mira si se est� en los l�mites del mapa y
-				//hay que verificar si la posici�n es construible
-				if (f+1>=maxHeight || c+1>=maxWidth){
-					zonaLibre = false;
-				}
-				if (!this.connector.getMap().isBuildable(pos_aux)){
-					zonaLibre = false;
-				}
-				//Se obtiene la altura de la posici�n
-				altura = this.connector.getMap().getGroundHeight(pos_aux);
+				//para cada posición se mira si se está en los límites del mapa y
+				//hay que verificar si la posición es construible
+				if (f+1>=maxHeight ||
+					c+1>=maxWidth ||
+					!this.connector.getMap().isBuildable(pos_aux)){ zonaLibre = false; }
+				
+				//Se obtiene la altura de la posición
+				int altura = this.connector.getMap().getGroundHeight(pos_aux);
 				while(zonaLibre && dimension <= 4){
 					dimension++;
-					//Se verifica vertical, horizontal y diagonalmente si son v�lidas las posiciones.
+					//Se verifica vertical, horizontal y diagonalmente si son válidas las posiciones.
 					//Si alguna no lo es, se sale del while y se guarda el valor en el mapa
 					for(int i = 0; i < dimension; i++){
 						//matriz[i+f][c+dimension]	Comprueba columnas
@@ -534,9 +544,7 @@ public class JohnDoe extends GameHandler {
 								zonaLibre = false;
 							}
 						}
-						else{
-							zonaLibre = false;
-						}
+						else{ zonaLibre = false; }
 						
 						//matriz[f+dimension][i+c]    Comprueba filas
 						if (this.connector.isBuildable(new Position(c+i, f+dimension, PosType.BUILD), true)) {
@@ -544,9 +552,7 @@ public class JohnDoe extends GameHandler {
 								zonaLibre = false;
 							}
 						}
-						else{
-							zonaLibre = false;
-						}
+						else{ zonaLibre = false; }
 					
 						//matriz[f+dimension][c+dimension]   Comprueba en la diagonal (se podr�a cambiar cambiando la condicion del for a <=)
 						if (this.connector.isBuildable(new Position(c+dimension, f+dimension, PosType.BUILD), true)) {
@@ -554,20 +560,16 @@ public class JohnDoe extends GameHandler {
 								zonaLibre = false;
 							}
 						}
-						else{
-							zonaLibre = false;
-						}
+						else{ zonaLibre = false; }
 					}
-					//si se est� en los l�mites del mapa en la pr�xima iteraci�n, se sale del bucle.  //creo que no hace falta porque isBuildable ya lo comprueba
-					if (f+1+dimension>=maxHeight || c+1+dimension>=maxWidth){
-						zonaLibre = false;
-					}
+					//si se está en los límites del mapa en la próxima iteración, se sale del bucle.
+					//creo que no hace falta porque isBuildable ya lo comprueba
+					if (f+1+dimension>=maxHeight || c+1+dimension>=maxWidth){ zonaLibre = false;	}
 
 				}
-				// Se resta 1 porque hemos aumentado en 1 la dimensi�n suponiendo que la siguiente posici�n es v�lida
-				if (dimension != 0)
-					dimension--;
-				// Se actualiza la posici�n
+				// Se resta 1 porque hemos aumentado en 1 la dimensión suponiendo que la siguiente posición es válida
+				if (dimension != 0) { dimension--; }
+				// Se actualiza la posición
 				mapa[f][c] = (dimension);	
 			}
 		}
@@ -575,7 +577,7 @@ public class JohnDoe extends GameHandler {
 		// Ahora se buscan los nodos de recursos y se les pone valores especiales:
 		// -1 Para minerales
 		// -2 Para vespeno.
-		// getTilePosition devuelve la posici�n superior izquierda
+		// getTilePosition devuelve la posición superior izquierda
 		for (Unit u : this.connector.getNeutralUnits()){
 			if (u.getType() == UnitTypes.Resource_Mineral_Field ||
 					u.getType() == UnitTypes.Resource_Mineral_Field_Type_2 ||
@@ -584,7 +586,7 @@ public class JohnDoe extends GameHandler {
 				mapa[u.getTilePosition().getBY()][u.getTilePosition().getBX()] = -1;
 			}
 			if (u.getType() == UnitTypes.Resource_Vespene_Geyser) {
-				//Para construir la refiner�a nos vale la casilla arriba a la izquierda.
+				//Para construir la refinería nos vale la casilla arriba a la izquierda.
 				mapa[u.getTilePosition().getBY()][u.getTilePosition().getBX()] = -2;
 			}
 		}
@@ -592,14 +594,14 @@ public class JohnDoe extends GameHandler {
     
     /**
      * Para poder crear la matriz deben ser en diagonal.
-     * Para contemplar casos en el que origen y m�ximo sean en horizontal (mismo Y)
+     * Para contemplar casos en el que origen y máximo sean en horizontal (mismo Y)
      * cuando ocurra eso, se toma Y como la Y del edificio. 
      * 
-     * El m�todo devolver� un Position que indica la casilla superior izquierda v�lida donde construir el edificio.
-     * Si se devuelve -1 en X no hay posici�n v�lida.
+     * El método devolverá un Position que indica la casilla superior izquierda v�lida donde construir el edificio.
+     * Si se devuelve -1 en X no hay posición válida.
      */
     public Position findPlace(Point origen, Point maximo, UnitType building){
-    	//Si no se pasan valores correctos, se devuelve posici�n inv�lida�
+    	//Si no se pasan valores correctos, se devuelve posición inválida
     	if (origen.x < 0 || origen.y < 0 ||
     			maximo.x < 0 || maximo.y < 0) {
     		return new Position(-2,0,PosType.BUILD);
@@ -618,11 +620,11 @@ public class JohnDoe extends GameHandler {
     	//Limites de la submatriz X e Y
     	//Eje X
     	if (origen.x < maximo.x) {
-    		//Origen est� antes que el maximo
+    		//Origen está antes que el maximo
     		xMaximo = (maximo.x > mapa[0].length ? mapa[0].length : maximo.x);
     		xOrigen = origen.x;
     	} else {
-    		//Maximo est� antes que el origen
+    		//Maximo está antes que el origen
     		xMaximo = (origen.x > mapa[0].length ? mapa[0].length : origen.x);
     		xOrigen = maximo.x;
     	}
@@ -635,15 +637,14 @@ public class JohnDoe extends GameHandler {
     		yOrigen = maximo.y;
     	}
     	
-    	
     	//Valor a buscar de posiciones
     	int max = (building.getTileHeight() > building.getTileWidth()) ? building.getTileHeight() : building.getTileWidth();
-    	//Variable de control para la b�squeda
+    	//Variable de control para la búsqueda
     	boolean found = false;
-    	//se recorre el mapa entre las posiciones dadas
-    	for (; yOrigen < yMaximo && !found; yOrigen++){
-    		for (; xOrigen < xMaximo && !found; xOrigen++){
-    			//si encuentra una posici�n v�lida sale.
+    	//Se recorre el mapa entre las posiciones dadas
+    	for (; xOrigen < xMaximo && !found; xOrigen++){
+    		for (; yOrigen < yMaximo && !found; yOrigen++){
+    			//si encuentra una posición válida sale.
     			if (mapa[yOrigen][xOrigen] >= max) {
     				found = true;
     			}
@@ -672,26 +673,26 @@ public class JohnDoe extends GameHandler {
     	}
     	/*
     	 *  Para actualizar el resto de la matriz, tendremos que explorar las casillas superiores y por la izquierda.
-    	 *  Dado que tambi�n hay que tener en cuenta las diagonales, se har� de tal forma que primero se actualicen
+    	 *  Dado que también hay que tener en cuenta las diagonales, se hará de tal forma que primero se actualicen
     	 *  todas las superiores incluidas las diagonales y despu�s las de la izquierda. 
     	 */
     	
-    	// Esta variable se usar� para saber si hemos terminado la actualizaci�n
+    	// Esta variable se usará para saber si hemos terminado la actualización
     	boolean parada = true;
-    	// Esta variable servir� para desplazarnos verticalmente y tambien saber que dimensi�n maxima puede tener el edificio de esa casilla
+    	// Esta variable servirá para desplazarnos verticalmente y tambien saber que dimensión maxima puede tener el edificio de esa casilla
     	int iv = 1;
-    	// Esta variable servir� para desplazarnos horizontalmente
+    	// Esta variable servirá para desplazarnos horizontalmente
     	int ih = 0;
     	
-    	// Bucle de actualizaci�n vertical
+    	// Bucle de actualización vertical
     	while (parada){
     		int extra = (destino.getBX()-origen.getBX() <= ih ? ih-(destino.getBX()-origen.getBX()) : 0);
-    		//Si no nos salimos del mapa, el valor actual de la dimensi�n no es 4 (m�ximo)
+    		//Si no nos salimos del mapa, el valor actual de la dimensión no es 4 (máximo)
     		if (((origen.getBY()-iv >= 0 && destino.getBX()-ih >= 0) && mapa[origen.getBY()-iv][destino.getBX()-ih] > iv) && (iv+extra < 4)){ // Si llegamos a 4 no es necesario seguir
     			mapa[origen.getBY()-iv][destino.getBX()-ih] = (iv == 1 ? iv+extra : iv);
     			iv++;
     		}
-    		else{ // Hemos terminado con la columna, pasamos a la siguiente (hacia atr�s en el mapa)
+    		else{ // Hemos terminado con la columna, pasamos a la siguiente (hacia atrás en el mapa)
     			if (iv == 1){
     				parada = false; // Si en la primera casilla no hay que actualizar, significa que hemos terminado.
     			}

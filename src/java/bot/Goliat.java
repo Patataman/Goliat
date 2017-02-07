@@ -29,7 +29,6 @@ public class Goliat extends Agent implements BWAPIEventListener {
 
 	BehavioralTree CollectTree, BuildTree, TrainTree, AttackTree;
 	Unit buildingTree;
-	//InfluenceMap dah_mapa;
 	JohnDoe gh;
 	int frames;
 	
@@ -49,11 +48,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
         this.bwapi.start();
     }
 	
-	@Override
-	public void connected() {
-	}
+	public void connected() { }
 
-	@Override
 	public void matchStart() {
 		 
         // Mediante este metodo se puede obtener información del usuario. 
@@ -81,10 +77,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
 
 		gh.supplies = bwapi.getSelf().getSupplyUsed();
 		gh.totalSupplies = bwapi.getSelf().getSupplyTotal();
-		//gh.addCC(gh.CCs.indexOf(gh.cc_select.getID()));
 		
 		gh.createMap();
-		//dah_mapa = new InfluenceMap(bwapi.getMap().getSize().getBY(), bwapi.getMap().getSize().getBX());
 		
 		frames = 0;
 		
@@ -268,6 +262,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		BuildTree.run();
 		TrainTree.run();
 		AttackTree.run();
+		
 		if(frames < 300){ // Cada 300 frames se recalculan las influencias.
 			frames++;
 		}else{
@@ -374,7 +369,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				this.bwapi.getUnit(unitID).getPosition().getBX(), this.bwapi.getUnit(unitID).getPosition().getBY());
 		/////////////////////////////////////
 		
-		//Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
+//		Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
 //		String workingDirectory = System.getProperty("user.dir");
 //		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
 //		createANDwriteInfluencia(path);
@@ -385,6 +380,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_SCV){
 				gh.VCEs.get(gh.CCs.indexOf(gh.cc_select.getID())).add(bwapi.getUnit(unitID));
 			}
+			
 			//Cuando se cree una unidad de las pendientes, se elimina de la lista.
 			if (gh.unidadesPendientes.contains(bwapi.getUnit(unitID).getType())){
 				gh.unidadesPendientes.remove(bwapi.getUnit(unitID).getType());
@@ -428,53 +424,25 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		}
 	}
 
-	@Override
 	public void unitMorph(int unitID) {
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
 			if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Refinery) gh.refineria++;
 		}
 	}
 	
-	@Override
 	public void playerDropped(int playerID) { }
-	
-	@Override
 	public void matchEnd(boolean winner) { }
-	
-	@Override
 	public void keyPressed(int keyCode) { }
-	
-	@Override
 	public void sendText(String text) { }
-	
-	@Override
 	public void receiveText(String text) { }
-	
-	@Override
 	public void playerLeft(int playerID) { }
-	
-	@Override
 	public void nukeDetect(Position p) { }
-	
-	@Override
 	public void nukeDetect() { }
-	
-	@Override
 	public void unitDiscover(int unitID) { }
-	
-	@Override
 	public void unitEvade(int unitID) { }
-	
-	@Override
 	public void unitShow(int unitID) { }
-	
-	@Override
 	public void unitHide(int unitID) { }
-	
-	@Override
 	public void unitRenegade(int unitID) { }
-
-	@Override
 	public void saveGame(String gameName) {	}
 	
 	/**
