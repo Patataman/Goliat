@@ -27,7 +27,7 @@ import jnibwapi.types.UpgradeType.UpgradeTypes;
 
 public class Goliat extends Agent implements BWAPIEventListener {
 
-	BehavioralTree CollectTree;
+	BehavioralTree CollectTree, BuildTree, TrainTree, AttackTree;
 	Unit buildingTree;
 	//InfluenceMap dah_mapa;
 	JohnDoe gh;
@@ -152,7 +152,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		buildRefinery.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Refinery));
 		buildRefinery.addChild(new FreeBuilder("Encontrar un constructor", gh));
 		buildRefinery.addChild(new Build("Construir refineria", gh, UnitTypes.Terran_Refinery));
-		//Construir bah�a de ingenieria
+		//Construir bahía de ingenieria
 		Sequence buildBay = new Sequence("Construir bahia");
 		buildBay.addChild(new CheckResources("Comprobar recursos bahia", gh, UnitTypes.Terran_Engineering_Bay));
 		buildBay.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Engineering_Bay));
@@ -250,8 +250,14 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		repair.addChild(new RepairBuilding("Reparar el edificio", gh));
 		// ------------- FIN REPAIR --------------------
 		
-		CollectTree = new BehavioralTree("Arbol maravilloso");
-		CollectTree.addChild(new Selector<>("MAIN SELECTOR", collect, selectorBuild, repair, selectorTrain, selectorResearch, adventure, attack));
+		CollectTree = new BehavioralTree("Arbol recolección/reparación");
+		CollectTree.addChild(new Selector<>("MAIN SELECTOR", collect, repair));
+		BuildTree  = new BehavioralTree("Arbol construcción/investigación");
+		BuildTree.addChild(new Selector<>("MAIN SELECTOR", selectorBuild, selectorResearch));
+		TrainTree  = new BehavioralTree("Arbol entrenamiento");
+		TrainTree.addChild(new Selector<>("MAIN SELECTOR", selectorTrain));
+		AttackTree  = new BehavioralTree("Arbol ataque/defensa");
+		AttackTree.addChild(new Selector<>("MAIN SELECTOR", adventure, attack));
 		
 		
 	}
@@ -259,6 +265,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	@Override
 	public void matchFrame() {
 		CollectTree.run();
+		BuildTree.run();
+		TrainTree.run();
+		AttackTree.run();
 		if(frames < 300){ // Cada 300 frames se recalculan las influencias.
 			frames++;
 		}else{
