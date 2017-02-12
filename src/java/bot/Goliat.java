@@ -140,74 +140,74 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		buildBarracks.addChild(new CheckResources("Comprobar recursos barracones", gh, UnitTypes.Terran_Barracks));
 		buildBarracks.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Barracks));
 		buildBarracks.addChild(new FreeBuilder("Encontrar un constructor", gh));
-		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
+		buildBarracks.addChild(new MoveTo("Mover el constructor", gh));
 		buildBarracks.addChild(new Build("Construir barracones", gh, UnitTypes.Terran_Barracks));
 		//Construir refineria
 		Sequence buildRefinery = new Sequence("Construir refineria");
 		buildRefinery.addChild(new CheckResources("Comprobar recursos refineria", gh, UnitTypes.Terran_Refinery));
 		buildRefinery.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Refinery));
 		buildRefinery.addChild(new FreeBuilder("Encontrar un constructor", gh));
-		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
+		buildRefinery.addChild(new MoveTo("Mover el constructor", gh));
 		buildRefinery.addChild(new Build("Construir refineria", gh, UnitTypes.Terran_Refinery));
 		//Construir bahía de ingenieria
 		Sequence buildBay = new Sequence("Construir bahia");
 		buildBay.addChild(new CheckResources("Comprobar recursos bahia", gh, UnitTypes.Terran_Engineering_Bay));
 		buildBay.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Engineering_Bay));
 		buildBay.addChild(new FreeBuilder("Encontrar un constructor", gh));
-		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
+		buildBay.addChild(new MoveTo("Mover el constructor", gh));
 		buildBay.addChild(new Build("Construir bahia", gh, UnitTypes.Terran_Engineering_Bay));
 		//Construir academia
 		Sequence buildAcademy = new Sequence("Construir academia");
 		buildAcademy.addChild(new CheckResources("Comprobar recursos academia", gh, UnitTypes.Terran_Academy));
 		buildAcademy.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Academy));
 		buildAcademy.addChild(new FreeBuilder("Encontrar un constructor", gh));
-		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
+		buildAcademy.addChild(new MoveTo("Mover el constructor", gh));
 		buildAcademy.addChild(new Build("Construir academia", gh, UnitTypes.Terran_Academy));
 		//Construir fabrica
 		Sequence buildFactory = new Sequence("Construir fabrica");
 		buildFactory.addChild(new CheckResources("Comprobar recursos fabrica", gh, UnitTypes.Terran_Factory));
 		buildFactory.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Factory));
 		buildFactory.addChild(new FreeBuilder("Encontrar un constructor", gh));
-		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
+		buildFactory.addChild(new MoveTo("Mover el constructor", gh));
 		buildFactory.addChild(new Build("Construir fabrica", gh, UnitTypes.Terran_Factory));
 		//Construir arsenal
 		Sequence buildArmory = new Sequence("Construir arsenal");
 		buildArmory.addChild(new CheckResources("Comprobar recursos arsenal", gh, UnitTypes.Terran_Armory));
 		buildArmory.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Armory));
 		buildArmory.addChild(new FreeBuilder("Encontrar un constructor", gh));
-		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
+		buildArmory.addChild(new MoveTo("Mover el constructor", gh));
 		buildArmory.addChild(new Build("Construir arsenal", gh, UnitTypes.Terran_Armory));
 		//Construir misiles
 		Sequence buildTurret = new Sequence("Construir torreta de misiles");
 		buildTurret.addChild(new CheckResources("Comprobar recursos torreta", gh, UnitTypes.Terran_Missile_Turret));
 		buildTurret.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Missile_Turret));
 		buildTurret.addChild(new FreeBuilder("Encontrar un constructor", gh));
-		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
+		buildTurret.addChild(new MoveTo("Mover el constructor", gh));
 		buildTurret.addChild(new Build("Construir torreta", gh, UnitTypes.Terran_Missile_Turret));
 		//Construir CC
 		Sequence buildCC = new Sequence("Construir centro de mando");
 		buildCC.addChild(new CheckResources("Comprobar recursos CC", gh, UnitTypes.Terran_Command_Center));
 		buildCC.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Command_Center));
 		buildCC.addChild(new FreeBuilder("Encontrar un constructor", gh));
-		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
+		buildCC.addChild(new MoveTo("Mover el constructor", gh));
 		buildCC.addChild(new Build("Construir CC", gh, UnitTypes.Terran_Command_Center));
 //		//Construir puerto estelar
 //		Sequence buildStarport = new Sequence("Construir puerto estelar");
 //		buildStarport.addChild(new CheckResources("Comprobar recursos puerto", gh, UnitTypes.Terran_Starport));
 //		buildStarport.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Starport));
 //		buildStarport.addChild(new FreeBuilder("Encontrar un constructor", gh));
-//		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
+//		buildStarport.addChild(new MoveTo("Mover el constructor", gh));
 //		buildStarport.addChild(new Build("Construir puerto", gh, UnitTypes.Terran_Starport));
 //		//Construir laboratorio científico
 //		Sequence buildLab = new Sequence("Construir laboratorio cientifico");
 //		buildLab.addChild(new CheckResources("Comprobar recursos laboratorio", gh, UnitTypes.Terran_Science_Facility));
 //		buildLab.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Science_Facility));
 //		buildLab.addChild(new FreeBuilder("Encontrar un constructor", gh));
-//		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
+//		buildLab.addChild(new MoveTo("Mover el constructor", gh));
 //		buildLab.addChild(new Build("Construir laboratorio", gh, UnitTypes.Terran_Science_Facility));
 		
 		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks, 
-																buildAcademy, buildRefinery, buildBay, buildTurret, buildCC, buildFactory, buildArmory);
+													buildRefinery, buildAcademy, buildFactory, buildBay, buildArmory, buildTurret, buildCC);
 		// ---------- FIN BUILD -----------
 		
 		// -------- Secuencias de movimiento ---------

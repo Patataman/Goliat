@@ -83,7 +83,7 @@ public class JohnDoe extends GameHandler {
 		dah_mapa 				= new InfluenceMap(bwapi.getMap().getSize().getBY(), bwapi.getMap().getSize().getBX());
 	}
 	
-	//A�aden las listas correspondientes al nuevo CC
+	//Añaden las listas correspondientes al nuevo CC
 	public void addCC(int cc_pos) {
 		VCEs.add(new ArrayList<Unit>());
 		trabajadoresMineral.add(new ArrayList<Integer>());
@@ -99,7 +99,6 @@ public class JohnDoe extends GameHandler {
 				if ((!trabajadoresMineral.get(VCEs.indexOf(vces_cc)).contains(vce.getID()) &&
 					 !trabajadoresVespeno.get(VCEs.indexOf(vces_cc)).contains(vce.getID())) &&
 					 vce.isIdle() && vce.isCompleted() && CCs.size() > 0) {
-					System.out.println("getWorker: "+trabajadoresMineral.get(VCEs.indexOf(vces_cc)).size());
 					current_worker = vce;
 					cc_select = this.connector.getUnit(CCs.get(VCEs.indexOf(vces_cc)));
 					return true;
@@ -151,7 +150,6 @@ public class JohnDoe extends GameHandler {
 	public boolean aCurrarMina(){
 		//Se verifica que no se pase del número de trabajadores y que el VCE está
 		//completado, ya que a veces se selecciona sin haber completado el entrenamiento.
-		System.out.println("Tamano "+trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).size());
 		if ((trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).size() < max_vce-2) && current_worker.isCompleted()){
 			//Se buscan los minerales cercanos a la base.
 			for (Unit recurso : this.connector.getNeutralUnits()) {
@@ -161,8 +159,6 @@ public class JohnDoe extends GameHandler {
 						//Se manda al VCE a recolectar
 						this.connector.getUnit(current_worker.getID()).rightClick(recurso, false);
 						trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).add(current_worker.getID());
-						System.out.println(trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).size());
-						System.out.println("add trabajador");
 						current_worker = null;
 						return true;
 					}
@@ -247,9 +243,6 @@ public class JohnDoe extends GameHandler {
 			}
 		}
 		return false;
-/*		if (edificio == UnitTypes.Terran_Command_Center && !worker.isMoving()) {
-			current_worker.move(posBuild, false);
-		}*/
 	}
 	
 	//Comprueba si se puede investigar la investigación (valga la redundancia)
@@ -411,48 +404,15 @@ public class JohnDoe extends GameHandler {
 		}
 		//Caso especial de que sea una refinería
 		if (edificio == UnitTypes.Terran_Refinery) {
-			for (Unit vespeno : this.connector.getNeutralUnits()){
-				//Se construirá la refinería si está en la misma región que el CC
-				if (vespeno.getType() == UnitTypes.Resource_Vespene_Geyser &&
-						this.connector.getMap().getRegion(vespeno.getPosition()) ==
-						this.connector.getMap().getRegion(cc_select.getPosition())) {                              
-						//Se obtiene la pos. del vespeno.
-						posBuild = vespeno.getTopLeft();
-						return true;
-				}
-			}
-			//No se encuentra posición para una refinería, asique fuera
-			return false;
+			return findPositionRefinery();
 		}
 		//Caso especial de que sea una expansión
 		if (edificio == UnitTypes.Terran_Command_Center) {
-			//Nos quedamos con la expansión más cercana a la base
-			int dist = 9999;
-			BaseLocation pos = null;
-			for (BaseLocation aux : this.connector.getMap().getBaseLocations()) {
-				//Se comprueba que no sean la misma posición, que la distancia 
-				//sea menor que la anterior y que se pueda construir
-				if (!aux.isStartLocation() &&
-						cc.getPosition().getApproxWDistance(aux.getCenter()) < dist &&
-						this.connector.canBuildHere(aux.getPosition(), edificio, false) &&
-						!(aux.isIsland() || aux.isMineralOnly())) {
-					//Si es mas cercano se actualiza la distancia
-					dist = cc.getPosition().getApproxWDistance(aux.getCenter());
-					//Se guarda
-					pos = aux;
-				}
-				//Ha encontrado una posición
-				if (pos != null) {
-					posBuild = pos.getPosition();
-					return true;
-				}
-				//No ha encontrado posición
-				else {
-					return false;
-				}
-			}
-			//No se encuentra para un CC, asique fuera
-			return false;
+			return findPositionCC();
+		}
+		//Caso de edificios más o menos importantes (para alejarlos de la entrada)
+		if (edificio == UnitTypes.Terran_Barracks) {
+			
 		}
 		//Edificios no especiales
 		byte [][] pruebas = {{1,0},{0,1},{1,1},{-1,0},{-1,1},{-1,-1},{0,-1},{1,-1}};
@@ -471,6 +431,50 @@ public class JohnDoe extends GameHandler {
 			}
 		}
 		//No se encuentra nada
+		return false;
+	}
+	
+	public boolean findPositionRefinery() {
+		//Caso especial de que sea una refinería
+		for (Unit vespeno : this.connector.getNeutralUnits()){
+			//Se construirá la refinería si está en la misma región que el CC
+			if (vespeno.getType() == UnitTypes.Resource_Vespene_Geyser &&
+					this.connector.getMap().getRegion(vespeno.getPosition()) ==
+					this.connector.getMap().getRegion(cc_select.getPosition())) {                              
+					//Se obtiene la pos. del vespeno.
+					posBuild = vespeno.getTopLeft();
+					return true;
+			}
+		}
+		//No se encuentra posición para una refinería, asique fuera
+		return false;
+	}
+	
+	public boolean findPositionCC() {
+		//Nos quedamos con la expansión más cercana a la base
+		int dist = 9999;
+		BaseLocation pos = null;
+		for (BaseLocation aux : this.connector.getMap().getBaseLocations()) {
+			//Se comprueba que no sean la misma posición, que la distancia 
+			//sea menor que la anterior y que se pueda construir
+			if (!aux.isStartLocation() &&
+					cc.getPosition().getApproxWDistance(aux.getCenter()) < dist &&
+					this.connector.canBuildHere(aux.getPosition(), UnitTypes.Terran_Command_Center, false) &&
+					!(aux.isIsland() || aux.isMineralOnly())) {
+				//Si es mas cercano se actualiza la distancia
+				dist = cc.getPosition().getApproxWDistance(aux.getCenter());
+				//Se guarda
+				pos = aux;
+			}
+			//Ha encontrado una posición
+			if (pos != null) {
+				posBuild = pos.getPosition();
+				return true;
+			}
+			//No ha encontrado posición
+			else { return false; }
+		}
+		//No se encuentra para un CC, asique fuera
 		return false;
 	}
 	

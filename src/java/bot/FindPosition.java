@@ -37,8 +37,8 @@ public class FindPosition extends Conditional {
 				return State.FAILURE;
 			}
 			//Decorador para la academia, va después de los barracones. Limite 1
-			if ((edificio == UnitTypes.Terran_Academy && ((JohnDoe)this.handler).barracones == 0) || 
-					(edificio == UnitTypes.Terran_Academy && ((JohnDoe)this.handler).academia != 0)) {
+			if (edificio == UnitTypes.Terran_Academy && (((JohnDoe)this.handler).barracones == 0 || 
+					((JohnDoe)this.handler).academia != 0)) {
 				return State.FAILURE;
 			}
 			//Decorador para la bahía de ingeniería
@@ -47,13 +47,13 @@ public class FindPosition extends Conditional {
 				return State.FAILURE;
 			}
 			//Decorador para la fábrica, va después de los barracones. Límite a 2 por CC.
-			if ((edificio == UnitTypes.Terran_Factory && ((JohnDoe)this.handler).barracones == 0) ||
-					(edificio == UnitTypes.Terran_Factory && ((JohnDoe)this.handler).fabricas >= ((JohnDoe)this.handler).CCs.size())) {
+			if (edificio == UnitTypes.Terran_Factory && (((JohnDoe)this.handler).barracones == 0 ||
+					((JohnDoe)this.handler).fabricas >= ((JohnDoe)this.handler).CCs.size())) {
 				return State.FAILURE;
 			}
 			//Decorador para el arsenal. Límite a 1
-			if ((edificio == UnitTypes.Terran_Armory && ((JohnDoe)this.handler).fabricas == 0) ||
-					(edificio == UnitTypes.Terran_Armory && ((JohnDoe)this.handler).arsenal != 0)) {
+			if (edificio == UnitTypes.Terran_Armory && (((JohnDoe)this.handler).fabricas == 0 ||
+					((JohnDoe)this.handler).arsenal != 0)) {
 				return State.FAILURE;
 			}
 			//Decorador para construir expansiones.
