@@ -30,19 +30,21 @@ public class JohnDoe extends GameHandler {
 	List<Unit> tropaAsalto;				//Lista para saber cuales son los valientes que han ido a la guerra
 	List<UnitType> edificiosPendientes;	//Lista para llevar el conteo de los edificios construyendose.
 	List<Unit> edificiosConstruidos; 	//Lista para saber los edificios construidos actualmente
-	List<UpgradeType> researching;		//Lista para saber las investigaciones que se est�n realizando.
+	List<UpgradeType> researching;		//Lista para saber las investigaciones que se estén realizando.
 	List<Unit> damageBuildings;			//Lista para saber los edificios que han sido atacados 
 										//y poder repararlos. De esta forma no hay que recorrer toda edificiosConstruidos
-	
+	List<Unit> workers;					//Lista para tener hasta 3 trabajadores construyendo o haciendo cosas
+	Unit current_worker;				//Variable para saber que VCE se usa de la lista
+		
 	int supplies, totalSupplies;
 	byte barracones, refineria, fabricas, 
 		academia, arsenal, bahia, max_vce, lab_cient, puerto;
 	
 	List<ChokePoint>[][] chokePoints;
 	
-	//Variables para tener controlado al trabajador seleccionado
-	//el cc inicial y el cc del vce seleccionado.
-	Unit worker, cc, cc_select;
+	//Variables para tener controlado el cc inicial
+	//y el cc del vce seleccionado.
+	Unit cc, cc_select;
 	
 	//Posición donde se va a construir el último edificio.
 	Position posBuild;
@@ -59,8 +61,8 @@ public class JohnDoe extends GameHandler {
 
 	public JohnDoe(JNIBWAPI bwapi) {
 		super(bwapi);
-		
-		worker 					= null;
+
+		workers 				= new ArrayList<Unit>(3);
 		cc 						= null;
 		cc_select 				= null;
 		CCs 					= new ArrayList<Integer>();
@@ -93,11 +95,11 @@ public class JohnDoe extends GameHandler {
 	public boolean getWorker() {
 		for (ArrayList<Unit> vces_cc : VCEs) {
 			for (Unit vce : vces_cc) {
-				// Se comprueba si la unidades es de tipo VCE y no est� ocupada
+				// Se comprueba si la unidades es de tipo VCE y no esté ocupada
 				if ((!trabajadoresMineral.get(VCEs.indexOf(vces_cc)).contains(vce.getID()) &&
 					 !trabajadoresVespeno.get(VCEs.indexOf(vces_cc)).contains(vce.getID())) &&
 					 vce.isIdle() && vce.isCompleted() && CCs.size() > 0) {
-					worker = vce;
+					current_worker = vce;
 					cc_select = this.connector.getUnit(CCs.get(VCEs.indexOf(vces_cc)));
 					return true;
 				}
@@ -108,39 +110,49 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	//Obtiene un trabajador para construir. Es diferente a obtener un trabajador, porque aqui cogemos un VCE
-	//que est� recolectando minerales. Se construye siempre con un VCE del cc inicial.
+	//que esté recolectando minerales. Se construye siempre con un VCE del cc inicial.
 	public boolean getMasterBuilder() {
-		if (worker == null){
+		if (workers.size() < 3){
+			//Si todos los actuales están ocupados coge otro VCE nuevo
+			for (Unit vce : workers) {
+				if (vce.isIdle()){
+					return true;
+				}
+			}
 			//Se coge 1 VCE de la lista de VCEs del CC inicial (0)
 			for (int vce : this.trabajadoresMineral.get(0)) {
-				//Se pone como trabajador
-				worker = this.connector.getUnit(vce);
-				//Se elimina de la lista
-				trabajadoresMineral.remove((Integer) vce);
-				return true;
+				//Si no está en la lista...
+				if (!workers.contains(this.connector.getUnit(vce))) {
+					//Se pone como trabajador
+					workers.add(this.connector.getUnit(vce));
+					//Se elimina de la lista
+					trabajadoresMineral.remove((Integer) vce);
+					return true;					
+				}
 			}
 			//No se ha podido seleccionar ninguno
 			return false;
 		}
-		//ya hay uno cogido
-		return true;
+		else if (workers.size() < 3){return true;}
+		//Si se llega a else es que ya hay 3 trabajadores
+		else {return false;}
 	}
 	
 	//Se manda a recolectar minerales al trabajador seleccionado, 
-	// ya que antes de llamar a esta funci�n se llama a getWorker
+	// ya que antes de llamar a esta función se llama a getWorker
 	public boolean aCurrarMina(){
-		//Se verifica que no se pase del n�mero de trabajadores y que el VCE está
+		//Se verifica que no se pase del número de trabajadores y que el VCE está
 		//completado, ya que a veces se selecciona sin haber completado el entrenamiento.
-		if ((trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).size() < max_vce-3) && worker.isCompleted()){
+		if ((trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).size() < max_vce-2) && current_worker.isCompleted()){
 			//Se buscan los minerales cercanos a la base.
 			for (Unit recurso : this.connector.getNeutralUnits()) {
-				if (recurso.getType().isMineralField()) {                                    
-					double distance = cc_select.getDistance(recurso);                                    
-					if (distance < 300) {
+				if (recurso.getType().isMineralField()) {
+					if (this.connector.getMap().getRegion(recurso.getPosition()) == 
+							this.connector.getMap().getRegion(cc_select.getPosition())) {
 						//Se manda al VCE a recolectar
-						this.connector.getUnit(worker.getID()).rightClick(recurso, false);
-						trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).add(worker.getID());
-						worker = null;
+						this.connector.getUnit(current_worker.getID()).rightClick(recurso, false);
+						trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).add(current_worker.getID());
+						current_worker = null;
 						return true;
 					}
 				}
@@ -151,12 +163,12 @@ public class JohnDoe extends GameHandler {
 	
 	//Igual que los minerales
 	public boolean aCurrarGas(){
-		if (trabajadoresVespeno.get(CCs.indexOf(cc_select.getID())).size() < 2 && worker.isCompleted()) {
+		if (trabajadoresVespeno.get(CCs.indexOf(cc_select.getID())).size() < 2 && current_worker.isCompleted()) {
 			for (Unit refineria : this.connector.getMyUnits()) {
 				if (refineria.getType() == UnitTypes.Terran_Refinery && refineria.isCompleted()){
-					this.connector.getUnit(worker.getID()).rightClick(refineria, false);
-					trabajadoresVespeno.get(CCs.indexOf(cc_select.getID())).add(worker.getID());
-					worker = null;
+					this.connector.getUnit(current_worker.getID()).rightClick(refineria, false);
+					trabajadoresVespeno.get(CCs.indexOf(cc_select.getID())).add(current_worker.getID());
+					current_worker = null;
 					return true;	
 				}
 			}			
@@ -194,15 +206,39 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
+	/**
+	 * Método que mueve un VCE a la posición a la que se quiere construir el edificio
+	 * @return True si manda que se mueva. False si no se puede mandar
+	 */
+	public boolean moveTo() {
+		for (Unit vce : workers){
+			if (vce.getPosition().getApproxBDistance(posBuild) < 10) {
+				return true;
+			} else {
+				if (!vce.isMoving()){
+					return vce.move(posBuild.makeValid(), false);					
+				} else {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
 	//Construye un edificio
 	public boolean buildUnit(UnitType edificio) {
-		if (edificiosPendientes.contains(edificio) || worker==null || !worker.isExists()) {
+		if (edificiosPendientes.contains(edificio)) {
 			return false;
 		}
-		if (edificio == UnitTypes.Terran_Command_Center && !worker.isMoving()) {
-			worker.move(posBuild, false);
+		for (Unit vce : workers){
+			if (vce.getPosition().getApproxBDistance(posBuild) < 10){
+				return vce.build(posBuild, edificio);
+			}
 		}
-		return worker.build(posBuild, edificio);
+		return false;
+/*		if (edificio == UnitTypes.Terran_Command_Center && !worker.isMoving()) {
+			current_worker.move(posBuild, false);
+		}*/
 	}
 	
 	//Comprueba si se puede investigar la investigación (valga la redundancia)
@@ -250,9 +286,7 @@ public class JohnDoe extends GameHandler {
 		}	
 		return false;
 	}
-	
-	
-	
+		
 	// Selecciona las unidades militares que no hacen nada para ponerlas a hacer algo
 	public boolean chosseUnits(){
 		ArrayList<Unit> aux = new ArrayList<Unit>();
@@ -355,11 +389,15 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	
-	/* Para construir vamos a coger como origen el CC. Y se realizarán hasta 10 intentos
+	/** Para construir vamos a coger como origen el CC. Y se realizarán hasta 10 intentos
 	 * para encontrar una posición válida. En cada intento se va cambiando de posicion maxima.
 	 * (es decir, se va moviendo alrededor para buscar la posición)
 	 */
 	public boolean findPosition(UnitType edificio) {
+		//Si ya se tiene una posición, no la vuelve a buscar
+		if (posBuild != null && this.connector.canBuildHere(posBuild, edificio, false)){
+			return true;
+		}
 		//Caso especial de que sea una refinería
 		if (edificio == UnitTypes.Terran_Refinery) {
 			for (Unit vespeno : this.connector.getNeutralUnits()){
@@ -478,11 +516,16 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	public boolean repair() {
-		boolean ret = worker.repair(damageBuildings.get(0), false);
-		//Si se va a reparar, se elimina de la lista.
-		if (ret)
-			damageBuildings.remove(0);
-		return ret;
+		for (Unit vce : workers){
+			if (vce.isIdle()) {
+				boolean ret = vce.repair(damageBuildings.get(0), false);
+				//Si se va a reparar, se elimina de la lista.
+				if (ret)
+					damageBuildings.remove(0);
+				return ret;
+			}
+		}
+		return false;
 	}
 	
 	/**
@@ -642,8 +685,11 @@ public class JohnDoe extends GameHandler {
     	//Variable de control para la búsqueda
     	boolean found = false;
     	//Se recorre el mapa entre las posiciones dadas
-    	for (; xOrigen < xMaximo && !found; xOrigen++){
-    		for (; yOrigen < yMaximo && !found; yOrigen++){
+    	/******************************************
+    	 * **************************************
+    	 */
+    	for (; yOrigen < yMaximo && !found; yOrigen++){
+    		for (; xOrigen < xMaximo && !found; xOrigen++){
     			//si encuentra una posición válida sale.
     			if (mapa[yOrigen][xOrigen] >= max) {
     				found = true;

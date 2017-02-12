@@ -48,7 +48,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
         this.bwapi.start();
     }
 	
-	public void connected() { }
+	public void connected() {}
 
 	public void matchStart() {
 		 
@@ -128,71 +128,82 @@ public class Goliat extends Agent implements BWAPIEventListener {
 
 		
 		// -------- Secuencias de construcción ---------
-		//Construir dep�sito de suministros
+		//Construir depósito de suministros
 		Sequence buildSupply = new Sequence("Construir suministros");
 		buildSupply.addChild(new CheckResources("Comprobar recursos suministros", gh, UnitTypes.Terran_Supply_Depot));
 		buildSupply.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Supply_Depot));
 		buildSupply.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
 		buildSupply.addChild(new Build("Construir suministros", gh, UnitTypes.Terran_Supply_Depot));
 		//Construir barracones
 		Sequence buildBarracks = new Sequence("Construir barracones");
 		buildBarracks.addChild(new CheckResources("Comprobar recursos barracones", gh, UnitTypes.Terran_Barracks));
 		buildBarracks.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Barracks));
 		buildBarracks.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
 		buildBarracks.addChild(new Build("Construir barracones", gh, UnitTypes.Terran_Barracks));
 		//Construir refineria
 		Sequence buildRefinery = new Sequence("Construir refineria");
 		buildRefinery.addChild(new CheckResources("Comprobar recursos refineria", gh, UnitTypes.Terran_Refinery));
 		buildRefinery.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Refinery));
 		buildRefinery.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
 		buildRefinery.addChild(new Build("Construir refineria", gh, UnitTypes.Terran_Refinery));
 		//Construir bahía de ingenieria
 		Sequence buildBay = new Sequence("Construir bahia");
 		buildBay.addChild(new CheckResources("Comprobar recursos bahia", gh, UnitTypes.Terran_Engineering_Bay));
 		buildBay.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Engineering_Bay));
 		buildBay.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
 		buildBay.addChild(new Build("Construir bahia", gh, UnitTypes.Terran_Engineering_Bay));
 		//Construir academia
 		Sequence buildAcademy = new Sequence("Construir academia");
 		buildAcademy.addChild(new CheckResources("Comprobar recursos academia", gh, UnitTypes.Terran_Academy));
 		buildAcademy.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Academy));
 		buildAcademy.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
 		buildAcademy.addChild(new Build("Construir academia", gh, UnitTypes.Terran_Academy));
 		//Construir fabrica
 		Sequence buildFactory = new Sequence("Construir fabrica");
 		buildFactory.addChild(new CheckResources("Comprobar recursos fabrica", gh, UnitTypes.Terran_Factory));
 		buildFactory.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Factory));
 		buildFactory.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
 		buildFactory.addChild(new Build("Construir fabrica", gh, UnitTypes.Terran_Factory));
 		//Construir arsenal
 		Sequence buildArmory = new Sequence("Construir arsenal");
 		buildArmory.addChild(new CheckResources("Comprobar recursos arsenal", gh, UnitTypes.Terran_Armory));
 		buildArmory.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Armory));
 		buildArmory.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
 		buildArmory.addChild(new Build("Construir arsenal", gh, UnitTypes.Terran_Armory));
 		//Construir misiles
 		Sequence buildTurret = new Sequence("Construir torreta de misiles");
 		buildTurret.addChild(new CheckResources("Comprobar recursos torreta", gh, UnitTypes.Terran_Missile_Turret));
 		buildTurret.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Missile_Turret));
 		buildTurret.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
 		buildTurret.addChild(new Build("Construir torreta", gh, UnitTypes.Terran_Missile_Turret));
 		//Construir CC
 		Sequence buildCC = new Sequence("Construir centro de mando");
 		buildCC.addChild(new CheckResources("Comprobar recursos CC", gh, UnitTypes.Terran_Command_Center));
 		buildCC.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Command_Center));
 		buildCC.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
 		buildCC.addChild(new Build("Construir CC", gh, UnitTypes.Terran_Command_Center));
 //		//Construir puerto estelar
 //		Sequence buildStarport = new Sequence("Construir puerto estelar");
 //		buildStarport.addChild(new CheckResources("Comprobar recursos puerto", gh, UnitTypes.Terran_Starport));
 //		buildStarport.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Starport));
 //		buildStarport.addChild(new FreeBuilder("Encontrar un constructor", gh));
+//		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
 //		buildStarport.addChild(new Build("Construir puerto", gh, UnitTypes.Terran_Starport));
 //		//Construir laboratorio científico
 //		Sequence buildLab = new Sequence("Construir laboratorio cientifico");
 //		buildLab.addChild(new CheckResources("Comprobar recursos laboratorio", gh, UnitTypes.Terran_Science_Facility));
 //		buildLab.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Science_Facility));
 //		buildLab.addChild(new FreeBuilder("Encontrar un constructor", gh));
+//		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
 //		buildLab.addChild(new Build("Construir laboratorio", gh, UnitTypes.Terran_Science_Facility));
 		
 		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks, 
@@ -265,6 +276,20 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		
 		if(frames < 300){ // Cada 300 frames se recalculan las influencias.
 			frames++;
+			if (gh.current_worker != null && gh.current_worker.isIdle()) { gh.current_worker = null; }
+			if (gh.workers.size() > 0) {
+				System.out.println("--------------------");
+				ArrayList <Unit> vces_aux = new ArrayList<Unit>(3);
+				for(Unit vce : gh.workers) {
+					System.out.println(vce.getID());
+					System.out.println(vce.getOrder());
+					if ((vce.isConstructing() || vce.isRepairing()) &&
+							!(vce.isGatheringGas() || vce.isGatheringMinerals())) {
+						vces_aux.add(vce);
+					}
+				}
+				gh.workers = vces_aux;				
+			}
 		}else{
 			frames = 0;
 			gh.updateInfluences();
@@ -408,7 +433,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 						gh.addCC(gh.CCs.indexOf(unitID));
 					}
 				}
-				gh.worker = null;
+				
+				//Se elimina el trabajador que construía de la lista
+//				gh.workers.remove(gh.current_worker);
 				
 				//Se actualiza el mapa.
 				gh.updateMap(bwapi.getUnit(unitID).getTopLeft(),

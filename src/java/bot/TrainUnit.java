@@ -28,7 +28,7 @@ public class TrainUnit extends Action {
 				if (u.getType() == UnitTypes.Terran_Science_Vessel) nave_cientifica++;
 			}
 			if (unit == UnitTypes.Terran_SCV){
-				//Se mira a ver si es posible entrenar alg�n VCE
+				//Se mira a ver si es posible entrenar algún VCE
 				if (((JohnDoe)this.handler).VCEs.get(0).size() >= ((JohnDoe)this.handler).max_vce) {
 					return State.FAILURE; 					
 				}
