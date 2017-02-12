@@ -99,6 +99,7 @@ public class JohnDoe extends GameHandler {
 				if ((!trabajadoresMineral.get(VCEs.indexOf(vces_cc)).contains(vce.getID()) &&
 					 !trabajadoresVespeno.get(VCEs.indexOf(vces_cc)).contains(vce.getID())) &&
 					 vce.isIdle() && vce.isCompleted() && CCs.size() > 0) {
+					System.out.println("getWorker: "+trabajadoresMineral.get(VCEs.indexOf(vces_cc)).size());
 					current_worker = vce;
 					cc_select = this.connector.getUnit(CCs.get(VCEs.indexOf(vces_cc)));
 					return true;
@@ -115,7 +116,7 @@ public class JohnDoe extends GameHandler {
 		if (workers.size() < 3){
 			//Si todos los actuales están ocupados coge otro VCE nuevo
 			for (Unit vce : workers) {
-				if (vce.isIdle()){
+				if (!vce.isConstructing()){
 					return true;
 				}
 			}
@@ -126,14 +127,21 @@ public class JohnDoe extends GameHandler {
 					//Se pone como trabajador
 					workers.add(this.connector.getUnit(vce));
 					//Se elimina de la lista
-					trabajadoresMineral.remove((Integer) vce);
+//					trabajadoresMineral.get(0).remove((Integer) vce);
 					return true;					
 				}
 			}
 			//No se ha podido seleccionar ninguno
 			return false;
 		}
-		else if (workers.size() < 3){return true;}
+		else if (workers.size() <= 3){
+			for (Unit vce : workers) {
+				if (!vce.isConstructing()){
+					return true;
+				}
+			}
+			return false;
+		}
 		//Si se llega a else es que ya hay 3 trabajadores
 		else {return false;}
 	}
@@ -143,6 +151,7 @@ public class JohnDoe extends GameHandler {
 	public boolean aCurrarMina(){
 		//Se verifica que no se pase del número de trabajadores y que el VCE está
 		//completado, ya que a veces se selecciona sin haber completado el entrenamiento.
+		System.out.println("Tamano "+trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).size());
 		if ((trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).size() < max_vce-2) && current_worker.isCompleted()){
 			//Se buscan los minerales cercanos a la base.
 			for (Unit recurso : this.connector.getNeutralUnits()) {
@@ -152,6 +161,8 @@ public class JohnDoe extends GameHandler {
 						//Se manda al VCE a recolectar
 						this.connector.getUnit(current_worker.getID()).rightClick(recurso, false);
 						trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).add(current_worker.getID());
+						System.out.println(trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).size());
+						System.out.println("add trabajador");
 						current_worker = null;
 						return true;
 					}
