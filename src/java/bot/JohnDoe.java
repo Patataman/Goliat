@@ -412,7 +412,7 @@ public class JohnDoe extends GameHandler {
 		}
 		//Caso de edificios más o menos importantes (para alejarlos de la entrada)
 		if (edificio == UnitTypes.Terran_Barracks) {
-			
+			return findPositionAwayCP();
 		}
 		//Edificios no especiales
 		byte [][] pruebas = {{1,0},{0,1},{1,1},{-1,0},{-1,1},{-1,-1},{0,-1},{1,-1}};
@@ -476,6 +476,15 @@ public class JohnDoe extends GameHandler {
 		}
 		//No se encuentra para un CC, asique fuera
 		return false;
+	}
+	
+	public boolean findPositionAwayCP() {
+		//Se construyen alejados, Barracas, Fabricas y Puertos estelares
+		//Conocer numeros de CP.
+		//Si sólo hay 1 construir lo más alejados del CP
+		//Si hay varios, construir lo más pegado al CC y alejado del CP
+		return false;
+		
 	}
 	
 	public void updateInfluences(){
