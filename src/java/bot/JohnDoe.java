@@ -38,7 +38,7 @@ public class JohnDoe extends GameHandler {
 		
 	int supplies, totalSupplies;
 	byte barracones, refineria, fabricas, 
-		academia, arsenal, bahia, max_vce, lab_cient, puerto;
+		academia, arsenal, bahia, max_vce, lab_cient, puerto, number_chokePoints;
 	
 	List<ChokePoint>[][] chokePoints;
 	
@@ -79,6 +79,7 @@ public class JohnDoe extends GameHandler {
 		damageBuildings			= new ArrayList<Unit>();
 		barracones = refineria = fabricas = 
 		academia = arsenal = bahia = lab_cient = puerto = 0;
+		number_chokePoints 		= (byte) this.connector.getMap().getRegion(this.connector.getSelf().getStartLocation()).getChokePoints().size();
 		max_vce = 20;
 		dah_mapa 				= new InfluenceMap(bwapi.getMap().getSize().getBY(), bwapi.getMap().getSize().getBX());
 	}
