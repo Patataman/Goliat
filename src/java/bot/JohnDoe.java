@@ -80,7 +80,6 @@ public class JohnDoe extends GameHandler {
 		barracones = refineria = fabricas = 
 		academia = arsenal = bahia = lab_cient = puerto = 0;
 		number_chokePoints 		= (byte) this.connector.getMap().getRegion(this.connector.getSelf().getStartLocation()).getChokePoints().size();
-		System.out.println(number_chokePoints);
 		max_vce = 20;
 		dah_mapa 				= new InfluenceMap(bwapi.getMap().getSize().getBY(), bwapi.getMap().getSize().getBX());
 	}
@@ -430,8 +429,8 @@ public class JohnDoe extends GameHandler {
 				//Si el chokePoint está arriba del CC
 				y = (cc_select.getPosition().getBY() < cp_position.getBY()) ? (byte)1 : (byte)-1;
 				byte [][] pruebas = {{x,y},{x,0},{0,y},{(byte)(-1*x), (byte)(-1*y)},{(byte)(-1*x), 0},{0, (byte)(-1*y)}};
-				for (int i=1; i<10; i++){
-					for (int j=0; j<pruebas.length; j++) {
+				for (int j=0; j<pruebas.length; j++) {
+					for (int i=1; i<4; i++){
 						//Point origen, Point maximo, UnitType building
 						Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
 								new Point((cc_select.getPosition().getBX()+
@@ -513,8 +512,8 @@ public class JohnDoe extends GameHandler {
 				//Si el chokePoint está arriba del CC
 				y = (cc_select.getPosition().getBY() > cp_position.getBY()) ? (byte)1 : (byte)-1;
 				byte [][] pruebas = {{x,y},{x,0},{0,y},{(byte)(-1*x), (byte)(-1*y)},{(byte)(-1*x), 0},{0, (byte)(-1*y)}};
-				for (int i=1; i<10; i++){
-					for (int j=0; j<pruebas.length; j++) {
+				for (int j=0; j<pruebas.length; j++) {
+					for (int i=1; i<4; i++){
 						//Point origen, Point maximo, UnitType building
 						Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
 								new Point((cc_select.getPosition().getBX()+
@@ -762,10 +761,6 @@ public class JohnDoe extends GameHandler {
     	/******************************************
     	 * **************************************
     	 */
-    	if (building == UnitTypes.Terran_Barracks){
-    		System.out.println(xOrigen+","+yOrigen);
-    		System.out.println(xMaximo+","+yMaximo);
-    	}
     	for (int y = yOrigen; y < yMaximo && !found; y++){
     		for (int x = xOrigen; x < xMaximo && !found; x++){
     			//si encuentra una posición válida sale.
