@@ -123,7 +123,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 //		TrainVessel.addChild(new ChooseBuilding("Comprobar entrenamiento nave cientifica", gh, UnitTypes.Terran_Science_Vessel));
 //		TrainVessel.addChild(new TrainUnit("Entrenar nave cientifica", gh, UnitTypes.Terran_Science_Vessel, UnitTypes.Terran_Starport));
 		//Selector con todos los posibles entrenamientos
-		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainGoliat, TrainMedic, TrainFirebat, TrainMarine, TrainVCE);
+		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVCE, TrainGoliat, TrainMedic, TrainFirebat, TrainMarine);
 		// ----------- FIN TRAIN ---------
 
 		
@@ -454,9 +454,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 									PosType.BUILD));
 				
 				//Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
-//				String workingDirectory = System.getProperty("user.dir");
-//				String path = workingDirectory + File.separator + "mapa.txt";
-//				createANDwrite(path);
+				String workingDirectory = System.getProperty("user.dir");
+				String path = workingDirectory + File.separator + "mapa.txt";
+				createANDwrite(path);
 			}
 		}
 	}

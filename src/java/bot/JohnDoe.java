@@ -80,6 +80,7 @@ public class JohnDoe extends GameHandler {
 		barracones = refineria = fabricas = 
 		academia = arsenal = bahia = lab_cient = puerto = 0;
 		number_chokePoints 		= (byte) this.connector.getMap().getRegion(this.connector.getSelf().getStartLocation()).getChokePoints().size();
+		System.out.println(number_chokePoints);
 		max_vce = 20;
 		dah_mapa 				= new InfluenceMap(bwapi.getMap().getSize().getBY(), bwapi.getMap().getSize().getBX());
 	}
@@ -412,24 +413,42 @@ public class JohnDoe extends GameHandler {
 			return findPositionCC();
 		}
 		//Caso de edificios más o menos importantes (para alejarlos de la entrada)
-		if (edificio == UnitTypes.Terran_Barracks) {
-			return findPositionAwayCP();
+		if (edificio == UnitTypes.Terran_Barracks ||
+				edificio == UnitTypes.Terran_Factory ||
+				edificio == UnitTypes.Terran_Starport) {
+			return findPositionAwayCP(edificio);
 		}
 		//Edificios no especiales
-		byte [][] pruebas = {{1,0},{0,1},{1,1},{-1,0},{-1,1},{-1,-1},{0,-1},{1,-1}};
-		for (int i=0; i<10; i++){
-			for (int j=0; j<pruebas.length; j++) {
-				//Point origen, Point maximo, UnitType building
-				Position pos = findPlace(new Point(cc.getPosition().getBX(), cc.getPosition().getBY()),
-						new Point((cc.getPosition().getBX()+1+edificio.getTileWidth()*pruebas[j][0]*i),
-								(cc.getPosition().getBY()+1+edificio.getTileHeight()*pruebas[j][1]*i)),
-						edificio);
-				//Si la posición es válida...
-				if (this.connector.canBuildHere(pos, edificio, true)){
-					posBuild = pos;
-					return true;
-				}				
+		//Para hacer bulto se construye entre el CP y el CC
+		if (number_chokePoints == 1) {
+			//Solo se ejecuta 1 vez
+			for (ChokePoint cp : this.connector.getMap().getRegion(cc_select.getPosition()).getChokePoints()){
+				Position cp_position = cp.getCenter();
+				byte x, y;
+				//Si el chokePoint está a la izq del CC
+				x = (cc_select.getPosition().getBX() < cp_position.getBX()) ? (byte)1 : (byte)-1;
+				//Si el chokePoint está arriba del CC
+				y = (cc_select.getPosition().getBY() < cp_position.getBY()) ? (byte)1 : (byte)-1;
+				byte [][] pruebas = {{x,y},{x,0},{0,y},{(byte)(-1*x), (byte)(-1*y)},{(byte)(-1*x), 0},{0, (byte)(-1*y)}};
+				for (int i=1; i<10; i++){
+					for (int j=0; j<pruebas.length; j++) {
+						//Point origen, Point maximo, UnitType building
+						Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
+								new Point((cc_select.getPosition().getBX()+
+										pruebas[j][0]*edificio.getTileWidth()*i),
+										(cc_select.getPosition().getBY()+
+												pruebas[j][1]*edificio.getTileHeight()*i)),
+								edificio);
+						//Si la posición es válida...
+						if (this.connector.canBuildHere(pos, edificio, true)){
+							posBuild = pos;
+							return true;
+						}				
+					}
+				}
 			}
+		} else {
+			
 		}
 		//No se encuentra nada
 		return false;
@@ -479,11 +498,41 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
-	public boolean findPositionAwayCP() {
+	public boolean findPositionAwayCP(UnitType edificio) {
 		//Se construyen alejados, Barracas, Fabricas y Puertos estelares
 		//Conocer numeros de CP.
 		//Si sólo hay 1 construir lo más alejados del CP
 		//Si hay varios, construir lo más pegado al CC y alejado del CP
+		if (number_chokePoints == 1) {
+			//Solo se ejecuta 1 vez
+			for (ChokePoint cp : this.connector.getMap().getRegion(cc_select.getPosition()).getChokePoints()){
+				Position cp_position = cp.getCenter();
+				byte x, y;
+				//Si el chokePoint está a la izq del CC
+				x = (cc_select.getPosition().getBX() > cp_position.getBX()) ? (byte)1 : (byte)-1;
+				//Si el chokePoint está arriba del CC
+				y = (cc_select.getPosition().getBY() > cp_position.getBY()) ? (byte)1 : (byte)-1;
+				byte [][] pruebas = {{x,y},{x,0},{0,y},{(byte)(-1*x), (byte)(-1*y)},{(byte)(-1*x), 0},{0, (byte)(-1*y)}};
+				for (int i=1; i<10; i++){
+					for (int j=0; j<pruebas.length; j++) {
+						//Point origen, Point maximo, UnitType building
+						Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
+								new Point((cc_select.getPosition().getBX()+
+										pruebas[j][0]*edificio.getTileWidth()*i),
+										(cc_select.getPosition().getBY()+
+												pruebas[j][1]*edificio.getTileHeight()*i)),
+								edificio);
+						//Si la posición es válida...
+						if (this.connector.canBuildHere(pos, edificio, true)){
+							posBuild = pos;
+							return true;
+						}				
+					}
+				}
+			}
+		} else {
+			
+		}
 		return false;
 		
 	}
@@ -554,7 +603,7 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	/**
-     * M�todo que genera un mapa con los tama�os m�ximos
+     * Método que genera un mapa con los tamaños máximos
      * de edificios que se pueden construir desde una casilla
      * hacia abajo a la derecha.
      * 
@@ -678,7 +727,7 @@ public class JohnDoe extends GameHandler {
     	int xMaximo, xOrigen, yOrigen, yMaximo;
     	
     	//Se considera que sea misma fila o columna.
-    	if (origen.x == maximo.x && maximo.x < mapa.length+building.getTileWidth()) {
+    	if (origen.x == maximo.x && maximo.x < mapa[0].length+building.getTileWidth()) {
     		maximo.x += building.getTileWidth();
     	}
     	if (origen.y == maximo.y && maximo.y < mapa.length+building.getTileHeight()) {
@@ -713,20 +762,35 @@ public class JohnDoe extends GameHandler {
     	/******************************************
     	 * **************************************
     	 */
-    	for (; yOrigen < yMaximo && !found; yOrigen++){
-    		for (; xOrigen < xMaximo && !found; xOrigen++){
+    	if (building == UnitTypes.Terran_Barracks){
+    		System.out.println(xOrigen+","+yOrigen);
+    		System.out.println(xMaximo+","+yMaximo);
+    	}
+    	for (int y = yOrigen; y < yMaximo && !found; y++){
+    		for (int x = xOrigen; x < xMaximo && !found; x++){
     			//si encuentra una posición válida sale.
-    			if (mapa[yOrigen][xOrigen] >= max) {
-    				found = true;
+    			if (mapa[y][x] >= max) {return new Position(x, y, PosType.BUILD);}
+    			//Este bucle busca en vertical hacia abajo
+    			for (int y2=0; y2<=(x-xOrigen) && y+y2 < mapa.length;y2++) {
+    				if (mapa[y+y2][x] >= max) {
+    					return new Position(x, y+y2, PosType.BUILD);
+    				}
     			}
+    			//Este bucle mira la diagonal
+    			for (int x2=0; x2<=(x-xOrigen) && y+(x-xOrigen) < mapa.length;x2++) {
+    				if (mapa[y+(x-xOrigen)][x-x2] >= max) {
+    					return new Position(x-x2, y+(x-xOrigen), PosType.BUILD);
+    				}
+    			}
+    			/*No hace falta mirar exclusivamente la diagonal 
+    			 * porque se mira mediante las dos comprobaciones anteriores
+    			 * ya que se va aumentando poco a poco el área
+    			 */
     		}
     	}
     	
-    	if (found) {
-    		return new Position(xOrigen, yOrigen, PosType.BUILD);
-    	} else {
-    		return new Position(-1,0, PosType.BUILD);
-    	}
+    	//Si llega aquí no ha encontrado nada
+		return new Position(-1,0, PosType.BUILD);
     }
     
     /**
@@ -735,6 +799,13 @@ public class JohnDoe extends GameHandler {
      * destino ha sido calculada con el tama�o del edificio + la posici�n origen
      */
     public void updateMap(Position origen, Position destino) {
+    	if (destino.getBX() > mapa[0].length) {
+    		if (destino.getBY() > mapa.length) {
+    			destino = new Position(mapa[0].length-1,mapa.length-1);
+    		} else {
+    			destino = new Position(mapa[0].length-1,destino.getBY());
+    		}
+    	}
     	//se recorre la matriz entre las posiciones dadas
     	for (int i = origen.getBY(); i < destino.getBY(); i++){
     		for(int j = origen.getBX(); j < destino.getBX(); j++){
