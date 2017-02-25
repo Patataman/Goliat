@@ -123,7 +123,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 //		TrainVessel.addChild(new ChooseBuilding("Comprobar entrenamiento nave cientifica", gh, UnitTypes.Terran_Science_Vessel));
 //		TrainVessel.addChild(new TrainUnit("Entrenar nave cientifica", gh, UnitTypes.Terran_Science_Vessel, UnitTypes.Terran_Starport));
 		//Selector con todos los posibles entrenamientos
-		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVCE, TrainMarine, TrainFirebat, TrainFirebat, TrainMedic, TrainGoliat);
+		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVCE, TrainGoliat, TrainMedic, TrainFirebat, TrainMarine);
 		// ----------- FIN TRAIN ---------
 
 		
