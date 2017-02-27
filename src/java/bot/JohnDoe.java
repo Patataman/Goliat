@@ -429,8 +429,8 @@ public class JohnDoe extends GameHandler {
 				//Si el chokePoint está arriba del CC
 				y = (cc_select.getPosition().getBY() < cp_position.getBY()) ? (byte)1 : (byte)-1;
 				byte [][] pruebas = {{x,0},{x,y},{0,y},{(byte)(-1*x), (byte)(-1*y)},{(byte)(-1*x), 0},{0, (byte)(-1*y)}};
-				for (int j=0; j<pruebas.length; j++) {
-					for (int i=1; i<4; i++){
+				for (int i=1; i<4; i++){
+					for (int j=0; j<pruebas.length; j++) {
 						//Point origen, Point maximo, UnitType building
 						Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
 								new Point((cc_select.getPosition().getBX()+pruebas[j][0]*edificio.getTileWidth()*i),
@@ -445,7 +445,21 @@ public class JohnDoe extends GameHandler {
 				}
 			}
 		} else {
-			
+			byte [][] pruebas = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
+			for (int i=4; i>1; i--){
+				for (int j=0; j<pruebas.length; j++) {
+					//Point origen, Point maximo, UnitType building
+					Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
+							new Point((cc_select.getPosition().getBX()+pruebas[j][0]*edificio.getTileWidth()*i),
+									(cc_select.getPosition().getBY()+pruebas[j][1]*edificio.getTileHeight()*i)),
+										edificio);
+					//Si la posición es válida...
+					if (this.connector.canBuildHere(pos, edificio, true)){
+						posBuild = pos;
+						return true;
+					}				
+				}
+			}
 		}
 		//No se encuentra nada
 		return false;
@@ -510,8 +524,8 @@ public class JohnDoe extends GameHandler {
 				//Si el chokePoint está arriba del CC
 				y = (cc_select.getPosition().getBY() > cp_position.getBY()) ? (byte)1 : (byte)-1;
 				byte [][] pruebas = {{0,y},{x,y},{x,0},{(byte)(-1*x), 0},{0, (byte)(-1*y)},{(byte)(-1*x), (byte)(-1*y)}};
-				for (int j=0; j<pruebas.length; j++) {
-					for (int i=0; i<4; i++){
+				for (int i=0; i<4; i++){
+					for (int j=0; j<pruebas.length; j++) {
 						//Point origen, Point maximo, UnitType building
 						Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
 								new Point((cc_select.getPosition().getBX()+pruebas[j][0]*edificio.getTileWidth()*i),
@@ -526,7 +540,21 @@ public class JohnDoe extends GameHandler {
 				}
 			}
 		} else {
-			
+			byte [][] pruebas = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
+			for (int i=1; i<4; i++){
+				for (int j=0; j<pruebas.length; j++) {
+					//Point origen, Point maximo, UnitType building
+					Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
+							new Point((cc_select.getPosition().getBX()+pruebas[j][0]*edificio.getTileWidth()*i),
+									(cc_select.getPosition().getBY()+pruebas[j][1]*edificio.getTileHeight()*i)),
+										edificio);
+					//Si la posición es válida...
+					if (this.connector.canBuildHere(pos, edificio, true)){
+						posBuild = pos;
+						return true;
+					}				
+				}
+			}
 		}
 		return false;
 		
