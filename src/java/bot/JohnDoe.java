@@ -3,6 +3,7 @@ package bot;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.iaie.btree.util.GameHandler;
 
@@ -19,26 +20,26 @@ import jnibwapi.types.UpgradeType;
 
 public class JohnDoe extends GameHandler {
 	
-	//Listas de control internas
-	List<Integer> CCs;				//Lista para llevar el conteo de los CCs
-	List<ArrayList<Unit>> VCEs;		//Lista para llevar el conteo de los VCEs de cada CC
-	List<ArrayList<Integer>> trabajadoresMineral; //Lista para llevar el conteo de los VCEs que recolectan mineral de cada CC
-	List<ArrayList<Integer>> trabajadoresVespeno; //Lista para llevar el conteo de los VCEs que recolectan vespeno de cada CC
-	List<UnitType> unidadesPendientes; 	//Lista para llevar el conteo de las unidades entrenandose en este momento
-	List<Unit> unidadesMilitares;		//Lista para llevar de las unidades militares que tienen algo asignado.
-	List<Unit> soldadosAburridos;		//Lista para llevar el conteo de todas las unidades militares entrenadas
-	List<Unit> tropaAsalto;				//Lista para saber cuales son los valientes que han ido a la guerra
-	List<UnitType> edificiosPendientes;	//Lista para llevar el conteo de los edificios construyendose.
-	List<Unit> edificiosConstruidos; 	//Lista para saber los edificios construidos actualmente
-	List<UpgradeType> researching;		//Lista para saber las investigaciones que se estén realizando.
-	List<Unit> damageBuildings;			//Lista para saber los edificios que han sido atacados 
-										//y poder repararlos. De esta forma no hay que recorrer toda edificiosConstruidos
-	List<Unit> workers;					//Lista para tener hasta 3 trabajadores construyendo o haciendo cosas
-	Unit current_worker;				//Variable para saber que VCE se usa de la lista
+	//Inner control lists
+	List<Integer> CCs;							//List for counting number of CCs
+	List<ArrayList<Unit>> VCEs;					//List for counting number of SCVs from each CC.
+	List<ArrayList<Integer>> workersMineral; 	//List for counting number of SVCs gathering minerals.
+	List<ArrayList<Integer>> workersVespin; 	//List for counting number of SCVs gathering vespin gas.
+	List<UnitType> remainingUnits; 				//List to know which units are being trained.
+	List<Unit> militaryUnits;					//List to know all military unit trained (alive).
+	List<Unit> boredSoldiers;					//List of unit which are defending base.
+	List<ArrayList<Unit>> assaultTroop;			//List of groups of troops which are attacking.
+	List<Unit> attackGroup;						//Group of attacking units currently selected.
+	List<UnitType> remainingBuildings;			//List to know which buildings are being builded.
+	List<Unit> finishedBuildings; 				//List to know all finished (and alive) buildings.
+	List<UpgradeType> researching;				//List to know which researches are being researched.
+	List<Unit> damageBuildings;					//List to know which buildings are being attacked and being able to fix it later.
+	List<Unit> workers;							//List to control which SCVs are assing to building.
+	Unit current_worker;						//Variable to know which SCV is currently selected.
 		
 	int supplies, totalSupplies;
-	byte barracones, refineria, fabricas, 
-		academia, arsenal, bahia, max_vce, lab_cient, puerto, number_chokePoints;
+	byte barracks, refinery, factory, 
+		academy, armory, bay, max_vce, lab_cient, starport, number_chokePoints;
 	
 	List<ChokePoint>[][] chokePoints;
 	
@@ -49,15 +50,15 @@ public class JohnDoe extends GameHandler {
 	//Posición donde se va a construir el último edificio.
 	Position posBuild;
 	//Posición a la que mandar una patrulla.
-	Position destination;
+	//Position destination;
 	Position objetivo;
 	
-	Position tramo1;
+//	Position tramo1; No se usa
 //	Position tramo2;
 	
-	int[][] mapa;
+	int[][] map;
 	
-	InfluenceMap dah_mapa;
+	InfluenceMap dah_map;
 
 	public JohnDoe(JNIBWAPI bwapi) {
 		super(bwapi);
@@ -67,28 +68,29 @@ public class JohnDoe extends GameHandler {
 		cc_select 				= null;
 		CCs 					= new ArrayList<Integer>();
 		VCEs 					= new ArrayList<ArrayList<Unit>>();
-		trabajadoresMineral 	= new ArrayList<ArrayList<Integer>>();
-		trabajadoresVespeno 	= new ArrayList<ArrayList<Integer>>();
-		unidadesPendientes 		= new ArrayList<UnitType>();
-		unidadesMilitares		= new ArrayList<Unit>();
-		soldadosAburridos		= new ArrayList<Unit>();
-		tropaAsalto				= new ArrayList<Unit>();
-		edificiosPendientes 	= new ArrayList<UnitType>();
-		edificiosConstruidos 	= new ArrayList<Unit>();
+		workersMineral 			= new ArrayList<ArrayList<Integer>>();
+		workersVespin 			= new ArrayList<ArrayList<Integer>>();
+		remainingUnits 			= new ArrayList<UnitType>();
+		militaryUnits			= new ArrayList<Unit>();
+		boredSoldiers			= new ArrayList<Unit>();
+		assaultTroop			= new ArrayList<ArrayList<Unit>>();
+		attackGroup				= new ArrayList<Unit>();
+		remainingBuildings 		= new ArrayList<UnitType>();
+		finishedBuildings 		= new ArrayList<Unit>();
 		researching				= new ArrayList<UpgradeType>();
 		damageBuildings			= new ArrayList<Unit>();
-		barracones = refineria = fabricas = 
-		academia = arsenal = bahia = lab_cient = puerto = 0;
+		barracks = refinery = factory = 
+		academy = armory = bay = lab_cient = starport = 0;
 		number_chokePoints 		= (byte) this.connector.getMap().getRegion(this.connector.getSelf().getStartLocation()).getChokePoints().size();
 		max_vce = 20;
-		dah_mapa 				= new InfluenceMap(bwapi.getMap().getSize().getBY(), bwapi.getMap().getSize().getBX());
+		dah_map 				= new InfluenceMap(bwapi.getMap().getSize().getBY(), bwapi.getMap().getSize().getBX());
 	}
 	
 	//Añaden las listas correspondientes al nuevo CC
 	public void addCC(int cc_pos) {
 		VCEs.add(new ArrayList<Unit>());
-		trabajadoresMineral.add(new ArrayList<Integer>());
-		trabajadoresVespeno.add(new ArrayList<Integer>());
+		workersMineral.add(new ArrayList<Integer>());
+		workersVespin.add(new ArrayList<Integer>());
 	}
 	
 	//Obtiene un trabajador que se encuentra libre
@@ -97,8 +99,8 @@ public class JohnDoe extends GameHandler {
 		for (ArrayList<Unit> vces_cc : VCEs) {
 			for (Unit vce : vces_cc) {
 				// Se comprueba si la unidades es de tipo VCE y no esté ocupada
-				if ((!trabajadoresMineral.get(VCEs.indexOf(vces_cc)).contains(vce.getID()) &&
-					 !trabajadoresVespeno.get(VCEs.indexOf(vces_cc)).contains(vce.getID())) &&
+				if ((!workersMineral.get(VCEs.indexOf(vces_cc)).contains(vce.getID()) &&
+					 !workersVespin.get(VCEs.indexOf(vces_cc)).contains(vce.getID())) &&
 					 vce.isIdle() && vce.isCompleted() && CCs.size() > 0) {
 					current_worker = vce;
 					cc_select = this.connector.getUnit(CCs.get(VCEs.indexOf(vces_cc)));
@@ -121,13 +123,13 @@ public class JohnDoe extends GameHandler {
 				}
 			}
 			//Se coge 1 VCE de la lista de VCEs del CC inicial (0)
-			for (int vce : this.trabajadoresMineral.get(0)) {
+			for (int vce : this.workersMineral.get(0)) {
 				//Si no está en la lista...
 				if (!workers.contains(this.connector.getUnit(vce))) {
 					//Se pone como trabajador
 					workers.add(this.connector.getUnit(vce));
 					//Se elimina de la lista
-//					trabajadoresMineral.get(0).remove((Integer) vce);
+//					workersMineral.get(0).remove((Integer) vce);
 					return true;					
 				}
 			}
@@ -151,7 +153,7 @@ public class JohnDoe extends GameHandler {
 	public boolean aCurrarMina(){
 		//Se verifica que no se pase del número de trabajadores y que el VCE está
 		//completado, ya que a veces se selecciona sin haber completado el entrenamiento.
-		if ((trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).size() < max_vce-2) && current_worker.isCompleted()){
+		if ((workersMineral.get(CCs.indexOf(cc_select.getID())).size() < max_vce-2) && current_worker.isCompleted()){
 			//Se buscan los minerales cercanos a la base.
 			for (Unit recurso : this.connector.getNeutralUnits()) {
 				if (recurso.getType().isMineralField()) {
@@ -159,7 +161,7 @@ public class JohnDoe extends GameHandler {
 							this.connector.getMap().getRegion(cc_select.getPosition())) {
 						//Se manda al VCE a recolectar
 						this.connector.getUnit(current_worker.getID()).rightClick(recurso, false);
-						trabajadoresMineral.get(CCs.indexOf(cc_select.getID())).add(current_worker.getID());
+						workersMineral.get(CCs.indexOf(cc_select.getID())).add(current_worker.getID());
 						current_worker = null;
 						return true;
 					}
@@ -171,11 +173,11 @@ public class JohnDoe extends GameHandler {
 	
 	//Igual que los minerales
 	public boolean aCurrarGas(){
-		if (trabajadoresVespeno.get(CCs.indexOf(cc_select.getID())).size() < 2 && current_worker.isCompleted()) {
-			for (Unit refineria : this.connector.getMyUnits()) {
-				if (refineria.getType() == UnitTypes.Terran_Refinery && refineria.isCompleted()){
-					this.connector.getUnit(current_worker.getID()).rightClick(refineria, false);
-					trabajadoresVespeno.get(CCs.indexOf(cc_select.getID())).add(current_worker.getID());
+		if (workersVespin.get(CCs.indexOf(cc_select.getID())).size() < 2 && current_worker.isCompleted()) {
+			for (Unit refinery : this.connector.getMyUnits()) {
+				if (refinery.getType() == UnitTypes.Terran_Refinery && refinery.isCompleted()){
+					this.connector.getUnit(current_worker.getID()).rightClick(refinery, false);
+					workersVespin.get(CCs.indexOf(cc_select.getID())).add(current_worker.getID());
 					current_worker = null;
 					return true;	
 				}
@@ -204,10 +206,10 @@ public class JohnDoe extends GameHandler {
 	
 	//Entrena una unidad 
 	public boolean trainUnit(UnitType edificio, UnitType unidad){
-		for (Unit u : edificiosConstruidos){
+		for (Unit u : finishedBuildings){
 			if (u.getType() == edificio && !u.isTraining()){
 				u.train(unidad);
-				unidadesPendientes.add(unidad);
+				remainingUnits.add(unidad);
 				return true;
 			}
 		}
@@ -235,7 +237,7 @@ public class JohnDoe extends GameHandler {
 	
 	//Construye un edificio
 	public boolean buildUnit(UnitType edificio) {
-		if (edificiosPendientes.contains(edificio)) {
+		if (remainingBuildings.contains(edificio)) {
 			return false;
 		}
 		for (Unit vce : workers){
@@ -259,7 +261,7 @@ public class JohnDoe extends GameHandler {
 	
 	//Realiza la investigación
 	public boolean doResearch(UnitType building, UpgradeType res) {
-		for (Unit u : edificiosConstruidos) {
+		for (Unit u : finishedBuildings) {
 			if (u.getType() == building) {
 				return u.upgrade(res);
 			}
@@ -267,9 +269,10 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
-	// Comprueba la posición de las unidades
+	/////////////REVISAR
+	// Comprueba la posición de las unidades. Se usa en "movimiento"
 	public boolean checkPositionUnits(){
-		double myInfluence = this.dah_mapa.getMyInfluenceLevel();
+		double myInfluence = this.dah_map.getMyInfluenceLevel();
 		double pointInfluence;
 		if(!this.connector.getEnemyUnits().isEmpty()){ // Nos atacan, no es momento para formar patrullas
 			for(Unit victima : this.connector.getEnemyUnits()){
@@ -278,11 +281,11 @@ public class JohnDoe extends GameHandler {
 				}
 			}
 		}
-		for (Unit u : soldadosAburridos){ // Si faltan unidades en los choke, las mandamos
+		for (Unit u : boredSoldiers){ // Si faltan unidades en los choke, las mandamos
 			if(u.isIdle() && u.isCompleted()){				
 				Region p = this.connector.getMap().getRegion(cc.getPosition());
 				for(ChokePoint a : p.getChokePoints()){
-					pointInfluence = this.dah_mapa.getInfluence(new Point(a.getCenter().getBX(), a.getCenter().getBY()));
+					pointInfluence = this.dah_map.getInfluence(new Point(a.getCenter().getBX(), a.getCenter().getBY()));
 					if(pointInfluence < (myInfluence*0.3)/p.getChokePoints().size()){ //Un tercio de la influencia debe defender los chokes
 						return true;
 					}
@@ -292,49 +295,29 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 		
-	// Selecciona las unidades militares que no hacen nada para ponerlas a hacer algo
-	public boolean chosseUnits(){
+	/////////////// REVISAR
+	// Selecciona las unidades militares que no hacen nada para ponerlas a hacer algo. Se usa en "movimiento"
+	/*public boolean chosseUnits(){
 		ArrayList<Unit> aux = new ArrayList<Unit>();
-		for (Unit u : soldadosAburridos){
-			if(u.isIdle() && !unidadesMilitares.contains(u)){
-				unidadesMilitares.add(u);
+		for (Unit u : boredSoldiers){
+			if(u.isIdle() && !militaryUnits.contains(u)){
+				militaryUnits.add(u);
 				aux.add(u);
 			}
 		}
 		for (Unit u : aux){
-			soldadosAburridos.remove(u);
+			boredSoldiers.remove(u);
 		}
-		if(!unidadesMilitares.isEmpty()){
+		if(!militaryUnits.isEmpty()){
 			return true;
 		}
 		return false;
-	}
+	}*/
 	
-	// Elige el destino de las unidades
-	public boolean chooseDestination(){
-		double myInfluence = this.dah_mapa.getMyInfluenceLevel();
-		double pointInfluence;
-		Region p = this.connector.getMap().getRegion(cc.getPosition());
-		for(ChokePoint a : p.getChokePoints()){
-			pointInfluence = this.dah_mapa.getInfluence(new Point(a.getCenter().getBX(), a.getCenter().getBY()));
-			if(pointInfluence < (myInfluence*0.3)/p.getChokePoints().size()){ //Un tercio de la influencia debe defender los chokes
-				destination = a.getCenter();
-				if(a.getFirstSide().getWDistance(cc.getPosition()) > a.getSecondSide().getWDistance(cc.getPosition())){
-//					tramo2 = a.getFirstSide();
-					tramo1 = a.getSecondSide();
-				}else{
-					tramo1 = a.getFirstSide();
-//					tramo2 = a.getSecondSide();
-				}
-				return true;
-			}
-		}
-		return false; // No hay choke al que mandar
-	}
-	
-	// Mandar las unidades a la posicion destino
-	public boolean sendUnits(){
-		for(Unit soldadito : unidadesMilitares){
+	/////////////// REVISAR
+	// Mandar las unidades a la posicion destino. Se usa en "movimiento"
+	/*public boolean sendUnits(){
+		for(Unit soldadito : militaryUnits){
 			if(soldadito.isIdle()){ // Solo mandamos a la unidad que este parada 
 				if (soldadito.getDistance(destination) > 50) {
 					soldadito.move(destination.makeValid(), false);					
@@ -344,49 +327,97 @@ public class JohnDoe extends GameHandler {
 			}
 		}
 		return true;
-	}
+	}*/
 	
-	// Comprueba el estado de las unidades
+	
+	/////////////// REVISAR
+	/**
+	 * Check if there is more than 20 unit in the CP waiting.
+	 * Used in Attack tree
+	 * @return true if there's more than 20, false otherwise
+	 */
 	public boolean checkStateUnits(){
-		for (Unit u : unidadesMilitares){
-			if(u.isCompleted() && u.isIdle()){
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	// Selecciona las unidades militares para formar una tropa de asalto.
-	public boolean chosseTropa(){
-		for (Unit u : unidadesMilitares){
-			if(u.isIdle() && !tropaAsalto.contains(u)){
-				//Esta lista tiene sentido para en el futuro poder crear subgrupos
-				tropaAsalto.add(u);
-			}
-		}
-		if(tropaAsalto.size() > 15){
+		if (boredSoldiers.size() > 30) {
 			return true;
 		}
 		return false;
 	}
 	
-	// Elige el el lugar o unidad a la que atacar
-	public boolean chooseVictim(){
+	// Selecciona las unidades militares para formar una tropa de asalto. Se usa en "ataque"
+	public boolean createTroop() {
+		//Se seleccionan tropas del CP mientras queden al menos 5-10 en el CP y el numero de unidades en el grupo sea < 15.
+		for (int i=0; i< assaultTroop.size() && assaultTroop.get(i).size()<15; i++) {
+			ArrayList<Unit> auxList = new ArrayList<Unit>();
+			for (Unit u : boredSoldiers) {
+				if(u.isIdle() && u.isCompleted()){
+					//Esta lista tiene sentido para en el futuro poder crear subgrupos
+					assaultTroop.get(i).add(u);
+					auxList.add(u);
+				}
+			}
+			boredSoldiers.removeAll(auxList);
+			//Si consigue crear 1 grupo, devuelve true
+			if(assaultTroop.get(i).size() >= 15){
+				return true;
+			}
+		}
+		//Si no consigue crear ningún grupo
+		return false;
+	}
+	
+	asdasd
+	public boolean selectGroup() {
+		return false;
+	}
+	
+	///////////// REVISAR
+	// Elige el destino de las unidades. Se usa en "movimiento" y "ataque"
+	/**
+	* Método que escoge la posición destino a la que atacar/moverse.
+	* Para mover todas las unidades "a la vez" la posición destino debe estar 
+	* como máximo a 500 unidades de distancia (???)
+	* @return true si encuentra posición, false si no.
+	*/
+	public boolean chooseDestination() {
+	double myInfluence = this.dah_map.getMyInfluenceLevel();
+	double pointInfluence;
+	Region p = this.connector.getMap().getRegion(cc.getPosition());
+	for(ChokePoint a : p.getChokePoints()){
+		pointInfluence = this.dah_map.getInfluence(new Point(a.getCenter().getBX(), a.getCenter().getBY()));
+		if(pointInfluence < (myInfluence*0.3)/p.getChokePoints().size()){ //Un tercio de la influencia debe defender los chokes
+			//destination = a.getCenter();
+			if(a.getFirstSide().getWDistance(cc.getPosition()) > a.getSecondSide().getWDistance(cc.getPosition())){
+	//			tramo2 = a.getFirstSide();
+				objetivo = a.getSecondSide();
+			}else{
+				objetivo = a.getFirstSide();
+	//			tramo2 = a.getSecondSide();
+			}
+			return true;
+		}
+	}
+	return false; // No hay choke al que mandar
+	}
+	
+	/////////////// REVISAR
+	// Elige el el lugar o unidad a la que atacar. Se usa en "ataque"
+	/*public boolean chooseVictim(){
 		for(Unit victima : this.connector.getEnemyUnits()){ // Nos atacan, es el momento de defender
-			if(victima.isExists() && victima.getDistance(cc)<500){ // 500 es un buen radio de defensa
+			if(victima.isExists() && victima.getDistance(cc)<50){ // 500 es un buen radio de defensa
 				objetivo = victima.getPosition();
 				return true;
 			}
 		}
 		objetivo = getPosToAttack(); //Se obtiene la posición objetivo
 		return true;
-	}
+	}*/
 	
-	// Mandar patrulla a la posicion destino
+	/////////////// REVISAR
+	// Mandar patrulla a la posicion destino. Se usa en "ataque"
 	public boolean sendAttack(){
-		for(Unit soldadito : tropaAsalto){
-			if(!soldadito.isAttacking()){
-				soldadito.attack(objetivo, true);
+		for(Unit soldadito : attackGroup){
+			if(!soldadito.isAttacking() && !soldadito.isMoving()){
+				soldadito.attack(objetivo, false); // <----- REVISAR ESTE TRUE
 			}
 		}
 		
@@ -510,7 +541,7 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	public boolean findPositionAwayCP(UnitType edificio) {
-		//Se construyen alejados, Barracas, Fabricas y Puertos estelares
+		//Se construyen alejados, Barracas, factory y starports estelares
 		//Conocer numeros de CP.
 		//Si sólo hay 1 construir lo más alejados del CP
 		//Si hay varios, construir lo más pegado al CC y alejado del CP
@@ -561,7 +592,7 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	public void updateInfluences(){
-		this.dah_mapa.updateMap(this.connector);
+		this.dah_map.updateMap(this.connector);
 	}
 	
 	/**
@@ -572,18 +603,18 @@ public class JohnDoe extends GameHandler {
 	 * @return Posición a la que atacar
 	 */
 	public Position getPosToAttack() {
-		ArrayList<int[]> posiciones = dah_mapa.getEnemyPositions(); //Posiciones enemigas
+		ArrayList<int[]> posiciones = dah_map.getEnemyPositions(); //Posiciones enemigas
 		Position ret = new Position(posiciones.get(0)[1], posiciones.get(0)[0], PosType.BUILD); //Posición por defecto
-		double infl = dah_mapa.mapa[posiciones.get(0)[0]][posiciones.get(0)[1]]; //Influencia por defecto
+		double infl = dah_map.mapa[posiciones.get(0)[0]][posiciones.get(0)[1]]; //Influencia por defecto
 		int dist = cc.getPosition().getApproxWDistance(ret); //Distancia inicial
 		
 		for (int[] i : posiciones) {
 			Position aux = new Position(i[1], i[0], PosType.BUILD);
-			if (dah_mapa.mapa[i[0]][i[1]] < infl*1.5 && cc.getPosition().getApproxWDistance(aux) < dist) {
+			if (dah_map.mapa[i[0]][i[1]] < infl*1.5 && cc.getPosition().getApproxWDistance(aux) < dist) {
 				//se actualizan los valores
 				dist = cc.getPosition().getApproxBDistance(aux);
 				ret = aux;
-				infl = dah_mapa.mapa[i[0]][i[1]];
+				infl = dah_map.mapa[i[0]][i[1]];
 			}
 		}
 		return ret;
@@ -599,7 +630,7 @@ public class JohnDoe extends GameHandler {
 		if (!damageBuildings.isEmpty()) {
 			return true;
 		}
-		for (Unit u : edificiosConstruidos){
+		for (Unit u : finishedBuildings){
 			//Si el edificio ha sido dañado y no se está reparando ni guardado
 			if (u.getHitPoints() - u.getType().getMaxHitPoints() != 0 &&
 					!u.isRepairing() && !damageBuildings.contains(u)) {
@@ -650,7 +681,7 @@ public class JohnDoe extends GameHandler {
 		//Altura de la casilla actual
 		//int altura = this.connector.getMap().getGroundHeight(pos_aux);
 		//Mapa a devolver
-		mapa = new int[maxHeight][maxWidth];
+		map = new int[maxHeight][maxWidth];
 		//Tamaño máximo del edificio que se puede construir
 		int dimension;
 		//Variable que detiene la búsqueda si se encuentra un obstáculo
@@ -710,7 +741,7 @@ public class JohnDoe extends GameHandler {
 				// Se resta 1 porque hemos aumentado en 1 la dimensión suponiendo que la siguiente posición es válida
 				if (dimension != 0) { dimension--; }
 				// Se actualiza la posición
-				mapa[f][c] = (dimension);	
+				map[f][c] = (dimension);	
 			}
 		}
 		
@@ -723,11 +754,11 @@ public class JohnDoe extends GameHandler {
 					u.getType() == UnitTypes.Resource_Mineral_Field_Type_2 ||
 					u.getType() == UnitTypes.Resource_Mineral_Field_Type_3) {
 				//para recolectar minerales vale con que el vce vaya a cualquiera de sus casillas.
-				mapa[u.getTilePosition().getBY()][u.getTilePosition().getBX()] = -1;
+				map[u.getTilePosition().getBY()][u.getTilePosition().getBX()] = -1;
 			}
 			if (u.getType() == UnitTypes.Resource_Vespene_Geyser) {
 				//Para construir la refinería nos vale la casilla arriba a la izquierda.
-				mapa[u.getTilePosition().getBY()][u.getTilePosition().getBX()] = -2;
+				map[u.getTilePosition().getBY()][u.getTilePosition().getBX()] = -2;
 			}
 		}
 	}
@@ -750,10 +781,10 @@ public class JohnDoe extends GameHandler {
     	int xMaximo, xOrigen, yOrigen, yMaximo;
     	
     	//Se considera que sea misma fila o columna.
-    	if (origen.x == maximo.x && maximo.x + building.getTileWidth() < mapa[0].length) {
+    	if (origen.x == maximo.x && maximo.x + building.getTileWidth() < map[0].length) {
     		maximo.x += building.getTileWidth();
     	}
-    	if (origen.y == maximo.y && maximo.y + building.getTileHeight() < mapa.length) {
+    	if (origen.y == maximo.y && maximo.y + building.getTileHeight() < map.length) {
     		maximo.y += building.getTileHeight();
     	}
     	
@@ -761,19 +792,19 @@ public class JohnDoe extends GameHandler {
     	//Eje X
     	if (origen.x < maximo.x) {
     		//Origen está antes que el maximo
-    		xMaximo = (maximo.x > mapa[0].length ? mapa[0].length : maximo.x);
+    		xMaximo = (maximo.x > map[0].length ? map[0].length : maximo.x);
     		xOrigen = origen.x;
     	} else {
     		//Maximo está antes que el origen
-    		xMaximo = (origen.x > mapa[0].length ? mapa[0].length : origen.x);
+    		xMaximo = (origen.x > map[0].length ? map[0].length : origen.x);
     		xOrigen = maximo.x;
     	}
     	//Lo mismo con el eje Y
     	if (origen.y < maximo.y) {
-    		yMaximo = (maximo.y > mapa.length ? mapa.length : maximo.y);
+    		yMaximo = (maximo.y > map.length ? map.length : maximo.y);
     		yOrigen = origen.y;
     	} else {
-    		yMaximo = (origen.y > mapa.length ? mapa.length : origen.y);
+    		yMaximo = (origen.y > map.length ? map.length : origen.y);
     		yOrigen = maximo.y;
     	}
     	
@@ -788,16 +819,16 @@ public class JohnDoe extends GameHandler {
     	for (int y = yOrigen; y < yMaximo && !found; y++){
     		for (int x = xOrigen; x < xMaximo && !found; x++){
     			//si encuentra una posición válida sale.
-    			if (mapa[y][x] >= max) {return new Position(x, y, PosType.BUILD);}
+    			if (map[y][x] >= max) {return new Position(x, y, PosType.BUILD);}
     			//Este bucle busca en vertical hacia abajo
-    			for (int y2=0; y2<=(x-xOrigen) && y+y2 < mapa.length;y2++) {
-    				if (mapa[y+y2][x] >= max) {
+    			for (int y2=0; y2<=(x-xOrigen) && y+y2 < map.length;y2++) {
+    				if (map[y+y2][x] >= max) {
     					return new Position(x, y+y2, PosType.BUILD);
     				}
     			}
     			//Este bucle mira desde la y que se quedó el bucle anterior y va horizontalmente hacia atrás
-    			for (int x2=0; x2<=(x-xOrigen) && y+(x-xOrigen) < mapa.length;x2++) {
-    				if (mapa[y+(x-xOrigen)][x-x2] >= max) {
+    			for (int x2=0; x2<=(x-xOrigen) && y+(x-xOrigen) < map.length;x2++) {
+    				if (map[y+(x-xOrigen)][x-x2] >= max) {
     					return new Position(x-x2, y+(x-xOrigen), PosType.BUILD);
     				}
     			}
@@ -818,18 +849,18 @@ public class JohnDoe extends GameHandler {
      * destino ha sido calculada con el tama�o del edificio + la posici�n origen
      */
     public void updateMap(Position origen, Position destino) {
-    	if (destino.getBX() > mapa[0].length) {
-    		if (destino.getBY() > mapa.length) {
-    			destino = new Position(mapa[0].length-1,mapa.length-1);
+    	if (destino.getBX() > map[0].length) {
+    		if (destino.getBY() > map.length) {
+    			destino = new Position(map[0].length-1,map.length-1);
     		} else {
-    			destino = new Position(mapa[0].length-1,destino.getBY());
+    			destino = new Position(map[0].length-1,destino.getBY());
     		}
     	}
     	//se recorre la matriz entre las posiciones dadas
     	for (int i = origen.getBY(); i < destino.getBY(); i++){
     		for(int j = origen.getBX(); j < destino.getBX(); j++){
     			//se ponen como ocupadas las casillas
-    			mapa[i][j] = 0;
+    			map[i][j] = 0;
     		}
     	}
     	/*
@@ -849,8 +880,8 @@ public class JohnDoe extends GameHandler {
     	while (parada){
     		int extra = (destino.getBX()-origen.getBX() <= ih ? ih-(destino.getBX()-origen.getBX()) : 0);
     		//Si no nos salimos del mapa, el valor actual de la dimensión no es 4 (máximo)
-    		if (((origen.getBY()-iv >= 0 && destino.getBX()-ih >= 0) && mapa[origen.getBY()-iv][destino.getBX()-ih] > iv) && (iv+extra < 4)){ // Si llegamos a 4 no es necesario seguir
-    			mapa[origen.getBY()-iv][destino.getBX()-ih] = (iv == 1 ? iv+extra : iv);
+    		if (((origen.getBY()-iv >= 0 && destino.getBX()-ih >= 0) && map[origen.getBY()-iv][destino.getBX()-ih] > iv) && (iv+extra < 4)){ // Si llegamos a 4 no es necesario seguir
+    			map[origen.getBY()-iv][destino.getBX()-ih] = (iv == 1 ? iv+extra : iv);
     			iv++;
     		}
     		else{ // Hemos terminado con la columna, pasamos a la siguiente (hacia atrás en el mapa)
@@ -870,8 +901,8 @@ public class JohnDoe extends GameHandler {
     	parada = true;
     	// Bucle horizontal
     	while (parada){
-    		if (((origen.getBY()+iv >= 0 && origen.getBX()-ih >= 0) && mapa[origen.getBY()+iv][origen.getBX()-ih] > ih) && (ih < 4)){ // Si llegamos a 4 no es necesario seguir
-    			mapa[origen.getBY()+iv][origen.getBX()-ih] = ih;
+    		if (((origen.getBY()+iv >= 0 && origen.getBX()-ih >= 0) && map[origen.getBY()+iv][origen.getBX()-ih] > ih) && (ih < 4)){ // Si llegamos a 4 no es necesario seguir
+    			map[origen.getBY()+iv][origen.getBX()-ih] = ih;
     			ih++;
     		}
     		else{ // Hemos terminado con la fila, pasamos a la siguiente (hacia abajo en el mapa)

@@ -4,17 +4,16 @@ import org.iaie.btree.state.State;
 import org.iaie.btree.task.leaf.Action;
 import org.iaie.btree.util.GameHandler;
 
-public class ChosseUnits extends Action {
+public class CreateTroop extends Action {
 
-	public ChosseUnits(String name, GameHandler gh) {
+	public CreateTroop(String name, GameHandler gh) {
 		super(name, gh);
 	}
 
 	@Override
 	public State execute() {
-		return State.ERROR;
-		/*try{
-			if (((JohnDoe)this.handler).chosseUnits()) {
+		try{
+			if (((JohnDoe)this.handler).createTroop()) {
 				return State.SUCCESS;
 			} else {
 				return State.FAILURE;
@@ -22,7 +21,7 @@ public class ChosseUnits extends Action {
 		} catch (Exception e) {
 			e.printStackTrace();
 			return State.ERROR;
-		}*/
+		}
 	}
 
 }

@@ -4,16 +4,16 @@ import org.iaie.btree.state.State;
 import org.iaie.btree.task.leaf.Action;
 import org.iaie.btree.util.GameHandler;
 
-public class ChosseTropa extends Action {
+public class SelectGroup extends Action {
 
-	public ChosseTropa(String name, GameHandler gh) {
+	public SelectGroup(String name, GameHandler gh) {
 		super(name, gh);
 	}
 
 	@Override
 	public State execute() {
 		try{
-			if (((JohnDoe)this.handler).chosseTropa()) {
+			if (((JohnDoe)this.handler).selectGroup()) {
 				return State.SUCCESS;
 			} else {
 				return State.FAILURE;

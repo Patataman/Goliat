@@ -21,11 +21,11 @@ public class TrainUnit extends Action {
 	@Override
 	public State execute() {
 		try{
-			byte soldados=0, murcielagos=0, nave_cientifica=0;
-			for (Unit u : ((JohnDoe)this.handler).unidadesMilitares){
-				if (u.getType() == UnitTypes.Terran_Marine) soldados++;
-				if (u.getType() == UnitTypes.Terran_Firebat) murcielagos++;
-				if (u.getType() == UnitTypes.Terran_Science_Vessel) nave_cientifica++;
+			byte marines=0, fire_bat=0, vessel=0;
+			for (Unit u : ((JohnDoe)this.handler).militaryUnits){
+				if (u.getType() == UnitTypes.Terran_Marine) marines++;
+				if (u.getType() == UnitTypes.Terran_Firebat) fire_bat++;
+				if (u.getType() == UnitTypes.Terran_Science_Vessel) vessel++;
 			}
 			if (unit == UnitTypes.Terran_SCV){
 				//Se mira a ver si es posible entrenar algún VCE
@@ -33,16 +33,16 @@ public class TrainUnit extends Action {
 					return State.FAILURE; 					
 				}
 			}
-			//Por cada 5 soldados+murcielagos debe entrenarse un médico
-			if (unit == UnitTypes.Terran_Medic && ((soldados+murcielagos)%5 != 0 || soldados+murcielagos == 0)) {
+			//Por cada 5 marines+fire_bat debe entrenarse un médico
+			if (unit == UnitTypes.Terran_Medic && ((marines+fire_bat)%5 != 0 || marines+fire_bat == 0)) {
 				return State.FAILURE;
 			}
-			//Por cada 3 soldados 1 murcielago debe entrenarse
-			if (unit == UnitTypes.Terran_Firebat && ((soldados+murcielagos)%3 != 0 || soldados+murcielagos == 0)) {
+			//Por cada 3 marines 1 murcielago debe entrenarse
+			if (unit == UnitTypes.Terran_Firebat && ((marines+fire_bat)%3 != 0 || marines+fire_bat == 0)) {
 				return State.FAILURE;
 			}
 			//Se construirá una nave científica para ver invisibles.
-			if (unit == UnitTypes.Terran_Science_Vessel && nave_cientifica>=1) {
+			if (unit == UnitTypes.Terran_Science_Vessel && vessel>=1) {
 				return State.FAILURE;
 			}
 			//Los goliats, mientras mas mejor

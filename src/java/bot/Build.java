@@ -16,7 +16,7 @@ public class Build extends Action {
 	public Build(String name, GameHandler gh, UnitType building) {
 		super(name, gh);
 		this.edificio = building;
-		this.influencias = ((JohnDoe)this.handler).dah_mapa;
+		this.influencias = ((JohnDoe)this.handler).dah_map;
 	}
 
 	@Override
@@ -31,7 +31,7 @@ public class Build extends Action {
 					return State.FAILURE;
 				}
 				//Deben estar espaciadas las torretas
-				for (Unit u : ((JohnDoe)this.handler).edificiosConstruidos) {
+				for (Unit u : ((JohnDoe)this.handler).finishedBuildings) {
 					if (u.getType() == UnitTypes.Terran_Missile_Turret && 
 							u.getDistance(((JohnDoe)this.handler).posBuild) < 300) {
 						return State.FAILURE;

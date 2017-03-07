@@ -71,7 +71,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				gh.cc_select = cc;
 				gh.CCs.add(cc.getID());
 				gh.addCC(0);
-				gh.edificiosConstruidos.add(cc);
+				gh.finishedBuildings.add(cc);
 			}
 		}
 
@@ -211,20 +211,23 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		// ---------- FIN BUILD -----------
 		
 		// -------- Secuencias de movimiento ---------
-		Sequence adventure = new Sequence("Mover unidades");
+		/*Sequence adventure = new Sequence("Mover unidades");
 		adventure.addChild(new CheckPositionUnits("Comprobar posici�n de las unidades", gh));
 		adventure.addChild(new ChosseUnits("Formar patrulla", gh));
 		adventure.addChild(new ChooseDestination("Escoger destino", gh));
-		adventure.addChild(new SendUnits("Mandar patrulla", gh));
+		adventure.addChild(new SendUnits("Mandar patrulla", gh));*/
 		// ---------- FIN MOVE -----------
 		
 		// -------- Secuencias de ataque ---------
 		Sequence attack = new Sequence("Mandar de ataque a las tropas");
-		attack.addChild(new CheckStateUnits("Comprobar estado de las unidades", gh));
-		attack.addChild(new ChosseTropa("Formar tropa", gh));
+		attack.addChild(new SelectGroup("Selecciona grupo para atacar/defender", gh));
 		attack.addChild(new ChooseDestination("Escoger destino", gh));
-		attack.addChild(new ChooseVictim("Escoger v�ctima", gh));
+		//attack.addChild(new ChooseVictim("Escoger víctima", gh));
 		attack.addChild(new SendAttack("Mandar ataque", gh));
+		
+		Sequence createGroup = new Sequence("Crea grupo de ataque");
+		attack.addChild(new CheckStateUnits("Comprobar estado de las unidades", gh));
+		attack.addChild(new CreateTroop("Formar tropa", gh));
 		// ---------- FIN ATTACK -----------
 		
 		// ---------- Secuencias investigación --------
@@ -262,7 +265,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		TrainTree  = new BehavioralTree("Arbol entrenamiento");
 		TrainTree.addChild(new Selector<>("MAIN SELECTOR", selectorTrain));
 		AttackTree  = new BehavioralTree("Arbol ataque/defensa");
-		AttackTree.addChild(new Selector<>("MAIN SELECTOR", adventure, attack));
+		AttackTree.addChild(new Selector<>("MAIN SELECTOR", attack, createGroup));
 		
 		
 	}
@@ -307,7 +310,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		//Cuando se comienza a construir un edificio se pone como pendiente.
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
 			if (bwapi.getUnit(unitID).getType().isBuilding()){
-				gh.edificiosPendientes.add(bwapi.getUnit(unitID).getType());
+				gh.remainingBuildings.add(bwapi.getUnit(unitID).getType());
 			}
 		}
 	}
@@ -315,7 +318,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 
 	@Override
 	public void unitDestroy(int unitID) {
-		gh.dah_mapa.removeUnitDead(unitID);
+		gh.dah_map.removeUnitDead(unitID);
 		Predicate<Unit> predicado = new Predicate<Unit>() {
 			public boolean test(Unit u) {
 				return u.getID() == unitID;
@@ -325,16 +328,16 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		int control = 0;
 		if (control == 0) {
 			//Casting a array de unidades (?)
-			for(Object u : gh.edificiosConstruidos.stream().filter(predicado).toArray()) {
+			for(Object u : gh.finishedBuildings.stream().filter(predicado).toArray()) {
 				//No es necesario comprobar el ID ya que la sublista que se recorre es la que cumple lo del ID
 				//Aunque sólo debería haber 1 elemento
-				gh.edificiosConstruidos.remove(u);
-				if (((Unit) u).getType() == UnitTypes.Terran_Academy) gh.academia--;
-				if (((Unit) u).getType() == UnitTypes.Terran_Barracks) gh.barracones--;
-				if (((Unit) u).getType() == UnitTypes.Terran_Factory) gh.fabricas--;
-				if (((Unit) u).getType() == UnitTypes.Terran_Engineering_Bay) gh.bahia--;
-				if (((Unit) u).getType() == UnitTypes.Terran_Armory) gh.arsenal--;
-				if (((Unit) u).getType() == UnitTypes.Terran_Refinery) gh.refineria--;
+				gh.finishedBuildings.remove(u);
+				if (((Unit) u).getType() == UnitTypes.Terran_Academy) gh.academy--;
+				if (((Unit) u).getType() == UnitTypes.Terran_Barracks) gh.barracks--;
+				if (((Unit) u).getType() == UnitTypes.Terran_Factory) gh.factory--;
+				if (((Unit) u).getType() == UnitTypes.Terran_Engineering_Bay) gh.bay--;
+				if (((Unit) u).getType() == UnitTypes.Terran_Armory) gh.armory--;
+				if (((Unit) u).getType() == UnitTypes.Terran_Refinery) gh.refinery--;
 				if (((Unit) u).getType() == UnitTypes.Terran_Science_Facility) gh.lab_cient--;
 				if (((Unit) u).getType() == UnitTypes.Terran_Supply_Depot) {
 					gh.totalSupplies -= UnitTypes.Terran_Supply_Depot.getSupplyProvided();
@@ -346,20 +349,22 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			}
 		}
 		if (control == 0) {
-			for(Object u : gh.unidadesMilitares.stream().filter(predicado).toArray()) {
+			for(Object u : gh.militaryUnits.stream().filter(predicado).toArray()) {
 				gh.supplies -= ((Unit) u).getType().getSupplyRequired();
-				gh.unidadesMilitares.remove((Unit) u);
+				gh.militaryUnits.remove((Unit) u);
 				control++;
 			}
-			for(Object u : gh.soldadosAburridos.stream().filter(predicado).toArray()) {
+			for(Object u : gh.boredSoldiers.stream().filter(predicado).toArray()) {
 				gh.supplies -= ((Unit) u).getType().getSupplyRequired();
-				gh.soldadosAburridos.remove((Unit) u);
+				gh.boredSoldiers.remove((Unit) u);
 				control++;
 			}
-			for(Object u : gh.tropaAsalto.stream().filter(predicado).toArray()) {
-				gh.supplies -= ((Unit) u).getType().getSupplyRequired();
-				gh.tropaAsalto.remove((Unit) u);
-				control++;				
+			for (ArrayList<Unit> lista : gh.assaultTroop){
+				for(Object u : lista.stream().filter(predicado).toArray()) {
+					gh.supplies -= ((Unit) u).getType().getSupplyRequired();
+					gh.assaultTroop.remove((Unit) u);
+					control++;
+				}	
 			}
 		}
 		if (control == 0) {
@@ -379,17 +384,17 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		}
 
 		if (control == 0) {
-			for(ArrayList<Integer> minerales : gh.trabajadoresMineral) {
+			for(ArrayList<Integer> minerales : gh.workersMineral) {
 				if (minerales.contains((Integer) unitID)) {
-					gh.trabajadoresMineral.get(gh.trabajadoresMineral.indexOf(minerales)).remove((Integer) unitID);
+					gh.workersMineral.get(gh.workersMineral.indexOf(minerales)).remove((Integer) unitID);
 					control++;
 				}
 			}
 		}
 		if (control == 0) {
-			for(ArrayList<Integer> vespeno : gh.trabajadoresVespeno) {
+			for(ArrayList<Integer> vespeno : gh.workersVespin) {
 				if (vespeno.contains((Integer) unitID)) {
-					gh.trabajadoresVespeno.get(gh.trabajadoresVespeno.indexOf(vespeno)).remove((Integer) unitID);
+					gh.workersVespin.get(gh.workersVespin.indexOf(vespeno)).remove((Integer) unitID);
 					//Ultimo if, no hay necesidad de control++
 				}
 			}
@@ -400,7 +405,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	public void unitComplete(int unitID) {
 		//Se actualiza el mapa de ingluencias
 		int influencia = (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) ? 1 : -1;
-		gh.dah_mapa.newUnit(this.bwapi.getUnit(unitID), influencia, 
+		gh.dah_map.newUnit(this.bwapi.getUnit(unitID), influencia, 
 				this.bwapi.getUnit(unitID).getPosition().getBX(), this.bwapi.getUnit(unitID).getPosition().getBY());
 		/////////////////////////////////////
 		
@@ -417,25 +422,26 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			}
 			
 			//Cuando se cree una unidad de las pendientes, se elimina de la lista.
-			if (gh.unidadesPendientes.contains(bwapi.getUnit(unitID).getType())){
-				gh.unidadesPendientes.remove(bwapi.getUnit(unitID).getType());
+			if (gh.remainingUnits.contains(bwapi.getUnit(unitID).getType())){
+				gh.remainingUnits.remove(bwapi.getUnit(unitID).getType());
 				gh.supplies += bwapi.getUnit(unitID).getType().getSupplyRequired();
 				//Los terran sólo poseen 1 unidad no militar, los VCEs.
 				if (bwapi.getUnit(unitID).getType() != UnitTypes.Terran_SCV) {
-					gh.soldadosAburridos.add(bwapi.getUnit(unitID));
+					gh.militaryUnits.add(bwapi.getUnit(unitID));
+					gh.boredSoldiers.add(bwapi.getUnit(unitID));
 				}
 			}
 			//Cuando se cree un edificio pendiente, se elimina de la lista y se pone como construido
-			if (gh.edificiosPendientes.contains(bwapi.getUnit(unitID).getType())) {
-				gh.edificiosPendientes.remove(bwapi.getUnit(unitID).getType());
-				gh.edificiosConstruidos.add(bwapi.getUnit(unitID));
+			if (gh.remainingBuildings.contains(bwapi.getUnit(unitID).getType())) {
+				gh.remainingBuildings.remove(bwapi.getUnit(unitID).getType());
+				gh.finishedBuildings.add(bwapi.getUnit(unitID));
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Supply_Depot)
 					gh.totalSupplies += UnitTypes.Terran_Supply_Depot.getSupplyProvided();
-				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Barracks) gh.barracones++;
-				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Engineering_Bay) gh.bahia++;
-				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Academy) gh.academia++;
-				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Factory) gh.fabricas++;
-				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Armory) gh.arsenal++;
+				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Barracks) gh.barracks++;
+				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Engineering_Bay) gh.bay++;
+				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Academy) gh.academy++;
+				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Factory) gh.factory++;
+				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Armory) gh.armory++;
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Science_Facility) gh.lab_cient++;
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Command_Center) {
 					if (gh.CCs.indexOf((Integer) unitID) == -1){
@@ -463,7 +469,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 
 	public void unitMorph(int unitID) {
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
-			if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Refinery) gh.refineria++;
+			if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Refinery) gh.refinery++;
 		}
 	}
 	
@@ -491,15 +497,15 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	 * @throws IOException
 	 */
 	public int createANDwriteInfluencia(String path) {
-		double mydah_mapa[][] = gh.dah_mapa.getmap();
+		double mydah_map[][] = gh.dah_map.getmap();
 		try {
 			Path p = Paths.get(path);
 			Charset charset = Charset.forName("UTF-8");
 			//Por defecto trae CREATE y TRUNCATE
 			BufferedWriter writer = Files.newBufferedWriter(p, charset);
-			for(int f = 0; f < mydah_mapa.length; f++){
-				for (int c=0; c < mydah_mapa[f].length; c++){			
-					writer.write(mydah_mapa[f][c]+";");
+			for(int f = 0; f < mydah_map.length; f++){
+				for (int c=0; c < mydah_map[f].length; c++){			
+					writer.write(mydah_map[f][c]+";");
 				}
 				writer.write("\n");
 			}
@@ -518,19 +524,19 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			Charset charset = Charset.forName("UTF-8");
 			//Por defecto trae CREATE y TRUNCATE
 			BufferedWriter writer = Files.newBufferedWriter(p, charset);
-			for(int f = 0; f < gh.mapa.length; f++){
-				for (int c=0; c < gh.mapa[f].length; c++){
-					if (gh.mapa[f][c] == -1){
+			for(int f = 0; f < gh.map.length; f++){
+				for (int c=0; c < gh.map[f].length; c++){
+					if (gh.map[f][c] == -1){
 						writer.write("M;");
 					}
-					else if (gh.mapa[f][c] == -2){
+					else if (gh.map[f][c] == -2){
 						writer.write("V;");
 					}
-					else if (gh.mapa[f][c] < 10){
-						writer.write("0"+gh.mapa[f][c]+";");
+					else if (gh.map[f][c] < 10){
+						writer.write("0"+gh.map[f][c]+";");
 					} 
 					else {						
-						writer.write(gh.mapa[f][c]+";");
+						writer.write(gh.map[f][c]+";");
 					}
 				}
 				writer.write("\n");
