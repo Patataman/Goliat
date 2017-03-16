@@ -3,7 +3,6 @@ package bot;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
 
 import org.iaie.btree.util.GameHandler;
 
@@ -28,8 +27,8 @@ public class JohnDoe extends GameHandler {
 	List<UnitType> remainingUnits; 				//List to know which units are being trained.
 	List<Unit> militaryUnits;					//List to know all military unit trained (alive).
 	List<Unit> boredSoldiers;					//List of unit which are defending base.
-	List<ArrayList<Unit>> assaultTroop;			//List of groups of troops which are attacking.
-	List<Unit> attackGroup;						//Group of attacking units currently selected.
+	List<Troop> assaultTroop;					//List of groups of troops created.
+	Troop attackGroup;							//Group of attacking units currently selected.
 	List<UnitType> remainingBuildings;			//List to know which buildings are being builded.
 	List<Unit> finishedBuildings; 				//List to know all finished (and alive) buildings.
 	List<UpgradeType> researching;				//List to know which researches are being researched.
@@ -73,8 +72,8 @@ public class JohnDoe extends GameHandler {
 		remainingUnits 			= new ArrayList<UnitType>();
 		militaryUnits			= new ArrayList<Unit>();
 		boredSoldiers			= new ArrayList<Unit>();
-		assaultTroop			= new ArrayList<ArrayList<Unit>>();
-		attackGroup				= new ArrayList<Unit>();
+		assaultTroop			= new ArrayList<Troop>();
+		attackGroup				= new Troop();
 		remainingBuildings 		= new ArrayList<UnitType>();
 		finishedBuildings 		= new ArrayList<Unit>();
 		researching				= new ArrayList<UpgradeType>();
@@ -332,41 +331,61 @@ public class JohnDoe extends GameHandler {
 	
 	/////////////// REVISAR
 	/**
-	 * Check if there is more than 20 unit in the CP waiting.
+	 * Check if there is more than 25 unit in the CP waiting.
 	 * Used in Attack tree
-	 * @return true if there's more than 20, false otherwise
+	 * @return true if there's more than 25, false otherwise
 	 */
 	public boolean checkStateUnits(){
-		if (boredSoldiers.size() > 30) {
+		if (boredSoldiers.size() > 25) {
 			return true;
 		}
 		return false;
 	}
 	
-	// Selecciona las unidades militares para formar una tropa de asalto. Se usa en "ataque"
+	/**
+	 * Selecciona las unidades militares para formar una tropa de asalto.
+	 * Se usa en "ataque"
+	 * @return True si se crea un grupo de al menos  unidades
+	 */
 	public boolean createTroop() {
 		//Se seleccionan tropas del CP mientras queden al menos 5-10 en el CP y el numero de unidades en el grupo sea < 15.
-		for (int i=0; i< assaultTroop.size() && assaultTroop.get(i).size()<15; i++) {
+		int i = 0;
+		for (; i<assaultTroop.size() && assaultTroop.get(i).units.size()<15; i++) {
 			ArrayList<Unit> auxList = new ArrayList<Unit>();
 			for (Unit u : boredSoldiers) {
 				if(u.isIdle() && u.isCompleted()){
 					//Esta lista tiene sentido para en el futuro poder crear subgrupos
-					assaultTroop.get(i).add(u);
+					assaultTroop.get(i).units.add(u);
 					auxList.add(u);
 				}
+				if (assaultTroop.get(i).units.size() > 20) break;
 			}
 			boredSoldiers.removeAll(auxList);
 			//Si consigue crear 1 grupo, devuelve true
-			if(assaultTroop.get(i).size() >= 15){
+			if(assaultTroop.get(i).units.size() >= 15){
 				return true;
 			}
+		}
+		//Si se llega a esta condición es porque todos los grupos 
+		// actuales están llenos se deben crear grupos nuevos.
+		if (i == assaultTroop.size()) {
+			assaultTroop.add(new Troop());
 		}
 		//Si no consigue crear ningún grupo
 		return false;
 	}
 	
-	asdasd
+	/**
+	 * Selecciona un grupo que no haga nada.
+	 * @return True si existe alguno. False en otros casos.
+	 */
 	public boolean selectGroup() {
+		for (Troop t : assaultTroop){
+			if (t.state == 0) {
+				attackGroup = t;
+				return true;
+			}
+		}
 		return false;
 	}
 	
@@ -415,7 +434,7 @@ public class JohnDoe extends GameHandler {
 	/////////////// REVISAR
 	// Mandar patrulla a la posicion destino. Se usa en "ataque"
 	public boolean sendAttack(){
-		for(Unit soldadito : attackGroup){
+		for(Unit soldadito : attackGroup.units){
 			if(!soldadito.isAttacking() && !soldadito.isMoving()){
 				soldadito.attack(objetivo, false); // <----- REVISAR ESTE TRUE
 			}

@@ -359,12 +359,16 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				gh.boredSoldiers.remove((Unit) u);
 				control++;
 			}
-			for (ArrayList<Unit> lista : gh.assaultTroop){
-				for(Object u : lista.stream().filter(predicado).toArray()) {
+			for (Troop tropa: gh.assaultTroop){
+				for(Object u : tropa.units.stream().filter(predicado).toArray()) {
 					gh.supplies -= ((Unit) u).getType().getSupplyRequired();
-					gh.assaultTroop.remove((Unit) u);
+					tropa.units.remove((Unit) u);
 					control++;
 				}	
+			}
+			for (Object u : gh.attackGroup.units.stream().filter(predicado).toArray()) {
+				gh.attackGroup.units.remove((Unit) u);
+				control++;
 			}
 		}
 		if (control == 0) {
