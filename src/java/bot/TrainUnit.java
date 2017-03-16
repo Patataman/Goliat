@@ -21,10 +21,11 @@ public class TrainUnit extends Action {
 	@Override
 	public State execute() {
 		try{
-			byte marines=0, fire_bat=0, vessel=0;
+			byte marines=0, fire_bat=0, medic = 0, vessel=0;
 			for (Unit u : ((JohnDoe)this.handler).militaryUnits){
 				if (u.getType() == UnitTypes.Terran_Marine) marines++;
 				if (u.getType() == UnitTypes.Terran_Firebat) fire_bat++;
+				if (u.getType() == UnitTypes.Terran_Medic) medic++;
 				if (u.getType() == UnitTypes.Terran_Science_Vessel) vessel++;
 			}
 			if (unit == UnitTypes.Terran_SCV){
@@ -34,7 +35,7 @@ public class TrainUnit extends Action {
 				}
 			}
 			//Por cada 5 marines+fire_bat debe entrenarse un médico
-			if (unit == UnitTypes.Terran_Medic && ((marines+fire_bat)%5 != 0 || marines+fire_bat == 0)) {
+			if (unit == UnitTypes.Terran_Medic && ((marines+fire_bat+medic)%5 != 0 || marines+fire_bat == 0)) {
 				return State.FAILURE;
 			}
 			//Por cada 3 marines 1 murcielago debe entrenarse
