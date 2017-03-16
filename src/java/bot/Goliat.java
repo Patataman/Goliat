@@ -226,8 +226,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		attack.addChild(new SendAttack("Mandar ataque", gh));
 		
 		Sequence createGroup = new Sequence("Crea grupo de ataque");
-		attack.addChild(new CheckStateUnits("Comprobar estado de las unidades", gh));
-		attack.addChild(new CreateTroop("Formar tropa", gh));
+		createGroup.addChild(new CheckStateUnits("Comprobar estado de las unidades", gh));
+		createGroup.addChild(new CreateTroop("Formar tropa", gh));
 		// ---------- FIN ATTACK -----------
 		
 		// ---------- Secuencias investigación --------
@@ -265,7 +265,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		TrainTree  = new BehavioralTree("Arbol entrenamiento");
 		TrainTree.addChild(new Selector<>("MAIN SELECTOR", selectorTrain));
 		AttackTree  = new BehavioralTree("Arbol ataque/defensa");
-		AttackTree.addChild(new Selector<>("MAIN SELECTOR", attack, createGroup));
+		AttackTree.addChild(new Selector<>("MAIN SELECTOR", createGroup, attack));
 		
 		
 	}
@@ -433,6 +433,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				if (bwapi.getUnit(unitID).getType() != UnitTypes.Terran_SCV) {
 					gh.militaryUnits.add(bwapi.getUnit(unitID));
 					gh.boredSoldiers.add(bwapi.getUnit(unitID));
+					System.out.println("BoredSoldiers: "+gh.boredSoldiers.size());
 				}
 			}
 			//Cuando se cree un edificio pendiente, se elimina de la lista y se pone como construido

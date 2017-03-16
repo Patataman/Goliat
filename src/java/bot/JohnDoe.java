@@ -331,12 +331,12 @@ public class JohnDoe extends GameHandler {
 	
 	/////////////// REVISAR
 	/**
-	 * Check if there is more than 25 unit in the CP waiting.
+	 * Check if there is more than 15 unit in the CP waiting.
 	 * Used in Attack tree
-	 * @return true if there's more than 25, false otherwise
+	 * @return true if there's more than 15, false otherwise
 	 */
 	public boolean checkStateUnits(){
-		if (boredSoldiers.size() > 25) {
+		if (boredSoldiers.size() > 15) {
 			return true;
 		}
 		return false;
@@ -348,9 +348,9 @@ public class JohnDoe extends GameHandler {
 	 * @return True si se crea un grupo de al menos  unidades
 	 */
 	public boolean createTroop() {
-		//Se seleccionan tropas del CP mientras queden al menos 5-10 en el CP y el numero de unidades en el grupo sea < 15.
+		//Se seleccionan tropas del CP mientras queden al menos 5-10 en el CP y el numero de unidades en el grupo sea < 10.
 		int i = 0;
-		for (; i<assaultTroop.size() && assaultTroop.get(i).units.size()<15; i++) {
+		for (; i<assaultTroop.size() && assaultTroop.get(i).units.size()<10; i++) {
 			ArrayList<Unit> auxList = new ArrayList<Unit>();
 			for (Unit u : boredSoldiers) {
 				if(u.isIdle() && u.isCompleted()){
@@ -358,11 +358,11 @@ public class JohnDoe extends GameHandler {
 					assaultTroop.get(i).units.add(u);
 					auxList.add(u);
 				}
-				if (assaultTroop.get(i).units.size() > 20) break;
+				if (assaultTroop.get(i).units.size() > 10) break;
 			}
 			boredSoldiers.removeAll(auxList);
 			//Si consigue crear 1 grupo, devuelve true
-			if(assaultTroop.get(i).units.size() >= 15){
+			if(assaultTroop.get(i).units.size() >= 10){
 				return true;
 			}
 		}
