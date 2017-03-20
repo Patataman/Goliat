@@ -267,6 +267,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		AttackTree  = new BehavioralTree("Arbol ataque/defensa");
 		AttackTree.addChild(new Selector<>("MAIN SELECTOR", createGroup, attack));
 		
+		bwapi.sendText("gl hf");
 		
 	}
 
@@ -479,7 +480,13 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	}
 	
 	public void playerDropped(int playerID) { }
-	public void matchEnd(boolean winner) { }
+	public void matchEnd(boolean winner) {
+		if (winner) {
+			bwapi.sendText("GG EZ");
+		} else {
+			bwapi.sendText("n00b learn 2 play");			
+		}
+	}
 	public void keyPressed(int keyCode) { }
 	public void sendText(String text) { }
 	public void receiveText(String text) { }
