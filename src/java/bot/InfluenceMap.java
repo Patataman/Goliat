@@ -168,8 +168,6 @@ public class InfluenceMap {
 	 * @param y: coordenada y para el im
 	 */
 	public void newUnit(Unit unit, int influencia, int x, int y) {
-		//int x = unit.getPosition().getBX();
-		//int y = unit.getPosition().getBY();
 		ArrayList<Integer> tupla = new ArrayList<Integer>();
 		tupla.add(unit.getID());
 		tupla.add(x);

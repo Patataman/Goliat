@@ -268,7 +268,7 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
-	/////////////REVISAR
+	/*/////////////REVISAR
 	// Comprueba la posición de las unidades. Se usa en "movimiento"
 	public boolean checkPositionUnits(){
 		double myInfluence = this.dah_map.getMyInfluenceLevel();
@@ -292,7 +292,7 @@ public class JohnDoe extends GameHandler {
 			}
 		}	
 		return false;
-	}
+	}*/
 		
 	/////////////// REVISAR
 	// Selecciona las unidades militares que no hacen nada para ponerlas a hacer algo. Se usa en "movimiento"
@@ -343,9 +343,9 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	/**
-	 * Selecciona las unidades militares para formar una tropa de asalto.
-	 * Se usa en "ataque"
-	 * @return True si se crea un grupo de al menos  unidades
+	 * Select military units to make an assault troop.
+	 * Used in "attack".
+	 * @return True if it's created at least 1 group.
 	 */
 	public boolean createTroop() {
 		//Se seleccionan tropas del CP mientras queden al menos 5-10 en el CP y el numero de unidades en el grupo sea < 10.
@@ -381,7 +381,7 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean selectGroup() {
 		for (Troop t : assaultTroop){
-			if (t.state == 0) {
+			if (t.state == 0 || t.isInPosition()) {
 				attackGroup = t;
 				return true;
 			}
@@ -398,25 +398,50 @@ public class JohnDoe extends GameHandler {
 	* @return true si encuentra posición, false si no.
 	*/
 	public boolean chooseDestination() {
-	double myInfluence = this.dah_map.getMyInfluenceLevel();
-	double pointInfluence;
-	Region p = this.connector.getMap().getRegion(cc.getPosition());
-	for(ChokePoint a : p.getChokePoints()){
-		pointInfluence = this.dah_map.getInfluence(new Point(a.getCenter().getBX(), a.getCenter().getBY()));
-		if(pointInfluence < (myInfluence*0.3)/p.getChokePoints().size()){ //Un tercio de la influencia debe defender los chokes
-			//destination = a.getCenter();
-			if(a.getFirstSide().getWDistance(cc.getPosition()) > a.getSecondSide().getWDistance(cc.getPosition())){
-	//			tramo2 = a.getFirstSide();
-				objetivo = a.getSecondSide();
-			}else{
-				objetivo = a.getFirstSide();
-	//			tramo2 = a.getSecondSide();
+		objetivo = getPosToAttack();
+		return true;
+	}
+	
+	/**
+	 * Calculates position to attack.
+	 * Depends of influence and distance to CC.
+	 * Distance to CC is more important.
+	 * the closer, more important.
+	 * @return Attacking position.
+	 */
+	public Position getPosToAttack() {
+		ArrayList<int[]> positions = dah_map.getEnemyPositions(); //Enemy positions
+		Position ret = new Position(positions.get(0)[1], positions.get(0)[0], PosType.BUILD); //Default position
+		double infl = dah_map.mapa[positions.get(0)[0]][positions.get(0)[1]]; //Default influence
+		int dist = cc.getPosition().getApproxWDistance(ret); //Initial distance
+		
+		for (int[] i : positions) {
+			Position aux = new Position(i[1], i[0], PosType.BUILD);
+			if (dah_map.mapa[i[0]][i[1]] < infl*1.5 && cc.getPosition().getApproxWDistance(aux) < dist) {
+				//se actualizan los valores
+				dist = cc.getPosition().getApproxBDistance(aux);
+				ret = aux;
+				infl = dah_map.mapa[i[0]][i[1]];
 			}
-			return true;
 		}
+		return ret;
 	}
-	return false; // No hay choke al que mandar
-	}
+	/*public boolean chooseDestination() {
+		double myInfluence = this.dah_map.getMyInfluenceLevel();
+		Region p = this.connector.getMap().getRegion(cc.getPosition());
+		for(ChokePoint a : p.getChokePoints()){
+			double pointInfluence = this.dah_map.getInfluence(new Point(a.getCenter().getBX(), a.getCenter().getBY()));
+			if(pointInfluence < (myInfluence*0.3)){
+				if(a.getFirstSide().getWDistance(cc.getPosition()) > a.getSecondSide().getWDistance(cc.getPosition())){
+					objetivo = a.getSecondSide();
+				}else{
+					objetivo = a.getFirstSide();
+				}
+				return true;
+			}
+		}
+		return false; // No hay choke al que mandar
+	}*/
 	
 	/////////////// REVISAR
 	// Elige el el lugar o unidad a la que atacar. Se usa en "ataque"
@@ -433,8 +458,58 @@ public class JohnDoe extends GameHandler {
 	
 	/////////////// REVISAR
 	// Mandar patrulla a la posicion destino. Se usa en "ataque"
+	/**
+	 * If the objective it's in range, send the units to attack.
+	 * @return true if it's in range, false otherwise
+	 */
 	public boolean sendAttack(){
 		for(Unit soldadito : attackGroup.units){
+			attackGroup.state = 1;
+			if(!soldadito.isAttacking() && !soldadito.isMoving()){
+				soldadito.attack(objetivo, false); // <----- REVISAR ESTE TRUE
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * If I'm under attack, send at least 1 troop to defend.
+	 * @return true if I'm under attack, false otherwise
+	 */
+	public boolean sendDefend(){
+		for(Unit soldadito : attackGroup.units){
+			attackGroup.state = 1;
+			if(!soldadito.isAttacking() && !soldadito.isMoving()){
+				soldadito.attack(objetivo, false); // <----- REVISAR ESTE TRUE
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Send troops to BaseLocations to locate enemies.
+	 * @return true if it can send a troop, false otherwise
+	 */
+	public boolean sendExplorer(){
+		for(Unit soldadito : attackGroup.units){
+			attackGroup.state = 1;
+			if(!soldadito.isAttacking() && !soldadito.isMoving()){
+				soldadito.attack(objetivo, false); // <----- REVISAR ESTE TRUE
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * If the objective it isn't in range, send the units to move to a closer point.
+	 * @return true if it isn't in range, false otherwise
+	 */
+	public boolean sendMovement(){
+		for(Unit soldadito : attackGroup.units){
+			attackGroup.state = 1;
 			if(!soldadito.isAttacking() && !soldadito.isMoving()){
 				soldadito.attack(objetivo, false); // <----- REVISAR ESTE TRUE
 			}
@@ -612,31 +687,6 @@ public class JohnDoe extends GameHandler {
 	
 	public void updateInfluences(){
 		this.dah_map.updateMap(this.connector);
-	}
-	
-	/**
-	 * Calcula la posición que habría que atacar.
-	 * Tiene en cuenta la influencia y la distancia a la base.
-	 * Se le da menor importancia a la influencia, ya que mientras
-	 * mas cerca, mayor importancia hay que darle.
-	 * @return Posición a la que atacar
-	 */
-	public Position getPosToAttack() {
-		ArrayList<int[]> posiciones = dah_map.getEnemyPositions(); //Posiciones enemigas
-		Position ret = new Position(posiciones.get(0)[1], posiciones.get(0)[0], PosType.BUILD); //Posición por defecto
-		double infl = dah_map.mapa[posiciones.get(0)[0]][posiciones.get(0)[1]]; //Influencia por defecto
-		int dist = cc.getPosition().getApproxWDistance(ret); //Distancia inicial
-		
-		for (int[] i : posiciones) {
-			Position aux = new Position(i[1], i[0], PosType.BUILD);
-			if (dah_map.mapa[i[0]][i[1]] < infl*1.5 && cc.getPosition().getApproxWDistance(aux) < dist) {
-				//se actualizan los valores
-				dist = cc.getPosition().getApproxBDistance(aux);
-				ret = aux;
-				infl = dah_map.mapa[i[0]][i[1]];
-			}
-		}
-		return ret;
 	}
 	
 	/**
