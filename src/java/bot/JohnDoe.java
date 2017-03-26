@@ -12,7 +12,6 @@ import jnibwapi.JNIBWAPI;
 import jnibwapi.Position;
 import jnibwapi.Unit;
 import jnibwapi.Position.PosType;
-import jnibwapi.Region;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.types.UpgradeType;
@@ -29,6 +28,7 @@ public class JohnDoe extends GameHandler {
 	List<Unit> boredSoldiers;					//List of unit which are defending base.
 	List<Troop> assaultTroop;					//List of groups of troops created.
 	Troop attackGroup;							//Group of attacking units currently selected.
+	Troop defendGroup;							//Group of defending units.
 	List<UnitType> remainingBuildings;			//List to know which buildings are being builded.
 	List<Unit> finishedBuildings; 				//List to know all finished (and alive) buildings.
 	List<UpgradeType> researching;				//List to know which researches are being researched.
@@ -50,10 +50,7 @@ public class JohnDoe extends GameHandler {
 	Position posBuild;
 	//Posición a la que mandar una patrulla.
 	//Position destination;
-	Position objetivo;
-	
-//	Position tramo1; No se usa
-//	Position tramo2;
+	Position objective;
 	
 	int[][] map;
 	
@@ -65,19 +62,20 @@ public class JohnDoe extends GameHandler {
 		workers 				= new ArrayList<Unit>(3);
 		cc 						= null;
 		cc_select 				= null;
-		CCs 					= new ArrayList<Integer>();
-		VCEs 					= new ArrayList<ArrayList<Unit>>();
-		workersMineral 			= new ArrayList<ArrayList<Integer>>();
-		workersVespin 			= new ArrayList<ArrayList<Integer>>();
-		remainingUnits 			= new ArrayList<UnitType>();
-		militaryUnits			= new ArrayList<Unit>();
-		boredSoldiers			= new ArrayList<Unit>();
-		assaultTroop			= new ArrayList<Troop>();
+		CCs 					= new ArrayList<Integer>(0);
+		VCEs 					= new ArrayList<ArrayList<Unit>>(0);
+		workersMineral 			= new ArrayList<ArrayList<Integer>>(0);
+		workersVespin 			= new ArrayList<ArrayList<Integer>>(0);
+		remainingUnits 			= new ArrayList<UnitType>(0);
+		militaryUnits			= new ArrayList<Unit>(0);
+		boredSoldiers			= new ArrayList<Unit>(0);
+		assaultTroop			= new ArrayList<Troop>(0);
 		attackGroup				= new Troop();
-		remainingBuildings 		= new ArrayList<UnitType>();
-		finishedBuildings 		= new ArrayList<Unit>();
-		researching				= new ArrayList<UpgradeType>();
-		damageBuildings			= new ArrayList<Unit>();
+		defendGroup				= new Troop();
+		remainingBuildings 		= new ArrayList<UnitType>(0);
+		finishedBuildings 		= new ArrayList<Unit>(0);
+		researching				= new ArrayList<UpgradeType>(0);
+		damageBuildings			= new ArrayList<Unit>(0);
 		barracks = refinery = factory = 
 		academy = armory = bay = lab_cient = starport = 0;
 		number_chokePoints 		= (byte) this.connector.getMap().getRegion(this.connector.getSelf().getStartLocation()).getChokePoints().size();
@@ -267,76 +265,14 @@ public class JohnDoe extends GameHandler {
 		}
 		return false;
 	}
-	
-	/*/////////////REVISAR
-	// Comprueba la posición de las unidades. Se usa en "movimiento"
-	public boolean checkPositionUnits(){
-		double myInfluence = this.dah_map.getMyInfluenceLevel();
-		double pointInfluence;
-		if(!this.connector.getEnemyUnits().isEmpty()){ // Nos atacan, no es momento para formar patrullas
-			for(Unit victima : this.connector.getEnemyUnits()){
-				if(victima.isExists() && victima.getDistance(cc)<500){ // 500 es un buen radio de defensa
-					return false;
-				}
-			}
-		}
-		for (Unit u : boredSoldiers){ // Si faltan unidades en los choke, las mandamos
-			if(u.isIdle() && u.isCompleted()){				
-				Region p = this.connector.getMap().getRegion(cc.getPosition());
-				for(ChokePoint a : p.getChokePoints()){
-					pointInfluence = this.dah_map.getInfluence(new Point(a.getCenter().getBX(), a.getCenter().getBY()));
-					if(pointInfluence < (myInfluence*0.3)/p.getChokePoints().size()){ //Un tercio de la influencia debe defender los chokes
-						return true;
-					}
-				}
-			}
-		}	
-		return false;
-	}*/
-		
-	/////////////// REVISAR
-	// Selecciona las unidades militares que no hacen nada para ponerlas a hacer algo. Se usa en "movimiento"
-	/*public boolean chosseUnits(){
-		ArrayList<Unit> aux = new ArrayList<Unit>();
-		for (Unit u : boredSoldiers){
-			if(u.isIdle() && !militaryUnits.contains(u)){
-				militaryUnits.add(u);
-				aux.add(u);
-			}
-		}
-		for (Unit u : aux){
-			boredSoldiers.remove(u);
-		}
-		if(!militaryUnits.isEmpty()){
-			return true;
-		}
-		return false;
-	}*/
-	
-	/////////////// REVISAR
-	// Mandar las unidades a la posicion destino. Se usa en "movimiento"
-	/*public boolean sendUnits(){
-		for(Unit soldadito : militaryUnits){
-			if(soldadito.isIdle()){ // Solo mandamos a la unidad que este parada 
-				if (soldadito.getDistance(destination) > 50) {
-					soldadito.move(destination.makeValid(), false);					
-				} else {
-					soldadito.move(destination, false);
-				}
-			}
-		}
-		return true;
-	}*/
-	
-	
-	/////////////// REVISAR
+
 	/**
-	 * Check if there is more than 15 unit in the CP waiting.
+	 * Check if there is more than 10 units in the CP waiting.
 	 * Used in Attack tree
-	 * @return true if there's more than 15, false otherwise
+	 * @return true if there's more than 10, false otherwise
 	 */
 	public boolean checkStateUnits(){
-		if (boredSoldiers.size() > 15) {
+		if (boredSoldiers.size() > 10) {
 			return true;
 		}
 		return false;
@@ -350,19 +286,22 @@ public class JohnDoe extends GameHandler {
 	public boolean createTroop() {
 		//Se seleccionan tropas del CP mientras queden al menos 5-10 en el CP y el numero de unidades en el grupo sea < 10.
 		int i = 0;
-		for (; i<assaultTroop.size() && assaultTroop.get(i).units.size()<10; i++) {
-			ArrayList<Unit> auxList = new ArrayList<Unit>();
-			for (Unit u : boredSoldiers) {
-				if(u.isIdle() && u.isCompleted()){
-					//Esta lista tiene sentido para en el futuro poder crear subgrupos
-					assaultTroop.get(i).units.add(u);
-					auxList.add(u);
+		for (; i<assaultTroop.size(); i++) {
+			if (assaultTroop.get(i).units.size()<10) {
+				if (assaultTroop.get(i).units.size() == 0) {
+					assaultTroop.get(i).state = 0;
 				}
-				if (assaultTroop.get(i).units.size() > 10) break;
-			}
-			boredSoldiers.removeAll(auxList);
-			//Si consigue crear 1 grupo, devuelve true
-			if(assaultTroop.get(i).units.size() >= 10){
+				ArrayList<Unit> auxList = new ArrayList<Unit>(0);
+				for (Unit u : boredSoldiers) {
+					if(u.isIdle() && u.isCompleted()){
+						//Esta lista tiene sentido para en el futuro poder crear subgrupos
+						assaultTroop.get(i).units.add(u);
+						auxList.add(u);
+					}
+					if (assaultTroop.get(i).units.size() > 10) break;
+				}
+				boredSoldiers.removeAll(auxList);
+				//Si se añaden unidades
 				return true;
 			}
 		}
@@ -380,7 +319,9 @@ public class JohnDoe extends GameHandler {
 	 * @return True si existe alguno. False en otros casos.
 	 */
 	public boolean selectGroup() {
+		System.out.println("Numero tropas: "+assaultTroop.size() +"soldados.\nSoldados aburridos: "+boredSoldiers.size());
 		for (Troop t : assaultTroop){
+			System.out.println("Con: "+t.units.size()+ " soldados");
 			if (t.state == 0 || t.isInPosition()) {
 				attackGroup = t;
 				return true;
@@ -388,17 +329,13 @@ public class JohnDoe extends GameHandler {
 		}
 		return false;
 	}
-	
-	///////////// REVISAR
-	// Elige el destino de las unidades. Se usa en "movimiento" y "ataque"
+
 	/**
-	* Método que escoge la posición destino a la que atacar/moverse.
-	* Para mover todas las unidades "a la vez" la posición destino debe estar 
-	* como máximo a 500 unidades de distancia (???)
-	* @return true si encuentra posición, false si no.
+	* Select position to attack/move
+	* @return true if find a valid position, false otherwise.
 	*/
 	public boolean chooseDestination() {
-		objetivo = getPosToAttack();
+		objective = getPosToAttack();
 		return true;
 	}
 	
@@ -426,81 +363,42 @@ public class JohnDoe extends GameHandler {
 		}
 		return ret;
 	}
-	/*public boolean chooseDestination() {
-		double myInfluence = this.dah_map.getMyInfluenceLevel();
-		Region p = this.connector.getMap().getRegion(cc.getPosition());
-		for(ChokePoint a : p.getChokePoints()){
-			double pointInfluence = this.dah_map.getInfluence(new Point(a.getCenter().getBX(), a.getCenter().getBY()));
-			if(pointInfluence < (myInfluence*0.3)){
-				if(a.getFirstSide().getWDistance(cc.getPosition()) > a.getSecondSide().getWDistance(cc.getPosition())){
-					objetivo = a.getSecondSide();
-				}else{
-					objetivo = a.getFirstSide();
-				}
-				return true;
-			}
-		}
-		return false; // No hay choke al que mandar
-	}*/
-	
-	/////////////// REVISAR
-	// Elige el el lugar o unidad a la que atacar. Se usa en "ataque"
-	/*public boolean chooseVictim(){
-		for(Unit victima : this.connector.getEnemyUnits()){ // Nos atacan, es el momento de defender
-			if(victima.isExists() && victima.getDistance(cc)<50){ // 500 es un buen radio de defensa
-				objetivo = victima.getPosition();
-				return true;
-			}
-		}
-		objetivo = getPosToAttack(); //Se obtiene la posición objetivo
-		return true;
-	}*/
-	
-	/////////////// REVISAR
-	// Mandar patrulla a la posicion destino. Se usa en "ataque"
-	/**
-	 * If the objective it's in range, send the units to attack.
-	 * @return true if it's in range, false otherwise
-	 */
-	public boolean sendAttack(){
-		for(Unit soldadito : attackGroup.units){
-			attackGroup.state = 1;
-			if(!soldadito.isAttacking() && !soldadito.isMoving()){
-				soldadito.attack(objetivo, false); // <----- REVISAR ESTE TRUE
-			}
-		}
-		
-		return false;
-	}
 	
 	/**
 	 * If I'm under attack, send at least 1 troop to defend.
 	 * @return true if I'm under attack, false otherwise
 	 */
 	public boolean sendDefend(){
-		for(Unit soldadito : attackGroup.units){
-			attackGroup.state = 1;
-			if(!soldadito.isAttacking() && !soldadito.isMoving()){
-				soldadito.attack(objetivo, false); // <----- REVISAR ESTE TRUE
+		for (Unit u : boredSoldiers) {
+			if (u.isCompleted()) {
+				if (defendGroup.units.size() < 15) {
+					defendGroup.units.add(u);					
+				}
+				u.attack(defendGroup.destination.makeValid(), false);
 			}
 		}
-		
-		return false;
+		boredSoldiers.removeAll(defendGroup.units);
+		return true;
 	}
 	
 	/**
-	 * Send troops to BaseLocations to locate enemies.
-	 * @return true if it can send a troop, false otherwise
+	 * If the objective it's in range, send the units to attack.
+	 * @return true if it's in range (< 100), false otherwise
 	 */
-	public boolean sendExplorer(){
+	public boolean sendAttack(){
+		if (attackGroup.units.get(0).getDistance(objective) > 100 &&
+				attackGroup.units.size() > 10) {
+			return false;
+		}
+			
+		attackGroup.state = 1;
+		attackGroup.destination = objective;
 		for(Unit soldadito : attackGroup.units){
-			attackGroup.state = 1;
-			if(!soldadito.isAttacking() && !soldadito.isMoving()){
-				soldadito.attack(objetivo, false); // <----- REVISAR ESTE TRUE
+			if(soldadito.isIdle()){
+				soldadito.attack(objective, false);
 			}
 		}
-		
-		return false;
+		return true;
 	}
 	
 	/**
@@ -508,20 +406,45 @@ public class JohnDoe extends GameHandler {
 	 * @return true if it isn't in range, false otherwise
 	 */
 	public boolean sendMovement(){
+		System.out.println("sendMovement");
+		if (attackGroup.tooFar() &&
+				attackGroup.units.size() > 10) {
+			return false;
+		}
+		attackGroup.state = 3;
+		attackGroup.destination = objective;
 		for(Unit soldadito : attackGroup.units){
-			attackGroup.state = 1;
-			if(!soldadito.isAttacking() && !soldadito.isMoving()){
-				soldadito.attack(objetivo, false); // <----- REVISAR ESTE TRUE
+			if(soldadito.isIdle()){
+				soldadito.attack(objective, false);
 			}
 		}
 		
-		return false;
+		return true;
 	}
 	
+	/**
+	 * Send troops to BaseLocations to locate enemies.
+	 * @return true if it can send a troop, false otherwise
+	 */
+	public boolean sendExplorer(){
+		return false;
+		/*attackGroup.state = 5;
+		attackGroup.destination = objective;
+		for(Unit soldadito : attackGroup.units){
+			if(!soldadito.isAttacking() && !soldadito.isMoving()){
+				soldadito.attack(objective, false); // <----- REVISAR ESTE TRUE
+			}
+		}
+		
+		return false;*/
+	}
+
 	
-	/** Para construir vamos a coger como origen el CC. Y se realizarán hasta 10 intentos
-	 * para encontrar una posición válida. En cada intento se va cambiando de posicion maxima.
-	 * (es decir, se va moviendo alrededor para buscar la posición)
+	/**
+	 * Building "center" it's the cc_select. It'll 4 attempts to find a valid position.
+	 * In each attempt the radius will be increased.
+	 * 
+	 * @return true if can find a valid position, false otherwise
 	 */
 	public boolean findPosition(UnitType edificio) {
 		//Si ya se tiene una posición, no la vuelve a buscar

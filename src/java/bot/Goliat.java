@@ -18,12 +18,14 @@ import org.iaie.btree.util.GameHandler;
 import org.iaie.tools.Options;
 
 import jnibwapi.BWAPIEventListener;
+import jnibwapi.ChokePoint;
 import jnibwapi.JNIBWAPI;
 import jnibwapi.Position;
 import jnibwapi.Unit;
 import jnibwapi.Position.PosType;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.types.UpgradeType.UpgradeTypes;
+import jnibwapi.util.BWColor;
 
 public class Goliat extends Agent implements BWAPIEventListener {
 
@@ -59,6 +61,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
         // Mediante este método se define la velocidad de ejecución del videojuego. 
         // Los valores posibles van desde 0 (velocidad estándar) a 10 (velocidad máxima).
         this.bwapi.setGameSpeed(Options.getInstance().getSpeed());
+        
+        this.bwapi.drawTargets(true);
 		
 		gh = new JohnDoe(bwapi);
 		
@@ -75,6 +79,14 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			}
 		}
 
+		if (gh.number_chokePoints == 1) {
+			for (ChokePoint cp : bwapi.getMap().getRegion(gh.cc_select.getPosition()).getChokePoints()){
+				gh.defendGroup.destination = cp.getCenter();				
+			}
+		} else {
+			gh.defendGroup.destination = gh.cc_select.getPosition();
+		}
+		bwapi.drawCircle(gh.defendGroup.destination, 10, BWColor.Blue, true, true);
 		gh.supplies = bwapi.getSelf().getSupplyUsed();
 		gh.totalSupplies = bwapi.getSelf().getSupplyTotal();
 		
@@ -222,19 +234,23 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		Sequence attack = new Sequence("Mandar de ataque a las tropas");
 		attack.addChild(new SelectGroup("Selecciona grupo para atacar/defender", gh));
 		attack.addChild(new ChooseDestination("Escoger destino", gh));
-		//attack.addChild(new ChooseVictim("Escoger víctima", gh));
-		Selector<GameHandler> attackSelector = new Selector<>("Atacar/Defender/Explorar/Mover");
+		Selector<GameHandler> attackSelector = new Selector<>("Atacar/Explorar/Mover");
 		attackSelector.addChild(new SendAttack("Mandar ataque", gh));
-		attackSelector.addChild(new SendDefend("Mandar ataque", gh));
-		attackSelector.addChild(new SendExplorer("Mandar ataque", gh));
-		attackSelector.addChild(new SendMovement("Mandar ataque", gh));
-		
+		attackSelector.addChild(new SendExplorer("Mandar a explorar", gh));
+		attackSelector.addChild(new SendMovement("Mandar agruparse", gh));		
 		attack.addChild(attackSelector);
+		// ---------- FIN ATTACK -----------
 		
+		// --------- Secuencia de defensa ---------
+		Sequence defense = new Sequence("Defiende la base");
+		defense.addChild(new SendDefend("Mandar defensa", gh));
+		// --------- FIN DEFENSE -----------
+		
+		//---------- Creacion de tropas
 		Sequence createGroup = new Sequence("Crea grupo de ataque");
 		createGroup.addChild(new CheckStateUnits("Comprobar estado de las unidades", gh));
 		createGroup.addChild(new CreateTroop("Formar tropa", gh));
-		// ---------- FIN ATTACK -----------
+		// -------- FIN createGroup ---------------
 		
 		// ---------- Secuencias investigación --------
 		//Investigar U238 (Academia)
@@ -271,7 +287,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		TrainTree  = new BehavioralTree("Arbol entrenamiento");
 		TrainTree.addChild(new Selector<>("MAIN SELECTOR", selectorTrain));
 		AttackTree  = new BehavioralTree("Arbol ataque/defensa");
-		AttackTree.addChild(new Selector<>("MAIN SELECTOR", createGroup, attack));
+		AttackTree.addChild(new Selector<>("MAIN SELECTOR", defense, createGroup, attack));
 		
 		bwapi.sendText("gl hf");
 		
@@ -362,19 +378,21 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				control++;
 			}
 			for(Object u : gh.boredSoldiers.stream().filter(predicado).toArray()) {
-				gh.supplies -= ((Unit) u).getType().getSupplyRequired();
 				gh.boredSoldiers.remove((Unit) u);
 				control++;
 			}
 			for (Troop tropa: gh.assaultTroop){
 				for(Object u : tropa.units.stream().filter(predicado).toArray()) {
-					gh.supplies -= ((Unit) u).getType().getSupplyRequired();
 					tropa.units.remove((Unit) u);
 					control++;
-				}	
+				}
 			}
 			for (Object u : gh.attackGroup.units.stream().filter(predicado).toArray()) {
 				gh.attackGroup.units.remove((Unit) u);
+				control++;
+			}
+			for (Object u : gh.defendGroup.units.stream().filter(predicado).toArray()) {
+				gh.defendGroup.units.remove((Unit) u);
 				control++;
 			}
 		}
@@ -440,7 +458,6 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				if (bwapi.getUnit(unitID).getType() != UnitTypes.Terran_SCV) {
 					gh.militaryUnits.add(bwapi.getUnit(unitID));
 					gh.boredSoldiers.add(bwapi.getUnit(unitID));
-					System.out.println("BoredSoldiers: "+gh.boredSoldiers.size());
 				}
 			}
 			//Cuando se cree un edificio pendiente, se elimina de la lista y se pone como construido
@@ -471,10 +488,10 @@ public class Goliat extends Agent implements BWAPIEventListener {
 									bwapi.getUnit(unitID).getTopLeft().getBY()+bwapi.getUnit(unitID).getType().getTileHeight(),
 									PosType.BUILD));
 				
-				//Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
+/*				//Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
 				String workingDirectory = System.getProperty("user.dir");
 				String path = workingDirectory + File.separator + "mapa.txt";
-				createANDwrite(path);
+				createANDwrite(path);*/
 			}
 		}
 	}
