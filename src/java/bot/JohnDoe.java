@@ -321,7 +321,10 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean selectGroup() {
 		for (Troop t : assaultTroop){
-			if (t.units.size() >= 10) {
+			if (t.state == 1){
+				t.isInPosition();
+			}
+			if (t.units.size() >= 10 && t.state != 1) {
 				System.out.println("holi "+t.state+", t2: "+t.units.size());
 				attackGroup = t;
 				return true;
