@@ -30,7 +30,9 @@ public class Troop {
 	 * @return true if they are in destination, false otherwise
 	 */
 	public boolean isInPosition() {
-		if (units.get(units.size()-1).getPosition().getApproxWDistance(destination) < 30) {
+		if (destination == null) return true;
+		if (units.get(units.size()-1).getPosition().getApproxWDistance(destination) < 20) {
+			state = 4;
 			return true;
 		}
 		return false;
@@ -42,7 +44,8 @@ public class Troop {
 	 */
 	public boolean tooFar() {
 		System.out.println("Distancia: "+units.get(units.size()-1).getPosition().getApproxWDistance(units.get(0).getPosition()));
-		if (units.get(units.size()-1).getPosition().getApproxWDistance(units.get(0).getPosition()) > 30) {
+		if (units.get(units.size()-1).getPosition().getApproxWDistance(units.get(0).getPosition()) > 30 &&
+				state != 4) {
 			//if too far, group units
 			for(Unit soldadito : units){
 				soldadito.attack(units.get(0).getPosition().makeValid(), false);

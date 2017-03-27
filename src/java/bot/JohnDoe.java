@@ -3,6 +3,7 @@ package bot;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.iaie.btree.util.GameHandler;
 
@@ -298,7 +299,7 @@ public class JohnDoe extends GameHandler {
 						assaultTroop.get(i).units.add(u);
 						auxList.add(u);
 					}
-					if (assaultTroop.get(i).units.size() > 10) break;
+					//if (assaultTroop.get(i).units.size() > 10) break;
 				}
 				boredSoldiers.removeAll(auxList);
 				//Si se añaden unidades
@@ -319,10 +320,9 @@ public class JohnDoe extends GameHandler {
 	 * @return True si existe alguno. False en otros casos.
 	 */
 	public boolean selectGroup() {
-		System.out.println("Numero tropas: "+assaultTroop.size() +"soldados.\nSoldados aburridos: "+boredSoldiers.size());
 		for (Troop t : assaultTroop){
-			System.out.println("Con: "+t.units.size()+ " soldados");
-			if (t.state == 0 || t.isInPosition()) {
+			if (t.units.size() >= 10) {
+				System.out.println("holi "+t.state+", t2: "+t.units.size());
 				attackGroup = t;
 				return true;
 			}
@@ -365,19 +365,26 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	/**
-	 * If I'm under attack, send at least 1 troop to defend.
-	 * @return true if I'm under attack, false otherwise
+	 * Defend chokePoint/base
+	 * @return true if there isn't enough units defending, false otherwise
 	 */
 	public boolean sendDefend(){
 		for (Unit u : boredSoldiers) {
 			if (u.isCompleted()) {
-				if (defendGroup.units.size() < 15) {
-					defendGroup.units.add(u);					
+				if (defendGroup.units.size() < 10) {
+					defendGroup.units.add(u);
 				}
-				u.attack(defendGroup.destination.makeValid(), false);
+				if (u.isIdle() && defendGroup.destination.getApproxWDistance(u.getPosition()) > 12+militaryUnits.size()/10) {
+					u.attack(defendGroup.destination.translated(
+							new Position(new Random().nextInt(4)-3,new Random().nextInt(4)-3,PosType.BUILD)).makeValid(),
+							false);					
+				}
 			}
 		}
-		boredSoldiers.removeAll(defendGroup.units);
+		//boredSoldiers.removeAll(defendGroup.units);
+		if (boredSoldiers.size() >= 16) {
+			return false;
+		}
 		return true;
 	}
 	
@@ -386,17 +393,14 @@ public class JohnDoe extends GameHandler {
 	 * @return true if it's in range (< 100), false otherwise
 	 */
 	public boolean sendAttack(){
-		if (attackGroup.units.get(0).getDistance(objective) > 100 &&
-				attackGroup.units.size() > 10) {
-			return false;
-		}
-			
-		attackGroup.state = 1;
-		attackGroup.destination = objective;
-		for(Unit soldadito : attackGroup.units){
-			if(soldadito.isIdle()){
+		if (attackGroup.state != 2 && attackGroup.state != 5 || attackGroup.isInPosition()) {
+			attackGroup.state = 1;
+			attackGroup.destination = objective;
+			for(Unit soldadito : attackGroup.units){
+				//if(soldadito.isIdle()){
 				soldadito.attack(objective, false);
-			}
+				//}
+			}			
 		}
 		return true;
 	}
@@ -406,9 +410,8 @@ public class JohnDoe extends GameHandler {
 	 * @return true if it isn't in range, false otherwise
 	 */
 	public boolean sendMovement(){
-		System.out.println("sendMovement");
-		if (attackGroup.tooFar() &&
-				attackGroup.units.size() > 10) {
+		System.out.println("sendMovement"+attackGroup.units.size());
+		if (attackGroup.tooFar()) {
 			return false;
 		}
 		attackGroup.state = 3;

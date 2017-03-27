@@ -232,6 +232,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		
 		// -------- Secuencias de ataque ---------
 		Sequence attack = new Sequence("Mandar de ataque a las tropas");
+		//attack.addChild(new CheckStateUnits("Comprueba estado unidades", gh));
 		attack.addChild(new SelectGroup("Selecciona grupo para atacar/defender", gh));
 		attack.addChild(new ChooseDestination("Escoger destino", gh));
 		Selector<GameHandler> attackSelector = new Selector<>("Atacar/Explorar/Mover");

@@ -35,7 +35,7 @@ public class TrainUnit extends Action {
 				}
 			}
 			//Por cada 5 marines+fire_bat debe entrenarse un médico
-			if (unit == UnitTypes.Terran_Medic && ((marines+fire_bat+medic)%5 != 0 || marines+fire_bat == 0)) {
+			if (unit == UnitTypes.Terran_Medic && ((marines+fire_bat+medic)%4 != 0 || marines+fire_bat == 0)) {
 				return State.FAILURE;
 			}
 			//Por cada 3 marines 1 murcielago debe entrenarse

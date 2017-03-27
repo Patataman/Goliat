@@ -8,7 +8,6 @@ public class SendDefend extends Action {
 
 	public SendDefend(String name, GameHandler gh) {
 		super(name, gh);
-		// TODO Auto-generated constructor stub
 	}
 	
 	@Override
