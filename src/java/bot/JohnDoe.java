@@ -280,6 +280,24 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	/**
+	 * Check troops' status.
+	 * Used in Attack tree
+	 * @return true if some troop to home, false otherwise
+	 */
+	public boolean checkStateTroops(){
+		for (Troop t : assaultTroop) {
+			if ((t.state == 1 || t.state == 4) && t.units.size() <= 5) {
+				t.state = 3;
+				for (Unit u : t.units) {
+					u.move(defendGroup.destination, false);
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
 	 * Select military units to make an assault troop.
 	 * Used in "attack".
 	 * @return True if it's created at least 1 group.
@@ -288,13 +306,14 @@ public class JohnDoe extends GameHandler {
 		//Se seleccionan tropas del CP mientras queden al menos 5-10 en el CP y el numero de unidades en el grupo sea < 10.
 		int i = 0;
 		for (; i<assaultTroop.size(); i++) {
-			if (assaultTroop.get(i).units.size()<10) {
+			if (assaultTroop.get(i).units.size() < 10) {
 				if (assaultTroop.get(i).units.size() == 0) {
 					assaultTroop.get(i).state = 0;
+					assaultTroop.get(i).destination = null;
 				}
 				ArrayList<Unit> auxList = new ArrayList<Unit>(0);
 				for (Unit u : boredSoldiers) {
-					if(u.isIdle() && u.isCompleted()){
+					if(u.isIdle() && u.isCompleted()) {
 						//Esta lista tiene sentido para en el futuro poder crear subgrupos
 						assaultTroop.get(i).units.add(u);
 						auxList.add(u);
@@ -325,7 +344,6 @@ public class JohnDoe extends GameHandler {
 				t.isInPosition();
 			}
 			if (t.units.size() >= 10 && t.state != 1) {
-				System.out.println("holi "+t.state+", t2: "+t.units.size());
 				attackGroup = t;
 				return true;
 			}
@@ -353,13 +371,13 @@ public class JohnDoe extends GameHandler {
 		ArrayList<int[]> positions = dah_map.getEnemyPositions(); //Enemy positions
 		Position ret = new Position(positions.get(0)[1], positions.get(0)[0], PosType.BUILD); //Default position
 		double infl = dah_map.mapa[positions.get(0)[0]][positions.get(0)[1]]; //Default influence
-		int dist = cc.getPosition().getApproxWDistance(ret); //Initial distance
+		int dist = cc_select.getPosition().getApproxWDistance(ret); //Initial distance
 		
 		for (int[] i : positions) {
 			Position aux = new Position(i[1], i[0], PosType.BUILD);
-			if (dah_map.mapa[i[0]][i[1]] < infl*1.5 && cc.getPosition().getApproxWDistance(aux) < dist) {
+			if (dah_map.mapa[i[0]][i[1]] < -0.4 && dah_map.mapa[i[0]][i[1]] < infl*1.5 && cc_select.getPosition().getApproxWDistance(aux) < dist) {
 				//se actualizan los valores
-				dist = cc.getPosition().getApproxBDistance(aux);
+				dist = cc_select.getPosition().getApproxBDistance(aux);
 				ret = aux;
 				infl = dah_map.mapa[i[0]][i[1]];
 			}
@@ -374,18 +392,18 @@ public class JohnDoe extends GameHandler {
 	public boolean sendDefend(){
 		for (Unit u : boredSoldiers) {
 			if (u.isCompleted()) {
-				if (defendGroup.units.size() < 10) {
+				if (defendGroup.units.size() < 8) {
 					defendGroup.units.add(u);
 				}
-				if (u.isIdle() && defendGroup.destination.getApproxWDistance(u.getPosition()) > 12+militaryUnits.size()/10) {
+				if (u.isIdle() && defendGroup.destination.getApproxWDistance(u.getPosition()) > 12+militaryUnits.size()/5) {
 					u.attack(defendGroup.destination.translated(
 							new Position(new Random().nextInt(4)-3,new Random().nextInt(4)-3,PosType.BUILD)).makeValid(),
-							false);					
+							false);
 				}
 			}
 		}
 		//boredSoldiers.removeAll(defendGroup.units);
-		if (boredSoldiers.size() >= 16) {
+		if (boredSoldiers.size() > 10) {
 			return false;
 		}
 		return true;
@@ -393,10 +411,13 @@ public class JohnDoe extends GameHandler {
 	
 	/**
 	 * If the objective it's in range, send the units to attack.
-	 * @return true if it's in range (< 100), false otherwise
+	 * @return true if sends unit to attack, false otherwise
 	 */
 	public boolean sendAttack(){
-		if (attackGroup.state != 2 && attackGroup.state != 5 || attackGroup.isInPosition()) {
+		if (attackGroup.tooFar()) {
+			return false;
+		}
+		if (attackGroup.state != 2 && attackGroup.state != 5) {
 			attackGroup.state = 1;
 			attackGroup.destination = objective;
 			for(Unit soldadito : attackGroup.units){
@@ -412,7 +433,7 @@ public class JohnDoe extends GameHandler {
 	 * If the objective it isn't in range, send the units to move to a closer point.
 	 * @return true if it isn't in range, false otherwise
 	 */
-	public boolean sendMovement(){
+/*	public boolean sendMovement(){
 		System.out.println("sendMovement"+attackGroup.units.size());
 		if (attackGroup.tooFar()) {
 			return false;
@@ -426,7 +447,7 @@ public class JohnDoe extends GameHandler {
 		}
 		
 		return true;
-	}
+	} */
 	
 	/**
 	 * Send troops to BaseLocations to locate enemies.

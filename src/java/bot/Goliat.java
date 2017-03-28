@@ -29,7 +29,7 @@ import jnibwapi.util.BWColor;
 
 public class Goliat extends Agent implements BWAPIEventListener {
 
-	BehavioralTree CollectTree, BuildTree, TrainTree, AttackTree;
+	BehavioralTree CollectTree, BuildTree, TrainTree, AttackTree, DefenseTree;
 	Unit buildingTree;
 	JohnDoe gh;
 	int frames;
@@ -222,36 +222,31 @@ public class Goliat extends Agent implements BWAPIEventListener {
 													buildRefinery, buildAcademy, buildFactory, buildBay, buildArmory, buildTurret, buildCC);
 		// ---------- FIN BUILD -----------
 		
-		// -------- Secuencias de movimiento ---------
-		/*Sequence adventure = new Sequence("Mover unidades");
-		adventure.addChild(new CheckPositionUnits("Comprobar posici�n de las unidades", gh));
-		adventure.addChild(new ChosseUnits("Formar patrulla", gh));
-		adventure.addChild(new ChooseDestination("Escoger destino", gh));
-		adventure.addChild(new SendUnits("Mandar patrulla", gh));*/
-		// ---------- FIN MOVE -----------
-		
-		// -------- Secuencias de ataque ---------
-		Sequence attack = new Sequence("Mandar de ataque a las tropas");
-		//attack.addChild(new CheckStateUnits("Comprueba estado unidades", gh));
-		attack.addChild(new SelectGroup("Selecciona grupo para atacar/defender", gh));
-		attack.addChild(new ChooseDestination("Escoger destino", gh));
-		Selector<GameHandler> attackSelector = new Selector<>("Atacar/Explorar/Mover");
-		attackSelector.addChild(new SendAttack("Mandar ataque", gh));
-		attackSelector.addChild(new SendExplorer("Mandar a explorar", gh));
-		attackSelector.addChild(new SendMovement("Mandar agruparse", gh));		
-		attack.addChild(attackSelector);
-		// ---------- FIN ATTACK -----------
-		
-		// --------- Secuencia de defensa ---------
-		Sequence defense = new Sequence("Defiende la base");
-		defense.addChild(new SendDefend("Mandar defensa", gh));
-		// --------- FIN DEFENSE -----------
+		// ---------- Check troops state
+		Sequence checkStatesTroops = new Sequence("Comprueba estado de las tropas y realiza acciones");
+		checkStatesTroops.addChild(new CheckStateTroops("Comprueba estado tropas", gh));
 		
 		//---------- Creacion de tropas
 		Sequence createGroup = new Sequence("Crea grupo de ataque");
 		createGroup.addChild(new CheckStateUnits("Comprobar estado de las unidades", gh));
 		createGroup.addChild(new CreateTroop("Formar tropa", gh));
 		// -------- FIN createGroup ---------------
+		
+		// -------- Secuencias de ataque ---------
+		Sequence attack = new Sequence("Mandar de ataque a las tropas");
+		attack.addChild(new SelectGroup("Selecciona grupo para atacar/defender", gh));
+		attack.addChild(new ChooseDestination("Escoger destino", gh));
+		Selector<GameHandler> attackSelector = new Selector<>("Atacar/Explorar/Mover");
+		attackSelector.addChild(new SendAttack("Mandar ataque", gh));
+		attackSelector.addChild(new SendExplorer("Mandar a explorar", gh));
+		//attackSelector.addChild(new SendMovement("Mandar agruparse", gh));		
+		attack.addChild(attackSelector);
+		// ---------- FIN ATTACK -----------
+		
+		// --------- Secuencia de defensa ---------
+		Sequence defenseBase = new Sequence("Defiende la base");
+		defenseBase.addChild(new SendDefend("Mandar defensa", gh));
+		// --------- FIN DEFENSE -----------
 		
 		// ---------- Secuencias investigación --------
 		//Investigar U238 (Academia)
@@ -287,8 +282,10 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		BuildTree.addChild(new Selector<>("MAIN SELECTOR", selectorBuild, selectorResearch));
 		TrainTree  = new BehavioralTree("Arbol entrenamiento");
 		TrainTree.addChild(new Selector<>("MAIN SELECTOR", selectorTrain));
-		AttackTree  = new BehavioralTree("Arbol ataque/defensa");
-		AttackTree.addChild(new Selector<>("MAIN SELECTOR", defense, createGroup, attack));
+		DefenseTree  = new BehavioralTree("Arbol defensa");
+		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", defenseBase));
+		AttackTree  = new BehavioralTree("Arbol ataque");
+		AttackTree.addChild(new Selector<>("MAIN SELECTOR", createGroup, checkStatesTroops, attack));
 		
 		bwapi.sendText("gl hf");
 		
@@ -299,6 +296,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		CollectTree.run();
 		BuildTree.run();
 		TrainTree.run();
+		DefenseTree.run();
 		AttackTree.run();
 		
 		if (frames % 60 == 0){
@@ -440,9 +438,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		/////////////////////////////////////
 		
 //		Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
-//		String workingDirectory = System.getProperty("user.dir");
-//		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
-//		createANDwriteInfluencia(path);
+		String workingDirectory = System.getProperty("user.dir");
+		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
+		createANDwriteInfluencia(path);
 		
 		//Se actualizan la cosa nostra
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
@@ -504,6 +502,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	}
 	
 	public void playerDropped(int playerID) { }
+	
 	public void matchEnd(boolean winner) {
 		if (winner) {
 			bwapi.sendText("GG EZ");
@@ -519,7 +518,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	public void nukeDetect() { }
 	public void unitDiscover(int unitID) { }
 	public void unitEvade(int unitID) { }
-	public void unitShow(int unitID) { }
+	public void unitShow(int unitID) { 
+		//Si la unidad que se acaba de mostrar
+	}
 	public void unitHide(int unitID) { }
 	public void unitRenegade(int unitID) { }
 	public void saveGame(String gameName) {	}
