@@ -1,11 +1,9 @@
 package bot;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 import jnibwapi.Position;
 import jnibwapi.Unit;
-import jnibwapi.Position.PosType;
 
 public class Troop {
 	
@@ -16,7 +14,7 @@ public class Troop {
 	 *	0: Doing nothing.
 	 *	1: Attacking.
 	 *	2: Defending.
-	 *	3: Moving.
+	 *	3: Regroup.
 	 *	4: Waiting.
 	 *	5: Exploring
 	*/
@@ -41,20 +39,15 @@ public class Troop {
 	}
 	
 	/**
-	 * Check if first and last troop of "units" are too far.
-	 * @return true if the first and last troop are too far.
+	 * Check if first and last unit of "units" are too far.
+	 * @return true if the first and last unit are too far.
 	 */
 	public boolean tooFar() {
-		if (state != 4 && 
-				units.get(units.size()-1).getPosition().getApproxWDistance(units.get(0).getPosition()) > 30) {
-			//if too far, group units
-			for(Unit soldadito : units){
-				soldadito.attack(units.get(0).getPosition().translated(
-												new Position(new Random().nextInt(4)-3,new Random().nextInt(4)-3,PosType.BUILD)).makeValid(),
-												false);
+		for (Unit u : units) {
+			if (units.get(0).getPosition().getApproxWDistance(u.getPosition()) > 30) {
+				System.out.println("Distancia: "+units.get(0).getPosition().getApproxWDistance(u.getPosition()));
+				return true;
 			}
-			state = 4;
-			return true;
 		}
 		return false;
 	}

@@ -4,9 +4,9 @@ import org.iaie.btree.state.State;
 import org.iaie.btree.task.leaf.Action;
 import org.iaie.btree.util.GameHandler;
 
-public class SendMovement extends Action {
+public class SendRegroup extends Action {
 
-	public SendMovement(String name, GameHandler gh) {
+	public SendRegroup(String name, GameHandler gh) {
 		super(name, gh);
 		// TODO Auto-generated constructor stub
 	}
@@ -14,7 +14,7 @@ public class SendMovement extends Action {
 	@Override
 	public State execute() {
 		try{
-			if (((JohnDoe)this.handler).sendMovement()) {
+			if (((JohnDoe)this.handler).sendRegroup()) {
 				return State.SUCCESS;
 			} else {
 				return State.FAILURE;
