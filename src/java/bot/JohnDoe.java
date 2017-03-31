@@ -286,13 +286,41 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean checkStateTroops(){
 		for (Troop t : assaultTroop) {
-			if ((t.state == 1 || t.state == 4) && t.units.size() <= 5) {
-				t.state = 3;
-				for (Unit u : t.units) {
-					u.move(defendGroup.destination, false);
-				}
-				return true;
+			for (Unit u : t.units) {
+				if (u.isUnderAttack()) {
+					Unit e = null;
+					for (Unit enemy : this.connector.getEnemyUnits()) {
+						if (enemy.getTarget().equals(u)) {
+							e = enemy;
+						}
+					}
+					for (Unit u2 : t.units) {
+						u2.attack(e.getPosition(), false);
+					}
+				}	
 			}
+			//If a troop is regrouping and begins to attack, change its status.
+			if (t.status == 3) {
+				for (Unit u : t.units) {
+					if (u.isUnderAttack()){
+						System.out.println("CAMBIO!");
+						for (Unit unit : t.units) {
+							unit.attack(u.getPosition(), false);
+						}
+						t.status = 1;
+//						return true;
+					}
+				}
+			}
+			//If the attackGroup falls, retreat.
+			if ((t.status != 2) && t.units.size() <= 5) {
+				for (Unit u : t.units) {
+					u.move(defendGroup.destination.makeValid(), false);
+				}
+				t.status = 2;
+//				return true;
+			}
+			
 		}
 		return false;
 	}
@@ -308,7 +336,7 @@ public class JohnDoe extends GameHandler {
 		for (; i<assaultTroop.size(); i++) {
 			if (assaultTroop.get(i).units.size() < 10) {
 				if (assaultTroop.get(i).units.size() == 0) {
-					assaultTroop.get(i).state = 0;
+					assaultTroop.get(i).status = 0;
 					assaultTroop.get(i).destination = null;
 				}
 				ArrayList<Unit> auxList = new ArrayList<Unit>(0);
@@ -340,9 +368,9 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean selectGroup() {
 		for (Troop t : assaultTroop){
-//			if (t.state == 1){
-//				t.isInPosition();
-//			}
+			if (t.status == 3){
+				t.isInPosition();
+			}
 			if (t.units.size() >= 10) {
 				attackGroup = t;
 				return true;
@@ -417,14 +445,16 @@ public class JohnDoe extends GameHandler {
 		if (attackGroup.tooFar()) {
 			return false;
 		}
-		if (attackGroup.state != 2 && attackGroup.state != 5) {
-			attackGroup.state = 1;
+		if (attackGroup.status != 2 && attackGroup.status != 5) {
+			attackGroup.status = 1;
 			attackGroup.destination = objective;
-			for(Unit soldadito : attackGroup.units){
-				//if(soldadito.isIdle()){
-				soldadito.attack(objective, false);
-				//}
-			}			
+			for (Unit u : attackGroup.units) {
+				u.attack(objective, false);
+			}
+//			for (int i = 0; i<=(int)attackGroup.units.size()/2; i++) {
+//				attackGroup.units.get(i).attack(objective.makeValid(), false);
+//				attackGroup.units.get(attackGroup.units.size()-i-1).attack(objective.makeValid(), false);
+//			}			
 		}
 		return true;
 	}
@@ -435,17 +465,19 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean sendRegroup(){
 		System.out.println("sendRegroup");
-		if (attackGroup.state == 3) {
+		if (attackGroup.status == 3) {
 			System.out.println("Already regrouping");
 			return false;
 		}
-		attackGroup.state = 3;
+		attackGroup.status = 3;
 		//if too far, group units
-		for(Unit u : attackGroup.units){
-			u.attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition().translated(
-											new Position(new Random().nextInt(3)-2,new Random().nextInt(3)-2,PosType.BUILD)).makeValid(),
-											false);
+		for (Unit u : attackGroup.units) {
+			u.attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition(), false);
 		}
+//		for (int i = 0; i<=(int)attackGroup.units.size()/2; i++) {
+//			attackGroup.units.get(i).attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition().makeValid(), false);
+//			attackGroup.units.get(attackGroup.units.size()-i-1).attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition().makeValid(), false);
+//		}
 		
 		return true;
 	}

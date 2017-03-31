@@ -125,10 +125,10 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		TrainFirebat.addChild(new ChooseBuilding("Check training firebat", gh, UnitTypes.Terran_Firebat));
 		TrainFirebat.addChild(new TrainUnit("Train Firebat", gh, UnitTypes.Terran_Firebat, UnitTypes.Terran_Barracks));
 		//Train siege tanks
-		Sequence TrainSiegeTank = new Sequence("Train Siege Tank");
+		/*Sequence TrainSiegeTank = new Sequence("Train Siege Tank");
 		TrainSiegeTank.addChild(new CheckResources("Check resources siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode));
 		TrainSiegeTank.addChild(new ChooseBuilding("Check training siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode));
-		TrainSiegeTank.addChild(new TrainUnit("Train siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode, UnitTypes.Terran_Siege_Tank_Tank_Mode));
+		TrainSiegeTank.addChild(new TrainUnit("Train siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode, UnitTypes.Terran_Siege_Tank_Tank_Mode));*/
 		//Train goliats
 		Sequence TrainGoliat = new Sequence("Train Goliat");
 		TrainGoliat.addChild(new CheckResources("Check resources goliat", gh, UnitTypes.Terran_Goliath));
@@ -189,7 +189,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		buildFactory.addChild(new Build("Build factory", gh, UnitTypes.Terran_Factory));
 		//Build armory
 		Sequence buildArmory = new Sequence("Build armory");
-		buildArmory.addChild(new CheckResources("Check resourcesarmory", gh, UnitTypes.Terran_Armory));
+		buildArmory.addChild(new CheckResources("Check resources armory", gh, UnitTypes.Terran_Armory));
 		buildArmory.addChild(new FindPosition("Find position", gh, UnitTypes.Terran_Armory));
 		buildArmory.addChild(new FreeBuilder("Find builder", gh));
 		buildArmory.addChild(new MoveTo("Move builder", gh));
@@ -228,32 +228,32 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		// ---------- FIN BUILD -----------
 		
 		// ---------- Check troops state
-		Sequence checkStatesTroops = new Sequence("Comprueba estado de las tropas y realiza acciones");
-		checkStatesTroops.addChild(new CheckStateTroops("Comprueba estado tropas", gh));
+		Sequence checkStatesTroops = new Sequence("Check troops status & change its state");
+		checkStatesTroops.addChild(new CheckStateTroops("Check troops status", gh));
 		
-		//---------- Creacion de tropas
-		Sequence createGroup = new Sequence("Crea grupo de ataque");
-		createGroup.addChild(new CheckStateUnits("Comprobar estado de las unidades", gh));
-		createGroup.addChild(new CreateTroop("Formar tropa", gh));
+		//---------- Troops creation
+		Sequence createGroup = new Sequence("Make attack group");
+		createGroup.addChild(new CheckStateUnits("Check units status", gh));
+		createGroup.addChild(new CreateTroop("Make troop", gh));
 		// -------- FIN createGroup ---------------
 		
-		// -------- Secuencias de ataque ---------
-		Sequence attack = new Sequence("Mandar de ataque a las tropas");
-		attack.addChild(new SelectGroup("Selecciona grupo para atacar/defender", gh));
-		attack.addChild(new ChooseDestination("Escoger destino", gh));
-		Selector<GameHandler> attackSelector = new Selector<>("Atacar/Explorar/Mover");
-		attackSelector.addChild(new SendAttack("Mandar ataque", gh));
-		attackSelector.addChild(new SendRegroup("Mandar agruparse", gh));		
-		attackSelector.addChild(new SendExplorer("Mandar a explorar", gh));
+		// -------- Attack sequence ---------
+		Sequence attack = new Sequence("Send to attack the troops");
+		attack.addChild(new SelectGroup("Select one troop to attack", gh));
+		attack.addChild(new ChooseDestination("Choose destination", gh));
+		Selector<GameHandler> attackSelector = new Selector<>("Attack/Explore");
+		attackSelector.addChild(new SendAttack("Send to attack", gh));
+		attackSelector.addChild(new SendRegroup("Regroup", gh));		
+		attackSelector.addChild(new SendExplorer("Send to explore", gh));
 		attack.addChild(attackSelector);
 		// ---------- FIN ATTACK -----------
 		
-		// --------- Secuencia de defensa ---------
-		Sequence defenseBase = new Sequence("Defiende la base");
-		defenseBase.addChild(new SendDefend("Mandar defensa", gh));
+		// --------- Defense secuence ---------
+		Sequence defenseBase = new Sequence("Defend base");
+		defenseBase.addChild(new SendDefend("Send to defend", gh));
 		// --------- FIN DEFENSE -----------
 		
-		// ---------- Secuencias investigación --------
+		// ---------- Research sequence --------
 		//Investigar U238 (Academia)
 		Sequence u238 = new Sequence("Investigar U238");
 		u238.addChild(new CheckResearch("Comprobar si se puede investigar", gh, UpgradeTypes.U_238_Shells));
@@ -288,9 +288,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		TrainTree  = new BehavioralTree("Arbol entrenamiento");
 		TrainTree.addChild(new Selector<>("MAIN SELECTOR", selectorTrain));
 		DefenseTree  = new BehavioralTree("Arbol defensa");
-		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", defenseBase));
+		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", checkStatesTroops, createGroup, defenseBase));
 		AttackTree  = new BehavioralTree("Arbol ataque");
-		AttackTree.addChild(new Selector<>("MAIN SELECTOR", createGroup, checkStatesTroops, attack));
+		AttackTree.addChild(new Selector<>("MAIN SELECTOR", attack));
 		
 		bwapi.sendText("gl hf");
 		
@@ -304,25 +304,25 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		DefenseTree.run();
 		AttackTree.run();
 		
-		if (frames % 60 == 0){
-			if (gh.current_worker != null && gh.current_worker.isIdle()) { gh.current_worker = null; }
-			if (gh.workers.size() > 0) {
-				//System.out.println("--------------------");
-				ArrayList <Unit> vces_aux = new ArrayList<Unit>(3);
-				for(Unit vce : gh.workers) {
-					if ((vce.isConstructing() || vce.isRepairing()) || vce.isMoving()) {
-						vces_aux.add(vce);
-					}
-				}
-				gh.workers = vces_aux;
-				//System.out.println(gh.workers.size());
-				//Comprobación de los VCEs una vez se limpia la lista
+//		if (frames % 40 == 0){
+//			if (gh.current_worker != null && gh.current_worker.isIdle()) { gh.current_worker = null; }
+//			if (gh.workers.size() > 0) {
+//				//System.out.println("--------------------");
+//				ArrayList <Unit> vces_aux = new ArrayList<Unit>(3);
 //				for(Unit vce : gh.workers) {
-//					System.out.println(vce.getOrder());
+//					if ((vce.isConstructing() || vce.isRepairing()) || vce.isMoving()) {
+//						vces_aux.add(vce);
+//					}
 //				}
-			}
-		}
-		if(frames < 300){ // Cada 300 frames se recalculan las influencias.
+//				gh.workers = vces_aux;
+//				//System.out.println(gh.workers.size());
+//				//Comprobación de los VCEs una vez se limpia la lista
+////				for(Unit vce : gh.workers) {
+////					System.out.println(vce.getOrder());
+////				}
+//			}
+//		}
+		if(frames < 150){ // Cada 200 frames se recalculan las influencias.
 			frames++;
 		}else{
 			frames = 0;
@@ -332,7 +332,6 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	}
 
 
-	@Override
 	public void unitCreate(int unitID) {
 		//Cuando se comienza a construir un edificio se pone como pendiente.
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
@@ -521,9 +520,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	public void nukeDetect() { }
 	public void unitDiscover(int unitID) { }
 	public void unitEvade(int unitID) { }
-	public void unitShow(int unitID) { 
-		//Si la unidad que se acaba de mostrar
-	}
+	public void unitShow(int unitID) { }
 	public void unitHide(int unitID) { }
 	public void unitRenegade(int unitID) { }
 	public void saveGame(String gameName) {	}

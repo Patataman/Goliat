@@ -9,7 +9,8 @@ public class Troop {
 	
 	ArrayList<Unit> units;
 	Position destination;
-	byte state;
+	byte distance;
+	byte status;
 	/*State's list:
 	 *	0: Doing nothing.
 	 *	1: Attacking.
@@ -21,8 +22,9 @@ public class Troop {
 
 	public Troop (){
 		units = new ArrayList<Unit>(0);
-		state = 0;
+		status = 0;
 		destination = null;
+		distance = 30;
 	}
 	
 	/**
@@ -31,8 +33,8 @@ public class Troop {
 	 */
 	public boolean isInPosition() {
 		if (destination == null) return true;
-		if (units.get(units.size()-1).getPosition().getApproxWDistance(destination) < 20) {
-			state = 4;
+		if (units.get((int)units.size()/2).getPosition().getApproxWDistance(destination) < distance) {
+			status = 4;
 			return true;
 		}
 		return false;
@@ -44,11 +46,13 @@ public class Troop {
 	 */
 	public boolean tooFar() {
 		for (Unit u : units) {
-			if (units.get(0).getPosition().getApproxWDistance(u.getPosition()) > 30) {
+			if (units.get(0).getPosition().getApproxWDistance(u.getPosition()) > distance) {
 				System.out.println("Distancia: "+units.get(0).getPosition().getApproxWDistance(u.getPosition()));
+				distance = 15;
 				return true;
 			}
 		}
+		distance = 30;
 		return false;
 	}
 	
