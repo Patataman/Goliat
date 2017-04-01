@@ -286,18 +286,21 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean checkStateTroops(){
 		for (Troop t : assaultTroop) {
-			for (Unit u : t.units) {
-				if (u.isUnderAttack()) {
-					Unit e = null;
-					for (Unit enemy : this.connector.getEnemyUnits()) {
-						if (enemy.getTarget().equals(u)) {
-							e = enemy;
+			if (t.enemy == null) {
+				for (Unit u : t.units) {
+					if (u.isUnderAttack()) {
+						for (Unit enemy : this.connector.getEnemyUnits()) {
+							if (enemy.getTarget() != null && enemy.getTarget().equals(u)) {
+								t.enemy = enemy;
+								for (Unit u2 : t.units) {
+									u2.attack(t.enemy, false);
+								}
+								break;
+							}
 						}
-					}
-					for (Unit u2 : t.units) {
-						u2.attack(e.getPosition(), false);
-					}
-				}	
+						break;
+					}	
+				}				
 			}
 			//If a troop is regrouping and begins to attack, change its status.
 			if (t.status == 3) {
@@ -317,6 +320,7 @@ public class JohnDoe extends GameHandler {
 				for (Unit u : t.units) {
 					u.move(defendGroup.destination.makeValid(), false);
 				}
+				t.enemy = null;
 				t.status = 2;
 //				return true;
 			}
@@ -447,6 +451,7 @@ public class JohnDoe extends GameHandler {
 		}
 		if (attackGroup.status != 2 && attackGroup.status != 5) {
 			attackGroup.status = 1;
+			attackGroup.enemy = null;
 			attackGroup.destination = objective;
 			for (Unit u : attackGroup.units) {
 				u.attack(objective, false);
@@ -470,6 +475,7 @@ public class JohnDoe extends GameHandler {
 			return false;
 		}
 		attackGroup.status = 3;
+		attackGroup.enemy = null;
 		//if too far, group units
 		for (Unit u : attackGroup.units) {
 			u.attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition(), false);

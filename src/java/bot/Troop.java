@@ -9,6 +9,7 @@ public class Troop {
 	
 	ArrayList<Unit> units;
 	Position destination;
+	Unit enemy;
 	byte distance;
 	byte status;
 	/*State's list:
@@ -24,6 +25,7 @@ public class Troop {
 		units = new ArrayList<Unit>(0);
 		status = 0;
 		destination = null;
+		enemy = null;
 		distance = 30;
 	}
 	
