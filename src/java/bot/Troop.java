@@ -29,12 +29,18 @@ public class Troop {
 	}
 	
 	/**
-	 * Check if troops are in destination.
+	 * Check if troops are in destination (or close to).
 	 * @return true if they are in destination, false otherwise
 	 */
 	public boolean isInPosition() {
 		if (destination == null) return true;
-		if (units.get((int)units.size()/2).getPosition().getApproxWDistance(destination) < 50) {
+		int dist = 0;
+		for (Unit u : units) {
+			dist += u.getPosition().getApproxWDistance(destination);
+		}
+		dist /= units.size();
+		if (dist < 50) {
+			System.out.println("ola k ase");
 			status = 5;
 			return true;
 		}

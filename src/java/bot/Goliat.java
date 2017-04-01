@@ -290,7 +290,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		TrainTree  = new BehavioralTree("Arbol entrenamiento");
 		TrainTree.addChild(new Selector<>("MAIN SELECTOR", selectorTrain));
 		DefenseTree  = new BehavioralTree("Arbol defensa");
-		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", createGroup, defenseBase));
+		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", defenseBase, createGroup));
 		AttackTree  = new BehavioralTree("Arbol ataque");
 		AttackTree.addChild(new Selector<>("MAIN SELECTOR", attack));
 		

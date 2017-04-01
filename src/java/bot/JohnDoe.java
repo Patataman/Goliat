@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Predicate;
 
 import org.iaie.btree.util.GameHandler;
 
@@ -311,7 +312,7 @@ public class JohnDoe extends GameHandler {
 	 * @return true if there's more than 10, false otherwise
 	 */
 	public boolean checkStateUnits(){
-		if (boredSoldiers.size() > 10) {
+		if (boredSoldiers.size() > 1) {
 			return true;
 		}
 		return false;
@@ -323,22 +324,29 @@ public class JohnDoe extends GameHandler {
 	 * @return true always.
 	 */
 	public boolean checkStateTroops(){
+		ArrayList<Troop> remove = new ArrayList<Troop>(0);
 		for (Troop t : assaultTroop) {
-			if (t.units.size() == 0) {
-				t.status = 0;
-				t.destination = null;
+//			if (t.status == 4) {
+//				if (t.isInPosition() && t.units.size() >= 10) {
+//					attackGroup = t;
+//					return true;
+//				}
+//			}
+			//If all units are dead, resets status and destination
+			if (t.units.size() == 0 && t.destination != null) {
+				remove.add(t);
 			}
 			//If the attackGroup fell, retreat.
-			if ((t.status != 0 && t.status != 4) && t.units.size() <= 5) {
+			if ((t.status != 0) && t.units.size() <= 5 && t.units.size() > 0) {
 				t.destination = defendGroup.destination;
 				for (Unit u : t.units) {
 					u.move(t.destination.makeValid(), false);
 				}
-				t.status = 4;
+//				t.status = 4;
 //				return true;
 			}
-			
 		}
+		assaultTroop.removeAll(remove);
 		return true;
 	}
 	
@@ -348,17 +356,16 @@ public class JohnDoe extends GameHandler {
 	 * @return True if it's created at least 1 group.
 	 */
 	public boolean createTroop() {
-		//Se seleccionan tropas del CP mientras queden al menos 5-10 en el CP y el numero de unidades en el grupo sea < 10.
 		int i = 0;
 		for (; i<assaultTroop.size(); i++) {
-			if (assaultTroop.get(i).units.size() < 10) {
+			if (assaultTroop.get(i).units.size() < 10 && assaultTroop.get(i).status != 1 && assaultTroop.get(i).status != 3) {
 //				if (assaultTroop.get(i).units.size() == 0) {
 //					assaultTroop.get(i).status = 0;
 //					assaultTroop.get(i).destination = null;
 //				}
 				ArrayList<Unit> auxList = new ArrayList<Unit>(0);
 				for (Unit u : boredSoldiers) {
-					if(u.isCompleted()) {
+					if(u.isIdle() && u.isCompleted()) {
 						//Esta lista tiene sentido para en el futuro poder crear subgrupos
 						assaultTroop.get(i).units.add(u);
 						auxList.add(u);
@@ -376,7 +383,7 @@ public class JohnDoe extends GameHandler {
 			assaultTroop.add(new Troop());
 		}
 		//Si no consigue crear ningún grupo
-		return false;
+		return true;
 	}
 	
 	/**
@@ -384,18 +391,32 @@ public class JohnDoe extends GameHandler {
 	 * @return True if can,  False otherwise.
 	 */
 	public boolean selectGroup() {
-		for (Troop t : assaultTroop){
-			//Defending group are excluded.
-			if (t.status != 2){
-				if (t.isInPosition() && t.units.size() >= 10) {
-					attackGroup = t;
-					return true;
-				}
+		Predicate<Troop> predicado = new Predicate<Troop>() {
+			public boolean test(Troop t) {
+				return t.status == 0;
+				
 			}
-//			if (t.units.size() >= 10) {
-//				attackGroup = t;
-//				return true;
-//			}
+		};
+		System.out.println("-------------------");
+		for (Troop t : assaultTroop){
+			System.out.println("Estado:"+t.status+", Tropas: "+t.units.size());
+		}
+		System.out.println("+++++++++++++++++++");
+		//Troops with status == 0
+		for (Object t : assaultTroop.stream().filter(predicado).toArray()){
+			//Defending group are excluded.
+			if (((Troop)t).units.size() >= 10) {
+				attackGroup = ((Troop)t);
+				return true;
+			}
+		}
+		//Else
+		for (Object t : assaultTroop){
+			//Defending group are excluded.
+			if (((Troop)t).units.size() >= 10 && (((Troop)t).status != 4 && ((Troop)t).status != 2 )) {
+				attackGroup = ((Troop)t);
+				return true;
+			}
 		}
 		return false;
 	}
@@ -476,7 +497,7 @@ public class JohnDoe extends GameHandler {
 			attackGroup.status = 1;
 			attackGroup.destination = objective;
 			for (Unit u : attackGroup.units) {
-				if (!u.isAttacking()) {
+				if (!u.isAttacking() && !u.isMoving()) {
 					u.attack(objective, true);
 				}
 			}
