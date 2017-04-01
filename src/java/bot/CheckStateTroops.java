@@ -10,7 +10,6 @@ public class CheckStateTroops extends Action {
 		super(name, gh);
 	}
 
-	@Override
 	public State execute() {
 		try{
 			if (((JohnDoe)this.handler).checkStateTroops()) {

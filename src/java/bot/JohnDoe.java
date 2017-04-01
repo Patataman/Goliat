@@ -43,14 +43,12 @@ public class JohnDoe extends GameHandler {
 	
 	List<ChokePoint>[][] chokePoints;
 	
-	//Variables para tener controlado el cc inicial
-	//y el cc del vce seleccionado.
+	//Variables for controlling initial cc and expansions.
 	Unit cc, cc_select;
 	
-	//Posición donde se va a construir el último edificio.
+	//Position where the last building is going to be built.
 	Position posBuild;
-	//Posición a la que mandar una patrulla.
-	//Position destination;
+	//Position to attack.
 	Position objective;
 	
 	int[][] map;
@@ -84,19 +82,25 @@ public class JohnDoe extends GameHandler {
 		dah_map 				= new InfluenceMap(bwapi.getMap().getSize().getBY(), bwapi.getMap().getSize().getBX());
 	}
 	
-	//Añaden las listas correspondientes al nuevo CC
+	/**
+	 * Adds the corresponding lists to the new CC
+	 * @param cc_pos
+	 */
 	public void addCC(int cc_pos) {
 		VCEs.add(new ArrayList<Unit>());
 		workersMineral.add(new ArrayList<Integer>());
 		workersVespin.add(new ArrayList<Integer>());
 	}
 	
-	//Obtiene un trabajador que se encuentra libre
-	//Un trabajador está libre cuando no recolecta mineral/vespeno o no hace nada con su vida
+	/**
+	 * Get a SCV which is free.
+	 * A SCV is free when he isn't gathering mineral/vespin or idle
+	 * @return
+	 */
 	public boolean getWorker() {
 		for (ArrayList<Unit> vces_cc : VCEs) {
 			for (Unit vce : vces_cc) {
-				// Se comprueba si la unidades es de tipo VCE y no esté ocupada
+				//Checks if the unit type equals SCV and is idle.
 				if ((!workersMineral.get(VCEs.indexOf(vces_cc)).contains(vce.getID()) &&
 					 !workersVespin.get(VCEs.indexOf(vces_cc)).contains(vce.getID())) &&
 					 vce.isIdle() && vce.isCompleted() && CCs.size() > 0) {
@@ -110,30 +114,31 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
-	//Obtiene un trabajador para construir. Es diferente a obtener un trabajador, porque aqui cogemos un VCE
-	//que esté recolectando minerales. Se construye siempre con un VCE del cc inicial.
+	/**
+	 * Gets a SCV to build. Only gets a SCV who is gathering minerals or idle. Always chooses a SCV from the original CC.
+	 * @return
+	 */
 	public boolean getMasterBuilder() {
 		if (workers.size() < 3){
-			//Si todos los actuales están ocupados coge otro VCE nuevo
+			//If there's a free SCV from the list "workers", return true
 			for (Unit vce : workers) {
 				if (!vce.isConstructing()){
 					return true;
 				}
 			}
-			//Se coge 1 VCE de la lista de VCEs del CC inicial (0)
+			//Chooses 1 SCV from the "workersMineral" list (from the original CC).
 			for (int vce : this.workersMineral.get(0)) {
-				//Si no está en la lista...
+				//If it isn't in the "workers" list...
 				if (!workers.contains(this.connector.getUnit(vce))) {
-					//Se pone como trabajador
+					//Adds the SCV to the "workers" list
 					workers.add(this.connector.getUnit(vce));
-					//Se elimina de la lista
-//					workersMineral.get(0).remove((Integer) vce);
 					return true;					
 				}
 			}
-			//No se ha podido seleccionar ninguno
+			//There isn't any free SCV
 			return false;
 		}
+		//If "workers" is full, check if there's any free SCV
 		else if (workers.size() <= 3){
 			for (Unit vce : workers) {
 				if (!vce.isConstructing()){
@@ -142,13 +147,16 @@ public class JohnDoe extends GameHandler {
 			}
 			return false;
 		}
-		//Si se llega a else es que ya hay 3 trabajadores
+		//"workers" is full and the 3 SCV are busy.
 		else {return false;}
 	}
 	
-	//Se manda a recolectar minerales al trabajador seleccionado, 
-	// ya que antes de llamar a esta función se llama a getWorker
-	public boolean aCurrarMina(){
+	/**
+	 * Se manda a recolectar minerales al trabajador seleccionado,
+	 * ya que antes de llamar a esta función se llama a getWorker 
+	 * @return
+	 */
+	public boolean gatherMinerals(){
 		//Se verifica que no se pase del número de trabajadores y que el VCE está
 		//completado, ya que a veces se selecciona sin haber completado el entrenamiento.
 		if ((workersMineral.get(CCs.indexOf(cc_select.getID())).size() < max_vce-2) && current_worker.isCompleted()){
@@ -169,8 +177,11 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
-	//Igual que los minerales
-	public boolean aCurrarGas(){
+	/**
+	 * Same as GatherMinerals
+	 * @return
+	 */
+	public boolean gatherGas(){
 		if (workersVespin.get(CCs.indexOf(cc_select.getID())).size() < 2 && current_worker.isCompleted()) {
 			for (Unit refinery : this.connector.getMyUnits()) {
 				if (refinery.getType() == UnitTypes.Terran_Refinery && refinery.isCompleted()){
@@ -184,7 +195,12 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
-	//Se comprueba si se posee más mineral y gas que el pasado por par�metro
+	/**
+	 * Checks if player has more or equals mineral and gas than the passed in the args.
+	 * @param mineral
+	 * @param gas
+	 * @return
+	 */
 	public boolean checkResources(int mineral, int gas){
 		if (this.connector.getSelf().getMinerals() >= mineral &&
 				this.connector.getSelf().getGas() >= gas){
@@ -193,7 +209,11 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
-	//Se comprueba si se puede construir una unidad
+	/**
+	 * Checks if can train/build an unit
+	 * @param unidad
+	 * @return
+	 */
 	public boolean canTrain(UnitType unidad) {
 		if (this.connector.canMake(unidad)) {
 			return true;
@@ -202,7 +222,12 @@ public class JohnDoe extends GameHandler {
 
 	}
 	
-	//Entrena una unidad 
+	/**
+	 * Train an unit. 
+	 * @param edificio
+	 * @param unidad
+	 * @return
+	 */
 	public boolean trainUnit(UnitType edificio, UnitType unidad){
 		for (Unit u : finishedBuildings){
 			if (u.getType() == edificio && !u.isTraining()){
@@ -233,7 +258,11 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
-	//Construye un edificio
+	/**
+	 * Build a building.
+	 * @param edificio
+	 * @return
+	 */
 	public boolean buildUnit(UnitType edificio) {
 		if (remainingBuildings.contains(edificio)) {
 			return false;
@@ -246,7 +275,11 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
-	//Comprueba si se puede investigar la investigación (valga la redundancia)
+	/**
+	 * Checks if can research a new tech.
+	 * @param res
+	 * @return
+	 */
 	public boolean checkResearch(UpgradeType res) {
 		if (this.researching.contains(res)) {
 			return false;
@@ -257,7 +290,12 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
-	//Realiza la investigación
+	/**
+	 * Do a research
+	 * @param building
+	 * @param res
+	 * @return
+	 */
 	public boolean doResearch(UnitType building, UpgradeType res) {
 		for (Unit u : finishedBuildings) {
 			if (u.getType() == building) {
@@ -282,7 +320,7 @@ public class JohnDoe extends GameHandler {
 	/**
 	 * Check troops' status.
 	 * Used in Attack tree
-	 * @return true if some troop to home, false otherwise
+	 * @return true always.
 	 */
 	public boolean checkStateTroops(){
 		for (Troop t : assaultTroop) {
@@ -342,12 +380,12 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	/**
-	 * Selecciona un grupo que no haga nada.
-	 * @return True si existe alguno. False en otros casos.
+	 * Selects a group which don't do anything.
+	 * @return True if can,  False otherwise.
 	 */
 	public boolean selectGroup() {
 		for (Troop t : assaultTroop){
-			//Se excluyen los que defienden.
+			//Defending group are excluded.
 			if (t.status != 2){
 				if (t.isInPosition() && t.units.size() >= 10) {
 					attackGroup = t;
@@ -578,6 +616,10 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	public boolean findPositionRefinery() {
 		//Caso especial de que sea una refinería
 		for (Unit vespeno : this.connector.getNeutralUnits()){
@@ -594,6 +636,10 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	public boolean findPositionCC() {
 		//Nos quedamos con la expansión más cercana a la base
 		int dist = 9999;
@@ -622,6 +668,11 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 	
+	/**
+	 * 
+	 * @param edificio
+	 * @return
+	 */
 	public boolean findPositionAwayCP(UnitType edificio) {
 		//Se construyen alejados, Barracas, factory y starports estelares
 		//Conocer numeros de CP.
@@ -673,6 +724,9 @@ public class JohnDoe extends GameHandler {
 		
 	}
 	
+	/**
+	 * 
+	 */
 	public void updateInfluences(){
 		this.dah_map.updateMap(this.connector);
 	}
@@ -700,6 +754,10 @@ public class JohnDoe extends GameHandler {
 		return true;
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	public boolean repair() {
 		for (Unit vce : workers){
 			if (vce.isIdle()) {
@@ -902,8 +960,8 @@ public class JohnDoe extends GameHandler {
     
     /**
      * Se da por supuesto que las posiciones indicadas son posiciones correctas.
-     * La posici�n origen ha sido obtenida mediante el m�todo findPlace y la posici�n
-     * destino ha sido calculada con el tama�o del edificio + la posici�n origen
+     * La posición origen ha sido obtenida mediante el m�todo findPlace y la posición
+     * destino ha sido calculada con el tama�o del edificio + la posición origen
      */
     public void updateMap(Position origen, Position destino) {
     	if (destino.getBX() > map[0].length) {

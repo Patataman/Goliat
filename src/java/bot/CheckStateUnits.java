@@ -10,7 +10,6 @@ public class CheckStateUnits extends Conditional {
 		super(name, gh);
 	}
 
-	@Override
 	public State execute() {
 		try{
 			if (((JohnDoe)this.handler).checkStateUnits()) {
