@@ -286,47 +286,22 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean checkStateTroops(){
 		for (Troop t : assaultTroop) {
-			if (t.enemy == null) {
-				for (Unit u : t.units) {
-					if (u.isUnderAttack()) {
-						for (Unit enemy : this.connector.getEnemyUnits()) {
-							if (enemy.getTarget() != null && enemy.getTarget().equals(u)) {
-								t.enemy = enemy;
-								for (Unit u2 : t.units) {
-									u2.attack(t.enemy, false);
-								}
-								break;
-							}
-						}
-						break;
-					}	
-				}				
+			if (t.units.size() == 0) {
+				t.status = 0;
+				t.destination = null;
 			}
-			//If a troop is regrouping and begins to attack, change its status.
-			if (t.status == 3) {
+			//If the attackGroup fell, retreat.
+			if ((t.status != 0 && t.status != 4) && t.units.size() <= 5) {
+				t.destination = defendGroup.destination;
 				for (Unit u : t.units) {
-					if (u.isUnderAttack()){
-						System.out.println("CAMBIO!");
-						for (Unit unit : t.units) {
-							unit.attack(u.getPosition(), false);
-						}
-						t.status = 1;
-//						return true;
-					}
+					u.move(t.destination.makeValid(), false);
 				}
-			}
-			//If the attackGroup falls, retreat.
-			if ((t.status != 2) && t.units.size() <= 5) {
-				for (Unit u : t.units) {
-					u.move(defendGroup.destination.makeValid(), false);
-				}
-				t.enemy = null;
-				t.status = 2;
+				t.status = 4;
 //				return true;
 			}
 			
 		}
-		return false;
+		return true;
 	}
 	
 	/**
@@ -339,13 +314,13 @@ public class JohnDoe extends GameHandler {
 		int i = 0;
 		for (; i<assaultTroop.size(); i++) {
 			if (assaultTroop.get(i).units.size() < 10) {
-				if (assaultTroop.get(i).units.size() == 0) {
-					assaultTroop.get(i).status = 0;
-					assaultTroop.get(i).destination = null;
-				}
+//				if (assaultTroop.get(i).units.size() == 0) {
+//					assaultTroop.get(i).status = 0;
+//					assaultTroop.get(i).destination = null;
+//				}
 				ArrayList<Unit> auxList = new ArrayList<Unit>(0);
 				for (Unit u : boredSoldiers) {
-					if(u.isIdle() && u.isCompleted()) {
+					if(u.isCompleted()) {
 						//Esta lista tiene sentido para en el futuro poder crear subgrupos
 						assaultTroop.get(i).units.add(u);
 						auxList.add(u);
@@ -372,13 +347,17 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean selectGroup() {
 		for (Troop t : assaultTroop){
-			if (t.status == 3){
-				t.isInPosition();
+			//Se excluyen los que defienden.
+			if (t.status != 2){
+				if (t.isInPosition() && t.units.size() >= 10) {
+					attackGroup = t;
+					return true;
+				}
 			}
-			if (t.units.size() >= 10) {
-				attackGroup = t;
-				return true;
-			}
+//			if (t.units.size() >= 10) {
+//				attackGroup = t;
+//				return true;
+//			}
 		}
 		return false;
 	}
@@ -427,10 +406,16 @@ public class JohnDoe extends GameHandler {
 				if (defendGroup.units.size() < 8) {
 					defendGroup.units.add(u);
 				}
-				if (u.isIdle() && defendGroup.destination.getApproxWDistance(u.getPosition()) > 12+militaryUnits.size()/5) {
-					u.attack(defendGroup.destination.translated(
-							new Position(new Random().nextInt(4)-3,new Random().nextInt(4)-3,PosType.BUILD)).makeValid(),
-							false);
+				if (u.getPosition().getApproxWDistance(defendGroup.destination) > 50) {
+					if (u.isIdle()) {
+						u.attack(defendGroup.destination, false);
+					} else {
+						u.attack(defendGroup.destination.makeValid(), false);					
+					}
+//				defendGroup.destination.getApproxWDistance(u.getPosition()) > 12+militaryUnits.size()/5) {
+//					u.attack(defendGroup.destination.translated(
+//							new Position(new Random().nextInt(4)-3,new Random().nextInt(4)-3,PosType.BUILD)).makeValid(),
+//							false);
 				}
 			}
 		}
@@ -449,12 +434,13 @@ public class JohnDoe extends GameHandler {
 		if (attackGroup.tooFar()) {
 			return false;
 		}
-		if (attackGroup.status != 2 && attackGroup.status != 5) {
+		if (attackGroup.status != 2 && attackGroup.status != 4) {
 			attackGroup.status = 1;
-			attackGroup.enemy = null;
 			attackGroup.destination = objective;
 			for (Unit u : attackGroup.units) {
-				u.attack(objective, false);
+				if (!u.isAttacking()) {
+					u.attack(objective, true);
+				}
 			}
 //			for (int i = 0; i<=(int)attackGroup.units.size()/2; i++) {
 //				attackGroup.units.get(i).attack(objective.makeValid(), false);
@@ -469,16 +455,29 @@ public class JohnDoe extends GameHandler {
 	 * @return true if it isn't in range, false otherwise
 	 */
 	public boolean sendRegroup(){
-		System.out.println("sendRegroup");
+//		System.out.println("sendRegroup");
 		if (attackGroup.status == 3) {
-			System.out.println("Already regrouping");
+//			System.out.println("Already regrouping");
 			return false;
 		}
 		attackGroup.status = 3;
-		attackGroup.enemy = null;
 		//if too far, group units
 		for (Unit u : attackGroup.units) {
-			u.attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition(), false);
+			if (u.getPosition().getApproxWDistance(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition()) > 50) {
+//				System.out.println(u.getPosition().getApproxWDistance(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition()));
+				u.attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition().makeValid(), false);					
+			} else {
+				u.attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition(), false);
+			}
+			
+//			if (this.connector.hasPath(u, attackGroup.units.get((int)attackGroup.units.size()/2).getPosition()) && 
+//					attackGroup.units.get(0).getPosition().getApproxWDistance(u.getPosition()) > attackGroup.distance) {
+//				u.attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition(), false);				
+//			} else {
+//				System.out.println("No path");
+//				attackGroup.ignore = true;
+//				attackGroup.status = 1;
+//			}
 		}
 //		for (int i = 0; i<=(int)attackGroup.units.size()/2; i++) {
 //			attackGroup.units.get(i).attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition().makeValid(), false);

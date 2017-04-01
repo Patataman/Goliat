@@ -228,17 +228,19 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		// ---------- FIN BUILD -----------
 		
 		// ---------- Check troops state
-		Sequence checkStatesTroops = new Sequence("Check troops status & change its state");
-		checkStatesTroops.addChild(new CheckStateTroops("Check troops status", gh));
+//		Sequence checkStatesTroops = new Sequence("Check troops status & change its state");
+//		checkStatesTroops.addChild(new CheckStateTroops("Check troops status", gh));
 		
 		//---------- Troops creation
 		Sequence createGroup = new Sequence("Make attack group");
+		createGroup.addChild(new CheckStateTroops("Check troops status", gh));
 		createGroup.addChild(new CheckStateUnits("Check units status", gh));
 		createGroup.addChild(new CreateTroop("Make troop", gh));
 		// -------- FIN createGroup ---------------
 		
 		// -------- Attack sequence ---------
 		Sequence attack = new Sequence("Send to attack the troops");
+		attack.addChild(new CheckStateTroops("Check troops status", gh));
 		attack.addChild(new SelectGroup("Select one troop to attack", gh));
 		attack.addChild(new ChooseDestination("Choose destination", gh));
 		Selector<GameHandler> attackSelector = new Selector<>("Attack/Explore");
@@ -288,7 +290,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		TrainTree  = new BehavioralTree("Arbol entrenamiento");
 		TrainTree.addChild(new Selector<>("MAIN SELECTOR", selectorTrain));
 		DefenseTree  = new BehavioralTree("Arbol defensa");
-		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", checkStatesTroops, createGroup, defenseBase));
+		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", createGroup, defenseBase));
 		AttackTree  = new BehavioralTree("Arbol ataque");
 		AttackTree.addChild(new Selector<>("MAIN SELECTOR", attack));
 		
