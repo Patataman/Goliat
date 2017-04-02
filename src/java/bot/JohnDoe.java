@@ -440,7 +440,7 @@ public class JohnDoe extends GameHandler {
 		
 		//Troops with status == 1
 		for (Troop t : assaultTroop) {
-			if (t.status == 1 && t.units.size() >= 10) {
+			if (t.status == 1 && t.isInPosition() && t.units.size() >= 10) {
 				System.out.println("Troop con status == 1, status = "+t.status);
 				attackGroup = t;
 				return true;
