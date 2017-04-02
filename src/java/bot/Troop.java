@@ -25,7 +25,7 @@ public class Troop {
 		units = new ArrayList<Unit>(0);
 		status = 0;
 		destination = null;
-		distance = 50;
+		distance = 40;
 	}
 	
 	/**
@@ -37,6 +37,9 @@ public class Troop {
 		int dist = 0;
 		for (Unit u : units) {
 			dist += u.getPosition().getApproxWDistance(destination);
+			if (u.isIdle() && u.getPosition().getApproxWDistance(destination) > 30) {
+				u.attack(destination, false);
+			}
 		}
 		dist /= units.size();
 		if (dist < 50) {
@@ -54,12 +57,11 @@ public class Troop {
 	public boolean tooFar() {
 		for (Unit u : units) {
 			if (units.get(0).getPosition().getApproxWDistance(u.getPosition()) > distance) {
-//				System.out.println("Distancia: "+units.get(0).getPosition().getApproxWDistance(u.getPosition()));
-				distance = 30;
+				distance = 20;
 				return true;
 			}
 		}
-		distance = 50;
+		distance = 40;
 		return false;
 	}
 	

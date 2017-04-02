@@ -306,24 +306,6 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		DefenseTree.run();
 		AttackTree.run();
 		
-//		if (frames % 40 == 0){
-//			if (gh.current_worker != null && gh.current_worker.isIdle()) { gh.current_worker = null; }
-//			if (gh.workers.size() > 0) {
-//				//System.out.println("--------------------");
-//				ArrayList <Unit> vces_aux = new ArrayList<Unit>(3);
-//				for(Unit vce : gh.workers) {
-//					if ((vce.isConstructing() || vce.isRepairing()) || vce.isMoving()) {
-//						vces_aux.add(vce);
-//					}
-//				}
-//				gh.workers = vces_aux;
-//				//System.out.println(gh.workers.size());
-//				//Comprobación de los VCEs una vez se limpia la lista
-////				for(Unit vce : gh.workers) {
-////					System.out.println(vce.getOrder());
-////				}
-//			}
-//		}
 		if(frames < 150){ // Cada 200 frames se recalculan las influencias.
 			frames++;
 		}else{

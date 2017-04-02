@@ -326,14 +326,11 @@ public class JohnDoe extends GameHandler {
 	public boolean checkStateTroops(){
 		ArrayList<Troop> remove = new ArrayList<Troop>(0);
 		for (Troop t : assaultTroop) {
-//			if (t.status == 4) {
-//				if (t.isInPosition() && t.units.size() >= 10) {
-//					attackGroup = t;
-//					return true;
-//				}
-//			}
+			if (t.status == 3) {
+				t.isInPosition();
+			}
 			//If all units are dead, resets status and destination
-			if (t.units.size() == 0 && t.destination != null) {
+			if (t.units.size() == 0 && t.status != 0) {
 				remove.add(t);
 			}
 			//If the attackGroup fell, retreat.
@@ -353,16 +350,14 @@ public class JohnDoe extends GameHandler {
 	/**
 	 * Select military units to make an assault troop.
 	 * Used in "attack".
-	 * @return True if it's created at least 1 group.
+	 * @return True always.
 	 */
 	public boolean createTroop() {
 		int i = 0;
 		for (; i<assaultTroop.size(); i++) {
-			if (assaultTroop.get(i).units.size() < 10 && assaultTroop.get(i).status != 1 && assaultTroop.get(i).status != 3) {
-//				if (assaultTroop.get(i).units.size() == 0) {
-//					assaultTroop.get(i).status = 0;
-//					assaultTroop.get(i).destination = null;
-//				}
+			if (assaultTroop.get(i).units.size() < 10 && 
+					assaultTroop.get(i).status != 1 && 
+					assaultTroop.get(i).status != 3) {
 				ArrayList<Unit> auxList = new ArrayList<Unit>(0);
 				for (Unit u : boredSoldiers) {
 					if(u.isIdle() && u.isCompleted()) {
@@ -377,12 +372,10 @@ public class JohnDoe extends GameHandler {
 				return true;
 			}
 		}
-		//Si se llega a esta condición es porque todos los grupos 
-		// actuales están llenos se deben crear grupos nuevos.
+		//All troops are full, so it's need a new troop.
 		if (i == assaultTroop.size()) {
 			assaultTroop.add(new Troop());
 		}
-		//Si no consigue crear ningún grupo
 		return true;
 	}
 	
@@ -391,32 +384,29 @@ public class JohnDoe extends GameHandler {
 	 * @return True if can,  False otherwise.
 	 */
 	public boolean selectGroup() {
-		Predicate<Troop> predicado = new Predicate<Troop>() {
-			public boolean test(Troop t) {
-				return t.status == 0;
-				
-			}
-		};
 		System.out.println("-------------------");
 		for (Troop t : assaultTroop){
 			System.out.println("Estado:"+t.status+", Tropas: "+t.units.size());
 		}
 		System.out.println("+++++++++++++++++++");
 		//Troops with status == 0
-		for (Object t : assaultTroop.stream().filter(predicado).toArray()){
-			//Defending group are excluded.
-			if (((Troop)t).units.size() >= 10) {
-				attackGroup = ((Troop)t);
-				return true;
+		for (Troop t : assaultTroop){
+			if (t.status == 0) {
+				if (t.units.size() >= 10) {
+					System.out.println("Troop con status == 0, status = "+t.status);
+					attackGroup = t;
+					return true;
+				}				
 			}
 		}
-		//Else
-		for (Object t : assaultTroop){
-			//Defending group are excluded.
-			if (((Troop)t).units.size() >= 10 && (((Troop)t).status != 4 && ((Troop)t).status != 2 )) {
-				attackGroup = ((Troop)t);
+		
+		//Troops with status != 2 && != 4
+		for (Troop t : assaultTroop) {
+			if ((t.status == 1 || t.status >= 5) && t.units.size() >= 10) {
+				System.out.println("Troop con status == 1 || >= 5, status = "+t.status);
+				attackGroup = t;
 				return true;
-			}
+			}			
 		}
 		return false;
 	}
@@ -446,7 +436,7 @@ public class JohnDoe extends GameHandler {
 		for (int[] i : positions) {
 			Position aux = new Position(i[1], i[0], PosType.BUILD);
 			if (dah_map.mapa[i[0]][i[1]] < -0.4 && dah_map.mapa[i[0]][i[1]] < infl && cc_select.getPosition().getApproxWDistance(aux) < dist) {
-				//se actualizan los valores
+				//updates values
 				dist = cc_select.getPosition().getApproxBDistance(aux);
 				ret = aux;
 				infl = dah_map.mapa[i[0]][i[1]];
@@ -471,14 +461,9 @@ public class JohnDoe extends GameHandler {
 					} else {
 						u.attack(defendGroup.destination.makeValid(), false);					
 					}
-//				defendGroup.destination.getApproxWDistance(u.getPosition()) > 12+militaryUnits.size()/5) {
-//					u.attack(defendGroup.destination.translated(
-//							new Position(new Random().nextInt(4)-3,new Random().nextInt(4)-3,PosType.BUILD)).makeValid(),
-//							false);
 				}
 			}
 		}
-		//boredSoldiers.removeAll(defendGroup.units);
 		if (boredSoldiers.size() > 10) {
 			return false;
 		}
@@ -500,13 +485,10 @@ public class JohnDoe extends GameHandler {
 				if (!u.isAttacking() && !u.isMoving()) {
 					u.attack(objective, true);
 				}
-			}
-//			for (int i = 0; i<=(int)attackGroup.units.size()/2; i++) {
-//				attackGroup.units.get(i).attack(objective.makeValid(), false);
-//				attackGroup.units.get(attackGroup.units.size()-i-1).attack(objective.makeValid(), false);
-//			}			
+			}			
+			return true;
 		}
-		return true;
+		return false;
 	}
 	
 	/**
@@ -514,34 +496,19 @@ public class JohnDoe extends GameHandler {
 	 * @return true if it isn't in range, false otherwise
 	 */
 	public boolean sendRegroup(){
-//		System.out.println("sendRegroup");
 		if (attackGroup.status == 3) {
-//			System.out.println("Already regrouping");
 			return false;
 		}
 		attackGroup.status = 3;
+		attackGroup.destination = attackGroup.units.get((int)attackGroup.units.size()/2).getPosition();
 		//if too far, group units
 		for (Unit u : attackGroup.units) {
 			if (u.getPosition().getApproxWDistance(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition()) > 50) {
-//				System.out.println(u.getPosition().getApproxWDistance(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition()));
 				u.attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition().makeValid(), false);					
 			} else {
 				u.attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition(), false);
 			}
-			
-//			if (this.connector.hasPath(u, attackGroup.units.get((int)attackGroup.units.size()/2).getPosition()) && 
-//					attackGroup.units.get(0).getPosition().getApproxWDistance(u.getPosition()) > attackGroup.distance) {
-//				u.attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition(), false);				
-//			} else {
-//				System.out.println("No path");
-//				attackGroup.ignore = true;
-//				attackGroup.status = 1;
-//			}
 		}
-//		for (int i = 0; i<=(int)attackGroup.units.size()/2; i++) {
-//			attackGroup.units.get(i).attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition().makeValid(), false);
-//			attackGroup.units.get(attackGroup.units.size()-i-1).attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition().makeValid(), false);
-//		}
 		
 		return true;
 	}
