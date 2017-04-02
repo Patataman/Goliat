@@ -84,8 +84,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				gh.defendGroup.destination = cp.getCenter();				
 			}
 		} else {
-			gh.defendGroup.destination = gh.cc_select.getPosition();
+			gh.defendGroup.destination = gh.cc.getPosition().makeValid();
 		}
+		
 		bwapi.drawCircle(gh.defendGroup.destination, 10, BWColor.Blue, true, true);
 		gh.supplies = bwapi.getSelf().getSupplyUsed();
 		gh.totalSupplies = bwapi.getSelf().getSupplyTotal();
