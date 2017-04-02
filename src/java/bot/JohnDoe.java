@@ -475,7 +475,7 @@ public class JohnDoe extends GameHandler {
 		
 		for (int[] i : positions) {
 			Position aux = new Position(i[1], i[0], PosType.BUILD);
-			if (dah_map.mapa[i[0]][i[1]] < -0.4 && dah_map.mapa[i[0]][i[1]] < infl && cc_select.getPosition().getApproxWDistance(aux) < dist) {
+			if (dah_map.mapa[i[0]][i[1]] < -1 && dah_map.mapa[i[0]][i[1]] < infl && cc_select.getPosition().getApproxWDistance(aux) < dist) {
 				//updates values
 				dist = cc_select.getPosition().getApproxBDistance(aux);
 				ret = aux;
