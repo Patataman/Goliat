@@ -29,7 +29,7 @@ import jnibwapi.util.BWColor;
 
 public class Goliat extends Agent implements BWAPIEventListener {
 
-	BehavioralTree CollectTree, BuildTree, TrainTree, AttackTree, DefenseTree;
+	BehavioralTree CollectTree, BuildTree, TrainTree, AttackTree, DefenseTree, UpdateTroopsTree;
 	Unit buildingTree;
 	JohnDoe gh;
 	int frames;
@@ -94,6 +94,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		
 		frames = 0;
 		
+		
 		Selector<GameHandler> CollectResources = new Selector<>("Minerals or Vespin gas");
 		CollectResources.addChild(new CollectGas("Vespin gas", gh));
 		CollectResources.addChild(new CollectMineral("Minerals", gh));
@@ -102,24 +103,23 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		collect.addChild(new FreeWorker("Free Worker", gh));
 		collect.addChild(CollectResources);
 		
-		// -------- Secuencias de entrenamiento ---------
-		
-		//Entrenar VCEs
+		// -------- Training sequences ---------
+		//Train SCVs
 		Sequence TrainVCE = new Sequence("Train SCV");
 		TrainVCE.addChild(new CheckResources("Check resources SCV", gh, UnitTypes.Terran_SCV));
 		TrainVCE.addChild(new ChooseBuilding("Check training SCV", gh, UnitTypes.Terran_SCV));
 		TrainVCE.addChild(new TrainUnit("Train SCV", gh, UnitTypes.Terran_SCV, UnitTypes.Terran_Command_Center));
-		//Entrenar soldados
+		//Train marines
 		Sequence TrainMarine = new Sequence("Train Marine");
 		TrainMarine.addChild(new CheckResources("Check resources marine", gh, UnitTypes.Terran_Marine));
 		TrainMarine.addChild(new ChooseBuilding("Check training marine", gh, UnitTypes.Terran_Marine));
 		TrainMarine.addChild(new TrainUnit("Train marine", gh, UnitTypes.Terran_Marine, UnitTypes.Terran_Barracks));
-		//Entrenar medicos
+		//Train medics
 		Sequence TrainMedic = new Sequence("Train medic");
 		TrainMedic.addChild(new CheckResources("Check resources medic", gh, UnitTypes.Terran_Medic));
 		TrainMedic.addChild(new ChooseBuilding("Check training medic", gh, UnitTypes.Terran_Medic));
 		TrainMedic.addChild(new TrainUnit("Train medic", gh, UnitTypes.Terran_Medic, UnitTypes.Terran_Barracks));
-		//Entrenar murcielagos de fuego
+		//Train firebats
 		Sequence TrainFirebat = new Sequence("Train Firebat");
 		TrainFirebat.addChild(new CheckResources("Check resources firebat", gh, UnitTypes.Terran_Firebat));
 		TrainFirebat.addChild(new ChooseBuilding("Check training firebat", gh, UnitTypes.Terran_Firebat));
@@ -141,10 +141,10 @@ public class Goliat extends Agent implements BWAPIEventListener {
 //		TrainVessel.addChild(new TrainUnit("Train Science vessel nave cientifica", gh, UnitTypes.Terran_Science_Vessel, UnitTypes.Terran_Starport));
 		//Selector con todos los posibles entrenamientos
 		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVCE, TrainGoliat, TrainMedic, TrainFirebat, TrainMarine);
-		// ----------- FIN TRAIN ---------
+		// ----------- END TRAIN ---------
 
 		
-		// -------- Secuencias de construcción ---------
+		// -------- Building sequences ---------
 		//Build supplies
 		Sequence buildSupply = new Sequence("Build supplies");
 		buildSupply.addChild(new CheckResources("Check resources supplies", gh, UnitTypes.Terran_Supply_Depot));
@@ -225,18 +225,19 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		
 		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks, 
 													buildRefinery, buildAcademy, buildFactory, buildBay, buildArmory, buildTurret, buildCC);
-		// ---------- FIN BUILD -----------
+		// ---------- END BUILD -----------
 		
-		// ---------- Check troops state
-//		Sequence checkStatesTroops = new Sequence("Check troops status & change its state");
-//		checkStatesTroops.addChild(new CheckStateTroops("Check troops status", gh));
+		// ---------- Compact troops
+		Sequence compactTroops = new Sequence("Redistribuite units in troops");
+		compactTroops.addChild(new RedistribuiteTroops("Redistribuite units in troops", gh));
+		// ----------- END compact troops
 		
 		//---------- Troops creation
-		Sequence createGroup = new Sequence("Make attack group");
-		createGroup.addChild(new CheckStateTroops("Check troops status", gh));
-		createGroup.addChild(new CheckStateUnits("Check units status", gh));
-		createGroup.addChild(new CreateTroop("Make troop", gh));
-		// -------- FIN createGroup ---------------
+		Sequence createTroop = new Sequence("Make attack troop");
+		createTroop.addChild(new CheckStateTroops("Check troops status", gh));
+		createTroop.addChild(new CheckStateUnits("Check units status", gh));
+		createTroop.addChild(new CreateTroop("Make troop", gh));
+		// -------- END createGroup ---------------
 		
 		// -------- Attack sequence ---------
 		Sequence attack = new Sequence("Send to attack the troops");
@@ -250,7 +251,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		attack.addChild(attackSelector);
 		// ---------- FIN ATTACK -----------
 		
-		// --------- Defense secuence ---------
+		// --------- Defense sequence ---------
 		Sequence defenseBase = new Sequence("Defend base");
 		defenseBase.addChild(new SendDefend("Send to defend", gh));
 		// --------- FIN DEFENSE -----------
@@ -289,8 +290,10 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		BuildTree.addChild(new Selector<>("MAIN SELECTOR", selectorBuild, selectorResearch));
 		TrainTree  = new BehavioralTree("Arbol entrenamiento");
 		TrainTree.addChild(new Selector<>("MAIN SELECTOR", selectorTrain));
+		UpdateTroopsTree = new BehavioralTree("Update/Check troops status");
+		UpdateTroopsTree.addChild(new Selector<>("MAIN SELECTOR", compactTroops, createTroop));
 		DefenseTree  = new BehavioralTree("Arbol defensa");
-		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", defenseBase, createGroup));
+		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", defenseBase));
 		AttackTree  = new BehavioralTree("Arbol ataque");
 		AttackTree.addChild(new Selector<>("MAIN SELECTOR", attack));
 		
@@ -303,6 +306,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		CollectTree.run();
 		BuildTree.run();
 		TrainTree.run();
+		UpdateTroopsTree.run();
 		DefenseTree.run();
 		AttackTree.run();
 		

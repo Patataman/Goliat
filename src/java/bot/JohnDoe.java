@@ -321,7 +321,7 @@ public class JohnDoe extends GameHandler {
 	/**
 	 * Check troops' status.
 	 * Used in Attack tree
-	 * @return true always.
+	 * @return Always True.
 	 */
 	public boolean checkStateTroops(){
 		ArrayList<Troop> remove = new ArrayList<Troop>(0);
@@ -348,16 +348,45 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	/**
+	 * Compact troops.
+	 * For example, if 2 troops' status == 4 && its units size < 10, merge both units list to make 1 troop.
+	 * @return Always false, because it's only extra control, not a condition
+	 */
+	public boolean redistribuiteTroops() {
+		//Predicate to filter all troops
+		Predicate<Troop> predicado = new Predicate<Troop>() {
+			public boolean test(Troop t) {
+				return t.units.size() <= 7 && (t.status == 4 || t.status == 5);
+				
+			}
+		};
+		
+		ArrayList <Troop> remove = new ArrayList<Troop>(0);
+		for (Object t : assaultTroop.stream().filter(predicado).toArray()) {
+			for (Object t2 : assaultTroop.stream().filter(predicado).toArray()) {
+				//If aux doesn't contains any unit from t2 && their status it's the same -> merge units list.
+				if (!((Troop) t).units.contains(((Troop) t2).units) &&
+						((Troop) t2).status == ((Troop) t).status) {
+					((Troop) t).units.addAll(((Troop) t2).units);
+					remove.add((Troop) t2);
+				}
+			}
+		}
+		assaultTroop.removeAll(remove);
+		
+		return false;
+	}
+	
+	/**
 	 * Select military units to make an assault troop.
 	 * Used in "attack".
-	 * @return True always.
+	 * @return Always true.
 	 */
 	public boolean createTroop() {
 		int i = 0;
 		for (; i<assaultTroop.size(); i++) {
 			if (assaultTroop.get(i).units.size() < 10 && 
-					assaultTroop.get(i).status != 1 && 
-					assaultTroop.get(i).status != 3) {
+					assaultTroop.get(i).status != 4) {
 				ArrayList<Unit> auxList = new ArrayList<Unit>(0);
 				for (Unit u : boredSoldiers) {
 					if(u.isIdle() && u.isCompleted()) {
@@ -400,10 +429,19 @@ public class JohnDoe extends GameHandler {
 			}
 		}
 		
-		//Troops with status != 2 && != 4
+		//Troops with status >= 5
 		for (Troop t : assaultTroop) {
-			if ((t.status == 1 || t.status >= 5) && t.units.size() >= 10) {
-				System.out.println("Troop con status == 1 || >= 5, status = "+t.status);
+			if (t.status >= 5 && t.units.size() >= 10) {
+				System.out.println("Troop con status >= 5, status = "+t.status);
+				attackGroup = t;
+				return true;
+			}			
+		}
+		
+		//Troops with status == 1
+		for (Troop t : assaultTroop) {
+			if (t.status == 1 && t.units.size() >= 10) {
+				System.out.println("Troop con status == 1, status = "+t.status);
 				attackGroup = t;
 				return true;
 			}			
