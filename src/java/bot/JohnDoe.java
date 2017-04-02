@@ -312,7 +312,7 @@ public class JohnDoe extends GameHandler {
 	 * @return true if there's more than 10, false otherwise
 	 */
 	public boolean checkStateUnits(){
-		if (boredSoldiers.size() > 1) {
+		if (boredSoldiers.size() > 0) {
 			return true;
 		}
 		return false;
@@ -339,7 +339,7 @@ public class JohnDoe extends GameHandler {
 				for (Unit u : t.units) {
 					u.move(t.destination.makeValid(), false);
 				}
-//				t.status = 4;
+				t.status = 4;
 //				return true;
 			}
 		}
@@ -356,7 +356,7 @@ public class JohnDoe extends GameHandler {
 		//Predicate to filter all troops
 		Predicate<Troop> predicado = new Predicate<Troop>() {
 			public boolean test(Troop t) {
-				return t.units.size() <= 7 && (t.status == 4 || t.status == 5);
+				return t.units.size() < 10 && (t.status == 4 || t.status == 5);
 				
 			}
 		};
@@ -367,7 +367,9 @@ public class JohnDoe extends GameHandler {
 				//If aux doesn't contains any unit from t2 && their status it's the same -> merge units list.
 				if (!((Troop) t).units.contains(((Troop) t2).units) &&
 						((Troop) t2).status == ((Troop) t).status) {
+					System.out.print("Merge: "+((Troop) t).units.size()+"+"+((Troop) t2).units.size());
 					((Troop) t).units.addAll(((Troop) t2).units);
+					System.out.println("=="+((Troop) t).units.size());
 					remove.add((Troop) t2);
 				}
 			}
@@ -385,23 +387,21 @@ public class JohnDoe extends GameHandler {
 	public boolean createTroop() {
 		int i = 0;
 		for (; i<assaultTroop.size(); i++) {
-			if (assaultTroop.get(i).units.size() < 10 && 
-					assaultTroop.get(i).status != 4) {
+			if (assaultTroop.get(i).units.size() < 10 && assaultTroop.get(i).status != 4) {
 				ArrayList<Unit> auxList = new ArrayList<Unit>(0);
+				
 				for (Unit u : boredSoldiers) {
 					if(u.isIdle() && u.isCompleted()) {
-						//Esta lista tiene sentido para en el futuro poder crear subgrupos
 						assaultTroop.get(i).units.add(u);
 						auxList.add(u);
 					}
-					//if (assaultTroop.get(i).units.size() > 10) break;
 				}
+				
 				boredSoldiers.removeAll(auxList);
-				//Si se añaden unidades
 				return true;
 			}
 		}
-		//All troops are full, so it's need a new troop.
+		//All troops are full, so it's needed a new troop.
 		if (i == assaultTroop.size()) {
 			assaultTroop.add(new Troop());
 		}
@@ -413,11 +413,13 @@ public class JohnDoe extends GameHandler {
 	 * @return True if can,  False otherwise.
 	 */
 	public boolean selectGroup() {
-		System.out.println("-------------------");
-		for (Troop t : assaultTroop){
-			System.out.println("Estado:"+t.status+", Tropas: "+t.units.size());
+		if (assaultTroop.size() > 0){
+			System.out.println("-------------------");
+			for (Troop t : assaultTroop){
+				System.out.println("Estado:"+t.status+", Tropas: "+t.units.size());
+			}
+			System.out.println("+++++++++++++++++++");			
 		}
-		System.out.println("+++++++++++++++++++");
 		//Troops with status == 0
 		for (Troop t : assaultTroop){
 			if (t.status == 0) {
@@ -440,7 +442,7 @@ public class JohnDoe extends GameHandler {
 		
 		//Troops with status == 1
 		for (Troop t : assaultTroop) {
-			if (t.status == 1 && t.isInPosition() && t.units.size() >= 10) {
+			if (t.status == 1 && !t.isInPosition() && t.units.size() >= 10) {
 				System.out.println("Troop con status == 1, status = "+t.status);
 				attackGroup = t;
 				return true;

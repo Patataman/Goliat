@@ -43,7 +43,6 @@ public class Troop {
 		}
 		dist /= units.size();
 		if (dist < 50) {
-			System.out.println("ola k ase");
 			status = 5;
 			return true;
 		}

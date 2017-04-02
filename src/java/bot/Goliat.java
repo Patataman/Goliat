@@ -306,8 +306,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		CollectTree.run();
 		BuildTree.run();
 		TrainTree.run();
-		UpdateTroopsTree.run();
 		DefenseTree.run();
+		UpdateTroopsTree.run();
 		AttackTree.run();
 		
 		if(frames < 150){ // Cada 200 frames se recalculan las influencias.
