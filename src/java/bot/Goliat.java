@@ -429,9 +429,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		/////////////////////////////////////
 		
 //		Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
-		String workingDirectory = System.getProperty("user.dir");
-		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
-		createANDwriteInfluencia(path);
+//		String workingDirectory = System.getProperty("user.dir");
+//		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
+//		createANDwriteInfluencia(path);
 		
 		//Se actualizan la cosa nostra
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
