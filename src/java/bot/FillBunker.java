@@ -4,21 +4,15 @@ import org.iaie.btree.state.State;
 import org.iaie.btree.task.leaf.Action;
 import org.iaie.btree.util.GameHandler;
 
-import jnibwapi.types.UnitType;
+public class FillBunker extends Action {
 
-public class Build extends Action {
-	
-	UnitType edificio;
-	
-	public Build(String name, GameHandler gh, UnitType building) {
+	public FillBunker(String name, GameHandler gh) {
 		super(name, gh);
-		this.edificio = building;
 	}
 
-	@Override
 	public State execute() {
 		try{
-			if (((JohnDoe)this.handler).buildUnit(edificio)) {
+			if (((JohnDoe)this.handler).sendToBunker()) {
 				return State.SUCCESS;
 			} else {
 				return State.FAILURE;

@@ -34,8 +34,9 @@ public class JohnDoe extends GameHandler {
 	List<Unit> finishedBuildings; 				//List to know all finished (and alive) buildings.
 	List<UpgradeType> researching;				//List to know which researches are being researched.
 	List<Unit> damageBuildings;					//List to know which buildings are being attacked and being able to fix it later.
-	List<Unit> workers;							//List to control which SCVs are assing to building.
+	List<Unit> workers;							//List to control which SCVs are assigned to building.
 	Unit current_worker;						//Variable to know which SCV is currently selected.
+	List<Unit> bunkers;							//List to know the bunkers I have
 		
 	int supplies, totalSupplies;
 	byte barracks, refinery, factory, 
@@ -58,23 +59,24 @@ public class JohnDoe extends GameHandler {
 	public JohnDoe(JNIBWAPI bwapi) {
 		super(bwapi);
 
-		workers 				= new ArrayList<Unit>(3);
 		cc 						= null;
 		cc_select 				= null;
+		workers 				= new ArrayList<Unit>(3);
+		militaryUnits			= new ArrayList<Unit>(0);
+		boredSoldiers			= new ArrayList<Unit>(0);
+		finishedBuildings 		= new ArrayList<Unit>(0);
+		damageBuildings			= new ArrayList<Unit>(0);
+		bunkers 				= new ArrayList<Unit>(0);
 		CCs 					= new ArrayList<Integer>(0);
 		VCEs 					= new ArrayList<ArrayList<Unit>>(0);
 		workersMineral 			= new ArrayList<ArrayList<Integer>>(0);
 		workersVespin 			= new ArrayList<ArrayList<Integer>>(0);
+		researching				= new ArrayList<UpgradeType>(0);
 		remainingUnits 			= new ArrayList<UnitType>(0);
-		militaryUnits			= new ArrayList<Unit>(0);
-		boredSoldiers			= new ArrayList<Unit>(0);
+		remainingBuildings 		= new ArrayList<UnitType>(0);
 		assaultTroop			= new ArrayList<Troop>(0);
 		attackGroup				= new Troop();
 		defendGroup				= new Troop();
-		remainingBuildings 		= new ArrayList<UnitType>(0);
-		finishedBuildings 		= new ArrayList<Unit>(0);
-		researching				= new ArrayList<UpgradeType>(0);
-		damageBuildings			= new ArrayList<Unit>(0);
 		barracks = refinery = factory = 
 		academy = armory = bay = lab_cient = starport = 0;
 		number_chokePoints 		= (byte) this.connector.getMap().getRegion(this.connector.getSelf().getStartLocation()).getChokePoints().size();
@@ -498,6 +500,30 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	/**
+	 * Send bored unit to the bunker, while there is space.
+	 * @return True if can send unit to the bunker, false otherwise
+	 */
+	public boolean sendToBunker() {
+		//Predicate to filter by type.
+		Predicate<Unit> predicado = new Predicate<Unit>() {
+			public boolean test(Unit u) {
+				return u.getType() == UnitTypes.Terran_Marine;
+				
+			}
+		};
+		for (Unit b : bunkers) {
+			if (b.getLoadedUnits().size() < 4) {
+				for (Object u : boredSoldiers.stream().filter(predicado).toArray()) {
+					b.load((Unit) u, false);
+					return true;
+				}
+			}
+			
+		}
+		return false;
+	}
+	
+	/**
 	 * If the objective it's in range, send the units to attack.
 	 * @return true if sends unit to attack, false otherwise
 	 */
@@ -586,6 +612,15 @@ public class JohnDoe extends GameHandler {
 						building == UnitTypes.Terran_Starport) {
 			return findPositionAwayCP(building);
 		}
+		//Special case: Missile turrets
+		if (building == UnitTypes.Terran_Missile_Turret){
+			return findPositionTurret();
+		}
+		//Special case: Bunkers
+		if (building == UnitTypes.Terran_Bunker){
+			return findPositionBunker();
+		}
+		
 		//No special case: others.
 		if (number_chokePoints == 1) {
 			//Gets the CP
@@ -745,7 +780,80 @@ public class JohnDoe extends GameHandler {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean findPositionTurret() {
+		byte [][] pruebas = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
+		for (int i=4; i>1; i--){
+			for (int j=0; j<pruebas.length; j++) {
+				//Point origen, Point maximo, UnitType building
+				Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
+						new Point((cc_select.getPosition().getBX()+pruebas[j][0]*UnitTypes.Terran_Missile_Turret.getTileWidth()*i),
+								(cc_select.getPosition().getBY()+pruebas[j][1]*UnitTypes.Terran_Missile_Turret.getTileHeight()*i)),
+								UnitTypes.Terran_Missile_Turret);
+				//If the position is valid...
+				if (this.connector.canBuildHere(pos, UnitTypes.Terran_Missile_Turret, true) && 
+						this.connector.getMap().isBuildable(pos) &&
+						this.connector.isBuildable(pos, true) &&
+						dah_map.mapa[pos.getBY()][pos.getBX()] < 3){
+					posBuild = pos;
+					return true;
+				}				
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean findPositionBunker() {
+		byte [][] pruebas = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
+		if (number_chokePoints == 1) {
+			System.out.println("Oli");
+			ChokePoint cp = (ChokePoint) this.connector.getMap().getRegion(cc_select.getPosition()).getChokePoints().toArray()[0];
+			Position cp_position = cp.getCenter();
+			for (int j=0; j<pruebas.length; j++) {
+				//Point origen, Point maximo, UnitType building
+				Position pos = findPlace(new Point(cp_position.getBX(), cp_position.getBY()),
+						new Point((cp_position.getBX()+pruebas[j][0]*UnitTypes.Terran_Bunker.getTileWidth()),
+								(cp_position.getBY()+pruebas[j][1]*UnitTypes.Terran_Bunker.getTileHeight())),
+								UnitTypes.Terran_Bunker);
+				//If the position is valid...
+				if (this.connector.canBuildHere(pos, UnitTypes.Terran_Bunker, true) && 
+						this.connector.getMap().isBuildable(pos) &&
+						this.connector.isBuildable(pos, true) &&
+						dah_map.mapa[pos.getBY()][pos.getBX()] < 3){
+					posBuild = pos;
+					return true;
+				}				
+			}
+		} else {
+			for (int i=4; i>1; i--){
+				for (int j=0; j<pruebas.length; j++) {
+					//Point origen, Point maximo, UnitType building
+					Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
+							new Point((cc_select.getPosition().getBX()+pruebas[j][0]*UnitTypes.Terran_Bunker.getTileWidth()*i),
+									(cc_select.getPosition().getBY()+pruebas[j][1]*UnitTypes.Terran_Bunker.getTileHeight()*i)),
+							UnitTypes.Terran_Bunker);
+					//If the position is valid...
+					if (this.connector.canBuildHere(pos, UnitTypes.Terran_Bunker, true) && 
+							this.connector.getMap().isBuildable(pos) &&
+							this.connector.isBuildable(pos, true) &&
+							dah_map.mapa[pos.getBY()][pos.getBX()] < 3){
+						posBuild = pos;
+						return true;
+					}				
+				}
+			}			
+		}
 		
+		return false;
 	}
 	
 	/**

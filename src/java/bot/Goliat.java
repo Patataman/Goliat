@@ -202,6 +202,13 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		buildTurret.addChild(new FreeBuilder("Find builder", gh));
 		buildTurret.addChild(new MoveTo("Move builder", gh));
 		buildTurret.addChild(new Build("Build missile turret", gh, UnitTypes.Terran_Missile_Turret));
+		//Build bunker
+		Sequence buildBunker = new Sequence("Build bunker");
+		buildBunker.addChild(new CheckResources("Check resources bunker", gh, UnitTypes.Terran_Bunker));
+		buildBunker.addChild(new FindPosition("Find position", gh, UnitTypes.Terran_Bunker));
+		buildBunker.addChild(new FreeBuilder("Find builder", gh));
+		buildBunker.addChild(new MoveTo("Move builder", gh));
+		buildBunker.addChild(new Build("Build bunker", gh, UnitTypes.Terran_Bunker));
 		//Build CC
 		Sequence buildCC = new Sequence("Build CC");
 		buildCC.addChild(new CheckResources("Check resources CC", gh, UnitTypes.Terran_Command_Center));
@@ -224,8 +231,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
 //		buildLab.addChild(new MoveTo("Move builder", gh));
 //		buildLab.addChild(new Build("Build facility", gh, UnitTypes.Terran_Science_Facility));
 		
-		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks, 
-													buildRefinery, buildAcademy, buildFactory, buildBay, buildArmory, buildTurret, buildCC);
+		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks, buildBunker,
+													buildRefinery, buildAcademy, buildFactory, buildBay, buildTurret, buildArmory, buildCC);
 		// ---------- END BUILD -----------
 		
 		// ---------- Compact troops
@@ -256,6 +263,11 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		Sequence defendBase = new Sequence("Defend base");
 		defendBase.addChild(new SendDefend("Send to defend", gh));
 		// --------- FIN DEFENSE -----------
+		
+		// --------- Fill bunker ---------
+		Sequence fillBunker = new Sequence("Fill bunker");
+		fillBunker.addChild(new FillBunker("Send to bunker", gh));
+		// --------- END BUNKER ---------
 		
 		// ---------- Research sequence --------
 		//Research U238 (Academy)
@@ -302,8 +314,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		UpdateTroopsTree = new BehavioralTree("Update/Check troops status");
 		UpdateTroopsTree.addChild(new Selector<>("MAIN SELECTOR", compactTroops, createTroop));
 		DefenseTree  = new BehavioralTree("Defense tree");
-		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", defendBase));
-//		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", sendToBunker, defenseBase));
+		//DefenseTree.addChild(new Selector<>("MAIN SELECTOR", defendBase));
+		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", fillBunker, defendBase));
 		AttackTree  = new BehavioralTree("Attack tree");
 		AttackTree.addChild(new Selector<>("MAIN SELECTOR", attack));
 		
@@ -335,6 +347,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
 			if (bwapi.getUnit(unitID).getType().isBuilding()){
 				gh.remainingBuildings.add(bwapi.getUnit(unitID).getType());
+				gh.posBuild = null;
 			}
 		}
 	}
@@ -354,7 +367,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			for(Object u : gh.finishedBuildings.stream().filter(predicado).toArray()) {
 				//No es necesario comprobar el ID ya que la sublista que se recorre es la que cumple lo del ID
 				//Aunque sólo debería haber 1 elemento
-				gh.finishedBuildings.remove(u);
+				gh.finishedBuildings.remove((Unit) u);
+				if (gh.bunkers.contains((Unit ) u)) { gh.bunkers.remove((Unit) u);}
+				
 				if (((Unit) u).getType() == UnitTypes.Terran_Academy) gh.academy--;
 				if (((Unit) u).getType() == UnitTypes.Terran_Barracks) gh.barracks--;
 				if (((Unit) u).getType() == UnitTypes.Terran_Factory) gh.factory--;
@@ -470,6 +485,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Academy) gh.academy++;
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Factory) gh.factory++;
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Armory) gh.armory++;
+				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Bunker) gh.bunkers.add(bwapi.getUnit(unitID));
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Science_Facility) gh.lab_cient++;
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Command_Center) {
 					if (gh.CCs.indexOf((Integer) unitID) == -1){

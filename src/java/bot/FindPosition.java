@@ -74,6 +74,11 @@ public class FindPosition extends Conditional {
 				return State.FAILURE;
 			}
 			
+			if (edificio == UnitTypes.Terran_Bunker && ((JohnDoe)this.handler).barracks == 0 &&
+					((JohnDoe)this.handler).bunkers.size() >= 2) {
+				return State.FAILURE;
+			}
+			
 			if (((JohnDoe)this.handler).findPosition(edificio)) {
 				return State.SUCCESS;
 			} else {
