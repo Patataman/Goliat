@@ -252,50 +252,59 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		attack.addChild(attackSelector);
 		// ---------- FIN ATTACK -----------
 		
-		// --------- Defense sequence ---------
-		Sequence defenseBase = new Sequence("Defend base");
-		defenseBase.addChild(new SendDefend("Send to defend", gh));
+		// --------- Defend sequence ---------
+		Sequence defendBase = new Sequence("Defend base");
+		defendBase.addChild(new SendDefend("Send to defend", gh));
 		// --------- FIN DEFENSE -----------
 		
 		// ---------- Research sequence --------
-		//Investigar U238 (Academia)
-		Sequence u238 = new Sequence("Investigar U238");
-		u238.addChild(new CheckResearch("Comprobar si se puede investigar", gh, UpgradeTypes.U_238_Shells));
-		u238.addChild(new Research("Investigar", gh, UnitTypes.Terran_Academy, UpgradeTypes.U_238_Shells));
-		//Investigar mejora curar medicos (Academia)
-		Sequence caudecus = new Sequence("Investigar caudecus");
-		caudecus.addChild(new CheckResearch("Comprobar si se puede investigar", gh, UpgradeTypes.Caduceus_Reactor));
-		caudecus.addChild(new Research("Investigar", gh, UnitTypes.Terran_Academy, UpgradeTypes.Caduceus_Reactor));
-		//Investigar mejora de armadura (infanteria)(Bahia)
-		Sequence armor = new Sequence("Investigar medicos");
-		armor.addChild(new CheckResearch("Comprobar si se puede investigar", gh, UpgradeTypes.Terran_Infantry_Armor));
-		armor.addChild(new Research("Investigar", gh, UnitTypes.Terran_Engineering_Bay, UpgradeTypes.Terran_Infantry_Armor));
-		//Investigar mejora de armamento (infanteria)(Bahia)
-		Sequence weapons = new Sequence("Investigar medicos");
-		weapons.addChild(new CheckResearch("Comprobar si se puede investigar", gh, UpgradeTypes.Terran_Infantry_Weapons));
-		weapons.addChild(new Research("Investigar", gh, UnitTypes.Terran_Engineering_Bay, UpgradeTypes.Terran_Infantry_Weapons));
+		//Research U238 (Academy)
+		Sequence u238 = new Sequence("Research U238");
+		u238.addChild(new CheckResearch("Checks if it can be researched", gh, UpgradeTypes.U_238_Shells));
+		u238.addChild(new Research("Research", gh, UnitTypes.Terran_Academy, UpgradeTypes.U_238_Shells));
+		//Research Caduceus reactor (Academy, for medics)
+		Sequence caudecus = new Sequence("Research caduceus");
+		caudecus.addChild(new CheckResearch("Checks if it can be researched", gh, UpgradeTypes.Caduceus_Reactor));
+		caudecus.addChild(new Research("Research", gh, UnitTypes.Terran_Academy, UpgradeTypes.Caduceus_Reactor));
+		//Research infantry armor (Bay)
+		Sequence infantryArmor = new Sequence("Research infantry armor");
+		infantryArmor.addChild(new CheckResearch("Checks if it can be researched", gh, UpgradeTypes.Terran_Infantry_Armor));
+		infantryArmor.addChild(new Research("Research", gh, UnitTypes.Terran_Engineering_Bay, UpgradeTypes.Terran_Infantry_Armor));
+		//Research infantry weapons (Bay)
+		Sequence infantryWeapons = new Sequence("Research infantry weapons");
+		infantryWeapons.addChild(new CheckResearch("Checks if it can be researched", gh, UpgradeTypes.Terran_Infantry_Weapons));
+		infantryWeapons.addChild(new Research("Research", gh, UnitTypes.Terran_Engineering_Bay, UpgradeTypes.Terran_Infantry_Weapons));
+		//Research vehicle armor (Armory)
+		Sequence vehicleArmor = new Sequence("Research vehicle armor");
+		vehicleArmor.addChild(new CheckResearch("Checks if it can be researched", gh, UpgradeTypes.Terran_Vehicle_Plating));
+		vehicleArmor.addChild(new Research("Research", gh, UnitTypes.Terran_Armory, UpgradeTypes.Terran_Vehicle_Plating));
+		//Research vehicle weapons (Armory)
+		Sequence vehicleWeapons = new Sequence("Research vehicle weapons");
+		vehicleWeapons.addChild(new CheckResearch("Checks if it can be researched", gh, UpgradeTypes.Terran_Vehicle_Weapons));
+		vehicleWeapons.addChild(new Research("Research", gh, UnitTypes.Terran_Armory, UpgradeTypes.Terran_Vehicle_Weapons));
 		
-		Selector<Sequence> selectorResearch = new Selector<>("Selector research", u238, caudecus, armor, weapons); 
+		Selector<Sequence> selectorResearch = new Selector<>("Selector research", u238, caudecus, infantryArmor, infantryWeapons, vehicleArmor, vehicleWeapons); 
 		// --------------- FIN RESEARCH ---------------
 		
-		// ----------- Secuencia de reparación ---------		
-		Sequence repair = new Sequence("Reparación");
-		repair.addChild(new FindDamageBuildings("Encontrar edificios da�ados", gh));
-		repair.addChild(new FreeBuilder("Trabajador libre", gh));
-		repair.addChild(new RepairBuilding("Reparar el edificio", gh));
-		// ------------- FIN REPAIR --------------------
+		// ----------- Repair sequence ---------		
+		Sequence repair = new Sequence("Repair");
+		repair.addChild(new FindDamageBuildings("Find damaged buildings", gh));
+		repair.addChild(new FreeBuilder("Free worker", gh));
+		repair.addChild(new RepairBuilding("Repair building", gh));
+		// ------------- END REPAIR --------------------
 		
-		CollectTree = new BehavioralTree("Arbol recolección/reparación");
+		CollectTree = new BehavioralTree("Gather/Repair tree");
 		CollectTree.addChild(new Selector<>("MAIN SELECTOR", collect, repair));
-		BuildTree  = new BehavioralTree("Arbol construcción/investigación");
+		BuildTree  = new BehavioralTree("Build/Research tree");
 		BuildTree.addChild(new Selector<>("MAIN SELECTOR", selectorBuild, selectorResearch));
-		TrainTree  = new BehavioralTree("Arbol entrenamiento");
+		TrainTree  = new BehavioralTree("Training tree");
 		TrainTree.addChild(new Selector<>("MAIN SELECTOR", selectorTrain));
 		UpdateTroopsTree = new BehavioralTree("Update/Check troops status");
 		UpdateTroopsTree.addChild(new Selector<>("MAIN SELECTOR", compactTroops, createTroop));
-		DefenseTree  = new BehavioralTree("Arbol defensa");
-		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", defenseBase));
-		AttackTree  = new BehavioralTree("Arbol ataque");
+		DefenseTree  = new BehavioralTree("Defense tree");
+		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", defendBase));
+//		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", sendToBunker, defenseBase));
+		AttackTree  = new BehavioralTree("Attack tree");
 		AttackTree.addChild(new Selector<>("MAIN SELECTOR", attack));
 		
 		bwapi.sendText("gl hf");
@@ -468,9 +477,6 @@ public class Goliat extends Agent implements BWAPIEventListener {
 						gh.addCC(gh.CCs.indexOf(unitID));
 					}
 				}
-				
-				//Se elimina el trabajador que construía de la lista
-//				gh.workers.remove(gh.current_worker);
 				
 				//Se actualiza el mapa.
 				gh.updateMap(bwapi.getUnit(unitID).getTopLeft(),

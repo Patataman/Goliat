@@ -3,7 +3,6 @@ package bot;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.function.Predicate;
 
 import org.iaie.btree.util.GameHandler;
@@ -565,50 +564,55 @@ public class JohnDoe extends GameHandler {
 	 * 
 	 * @return true if can find a valid position, false otherwise
 	 */
-	public boolean findPosition(UnitType edificio) {
-		//Si ya se tiene una posición, no la vuelve a buscar
-		if (posBuild != null && this.connector.canBuildHere(posBuild, edificio, false)){
+	public boolean findPosition(UnitType building) {
+		//If there's already a position to build, don't search again
+		if (posBuild != null && 
+				this.connector.canBuildHere(posBuild, building, true) && 
+				this.connector.getMap().isBuildable(posBuild) &&
+				this.connector.isBuildable(posBuild, true)){
 			return true;
 		}
-		//Caso especial de que sea una refinería
-		if (edificio == UnitTypes.Terran_Refinery) {
+		//Special case: Refinery
+		if (building == UnitTypes.Terran_Refinery) {
 			return findPositionRefinery();
 		}
-		//Caso especial de que sea una expansión
-		if (edificio == UnitTypes.Terran_Command_Center) {
+		//Special case: Expansion
+		if (building == UnitTypes.Terran_Command_Center) {
 			return findPositionCC();
 		}
-		//Caso de edificios más o menos importantes (para alejarlos de la entrada)
-		if (edificio == UnitTypes.Terran_Barracks ||
-				edificio == UnitTypes.Terran_Factory ||
-				edificio == UnitTypes.Terran_Starport) {
-			return findPositionAwayCP(edificio);
+		//Special case: Buildings away from the CP
+		if (building == UnitTypes.Terran_Barracks ||
+				building == UnitTypes.Terran_Factory ||
+						building == UnitTypes.Terran_Starport) {
+			return findPositionAwayCP(building);
 		}
-		//Edificios no especiales
-		//Para hacer bulto se construye entre el CP y el CC
+		//No special case: others.
 		if (number_chokePoints == 1) {
-			//Solo se ejecuta 1 vez
-			for (ChokePoint cp : this.connector.getMap().getRegion(cc_select.getPosition()).getChokePoints()){
-				Position cp_position = cp.getCenter();
-				byte x, y;
-				//Si el chokePoint está a la izq del CC
-				x = (cc_select.getPosition().getBX() < cp_position.getBX()) ? (byte)1 : (byte)-1;
-				//Si el chokePoint está arriba del CC
-				y = (cc_select.getPosition().getBY() < cp_position.getBY()) ? (byte)1 : (byte)-1;
-				byte [][] pruebas = {{x,0},{x,y},{0,y},{(byte)(-1*x), (byte)(-1*y)},{(byte)(-1*x), 0},{0, (byte)(-1*y)}};
-				for (int i=1; i<4; i++){
-					for (int j=0; j<pruebas.length; j++) {
-						//Point origen, Point maximo, UnitType building
-						Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
-								new Point((cc_select.getPosition().getBX()+pruebas[j][0]*edificio.getTileWidth()*i),
-										(cc_select.getPosition().getBY()+pruebas[j][1]*edificio.getTileHeight()*i)),
-											edificio);
-						//Si la posición es válida...
-						if (this.connector.canBuildHere(pos, edificio, true)){
-							posBuild = pos;
-							return true;
-						}				
-					}
+			//Gets the CP
+			ChokePoint cp = (ChokePoint) this.connector.getMap().getRegion(cc_select.getPosition()).getChokePoints().toArray()[0];
+			Position cp_position = cp.getCenter();
+			//Variables to control the direction of the building
+			byte x, y;
+			//If CP is on the left/right side of the CC
+			x = (cc_select.getPosition().getBX() < cp_position.getBX()) ? (byte)1 : (byte)-1;
+			//If CP is on the top/bottom of the CC
+			y = (cc_select.getPosition().getBY() < cp_position.getBY()) ? (byte)1 : (byte)-1;
+			byte [][] pruebas = {{x,0},{x,y},{0,y},{(byte)(-1*x), (byte)(-1*y)},{(byte)(-1*x), 0},{0, (byte)(-1*y)}};
+			//Looks for a place to build, testing all the directions and increasing the range up to x4
+			for (int i=1; i<4; i++){
+				for (int j=0; j<pruebas.length; j++) {
+					//Point origen, Point maximo, UnitType building
+					Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
+							new Point((cc_select.getPosition().getBX()+pruebas[j][0]*building.getTileWidth()*i),
+									(cc_select.getPosition().getBY()+pruebas[j][1]*building.getTileHeight()*i)),
+							building);
+					//If the position is valid...
+					if (this.connector.canBuildHere(pos, building, true) && 
+							this.connector.getMap().isBuildable(pos) &&
+							this.connector.isBuildable(pos, true)){
+						posBuild = pos;
+						return true;
+					}				
 				}
 			}
 		} else {
@@ -617,119 +621,123 @@ public class JohnDoe extends GameHandler {
 				for (int j=0; j<pruebas.length; j++) {
 					//Point origen, Point maximo, UnitType building
 					Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
-							new Point((cc_select.getPosition().getBX()+pruebas[j][0]*edificio.getTileWidth()*i),
-									(cc_select.getPosition().getBY()+pruebas[j][1]*edificio.getTileHeight()*i)),
-										edificio);
-					//Si la posición es válida...
-					if (this.connector.canBuildHere(pos, edificio, true)){
+							new Point((cc_select.getPosition().getBX()+pruebas[j][0]*building.getTileWidth()*i),
+									(cc_select.getPosition().getBY()+pruebas[j][1]*building.getTileHeight()*i)),
+									building);
+					//If the position is valid...
+					if (this.connector.canBuildHere(pos, building, true) && 
+							this.connector.getMap().isBuildable(pos) &&
+							this.connector.isBuildable(pos, true)){
 						posBuild = pos;
 						return true;
 					}				
 				}
 			}
 		}
-		//No se encuentra nada
+		//Can't find a position
 		return false;
 	}
 	
 	/**
-	 * 
-	 * @return
+	 * For build refineries
+	 * @return true if finds a position, false if not.
 	 */
 	public boolean findPositionRefinery() {
-		//Caso especial de que sea una refinería
+		//Find the geiser
 		for (Unit vespeno : this.connector.getNeutralUnits()){
-			//Se construirá la refinería si está en la misma región que el CC
+			//It must be in the same region as the cc
 			if (vespeno.getType() == UnitTypes.Resource_Vespene_Geyser &&
 					this.connector.getMap().getRegion(vespeno.getPosition()) ==
-					this.connector.getMap().getRegion(cc_select.getPosition())) {                              
-					//Se obtiene la pos. del vespeno.
+					this.connector.getMap().getRegion(cc_select.getPosition())) {
+				
 					posBuild = vespeno.getTopLeft();
 					return true;
 			}
 		}
-		//No se encuentra posición para una refinería, asique fuera
+		//Don't find position to build the refinery
 		return false;
 	}
 	
 	/**
-	 * 
-	 * @return
+	 * For build expansions.
+	 * @return true if finds a position, false if not.
 	 */
 	public boolean findPositionCC() {
-		//Nos quedamos con la expansión más cercana a la base
+		//Selects the closer position to the original CC
 		int dist = 9999;
 		BaseLocation pos = null;
 		for (BaseLocation aux : this.connector.getMap().getBaseLocations()) {
-			//Se comprueba que no sean la misma posición, que la distancia 
-			//sea menor que la anterior y que se pueda construir
+			//Checks to select a different BaseLocation, 
+			//the distance is lower than the previous 
+			//and the position is buildable.
 			if (!aux.isStartLocation() &&
 					cc.getPosition().getApproxWDistance(aux.getCenter()) < dist &&
 					this.connector.canBuildHere(aux.getPosition(), UnitTypes.Terran_Command_Center, false) &&
 					!(aux.isIsland() || aux.isMineralOnly())) {
-				//Si es mas cercano se actualiza la distancia
+				//If closer, updates "dist" and "pos".
 				dist = cc.getPosition().getApproxWDistance(aux.getCenter());
-				//Se guarda
 				pos = aux;
 			}
-			//Ha encontrado una posición
-			if (pos != null) {
-				posBuild = pos.getPosition();
-				return true;
-			}
-			//No ha encontrado posición
-			else { return false; }
 		}
-		//No se encuentra para un CC, asique fuera
-		return false;
+		//It has found a position
+		if (pos != null) {
+			posBuild = pos.getPosition();
+			return true;
+		} else { 
+			return false;
+		}
 	}
 	
 	/**
-	 * 
-	 * @param edificio
-	 * @return
+	 * For build specifics buildings away from the Choke Point
+	 * @param building: Building to build (barracks, Factories and Starports)
+	 * @return true if finds a position, false if not
 	 */
-	public boolean findPositionAwayCP(UnitType edificio) {
-		//Se construyen alejados, Barracas, factory y starports estelares
-		//Conocer numeros de CP.
-		//Si sólo hay 1 construir lo más alejados del CP
-		//Si hay varios, construir lo más pegado al CC y alejado del CP
+	public boolean findPositionAwayCP(UnitType building) {
+		//If number_chokePoints == 1, build away from the CP
 		if (number_chokePoints == 1) {
-			//Solo se ejecuta 1 vez
-			for (ChokePoint cp : this.connector.getMap().getRegion(cc_select.getPosition()).getChokePoints()){
-				Position cp_position = cp.getCenter();
-				byte x, y;
-				//Si el chokePoint está a la izq del CC
-				x = (cc_select.getPosition().getBX() > cp_position.getBX()) ? (byte)1 : (byte)-1;
-				//Si el chokePoint está arriba del CC
-				y = (cc_select.getPosition().getBY() > cp_position.getBY()) ? (byte)1 : (byte)-1;
-				byte [][] pruebas = {{0,y},{x,y},{x,0},{(byte)(-1*x), 0},{0, (byte)(-1*y)},{(byte)(-1*x), (byte)(-1*y)}};
-				for (int i=0; i<4; i++){
-					for (int j=0; j<pruebas.length; j++) {
-						//Point origen, Point maximo, UnitType building
-						Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
-								new Point((cc_select.getPosition().getBX()+pruebas[j][0]*edificio.getTileWidth()*i),
-										(cc_select.getPosition().getBY()+pruebas[j][1]*edificio.getTileHeight()*i)),
-										edificio);
-						//Si la posición es válida...
-						if (this.connector.canBuildHere(pos, edificio, false)){
-							posBuild = pos;
-							return true;
-						}				
-					}
-				}
-			}
-		} else {
-			byte [][] pruebas = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
-			for (int i=1; i<4; i++){
-				for (int j=0; j<pruebas.length; j++) {
+			//Gets the CP
+			ChokePoint cp = (ChokePoint) this.connector.getMap().getRegion(cc_select.getPosition()).getChokePoints().toArray()[0];
+			Position cp_position = cp.getCenter();
+			//Variables to control the direction of the building
+			byte x, y;
+			//If CP is on the left/right side of the CC
+			x = (cc_select.getPosition().getBX() > cp_position.getBX()) ? (byte)1 : (byte)-1;
+			//If CP is on the top/bottom of the CC
+			y = (cc_select.getPosition().getBY() > cp_position.getBY()) ? (byte)1 : (byte)-1;
+			byte [][] tests = {{0,y},{x,y},{x,0},{(byte)(-1*x), 0},{0, (byte)(-1*y)},{(byte)(-1*x), (byte)(-1*y)}};
+			//Looks for a place to build, testing all the directions and increasing the range up to x4
+			for (int i=0; i<4; i++){
+				for (int j=0; j<tests.length; j++) {
 					//Point origen, Point maximo, UnitType building
 					Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
-							new Point((cc_select.getPosition().getBX()+pruebas[j][0]*edificio.getTileWidth()*i),
-									(cc_select.getPosition().getBY()+pruebas[j][1]*edificio.getTileHeight()*i)),
-										edificio);
-					//Si la posición es válida...
-					if (this.connector.canBuildHere(pos, edificio, true)){
+							new Point((cc_select.getPosition().getBX()+tests[j][0]*building.getTileWidth()*i),
+									(cc_select.getPosition().getBY()+tests[j][1]*building.getTileHeight()*i)),
+							building);
+					//If the position is valid...
+					if (this.connector.canBuildHere(pos, building, true) && 
+							this.connector.getMap().isBuildable(pos) &&
+							this.connector.isBuildable(pos, true)){
+						posBuild = pos;
+						return true;
+					}				
+				}
+			}
+			//If there's more than 1 CP, builds closer to the CC.
+		} else {
+			byte [][] tests = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
+			//Looks for a place to build, testing all the directions and increasing the range up to x4
+			for (int i=1; i<4; i++){
+				for (int j=0; j<tests.length; j++) {
+					//Point origen, Point maximo, UnitType building
+					Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
+							new Point((cc_select.getPosition().getBX()+tests[j][0]*building.getTileWidth()*i),
+									(cc_select.getPosition().getBY()+tests[j][1]*building.getTileHeight()*i)),
+							building);
+					//If the position is valid...
+					if (this.connector.canBuildHere(pos, building, true) && 
+							this.connector.getMap().isBuildable(pos) &&
+							this.connector.isBuildable(pos, true)){
 						posBuild = pos;
 						return true;
 					}				
@@ -741,44 +749,46 @@ public class JohnDoe extends GameHandler {
 	}
 	
 	/**
-	 * 
+	 * Updates the influence map
 	 */
 	public void updateInfluences(){
 		this.dah_map.updateMap(this.connector);
 	}
 	
 	/**
-	 * Se comprueba si hay edificios dañados
-	 * @return True si hay edificio, false si no
+	 * Checks if there is any damaged building
+	 * @return true if there's at least 1 building, false otherwise.
 	 */
 	public boolean checkBuildings() {
-		//Para ahorrar ciclos, si la lista de edificios dañados contiene algo
-		//se evita el mirar todos los edificios.
+		//To save time, if the list isn't empty, return true
 		if (!damageBuildings.isEmpty()) {
 			return true;
 		}
+		//If the list it's empty, look for damaged building
 		for (Unit u : finishedBuildings){
-			//Si el edificio ha sido dañado y no se está reparando ni guardado
-			if (u.getHitPoints() - u.getType().getMaxHitPoints() != 0 &&
+			//If the building it's damaged, not being repaired and isn't in the damageBuildings list
+			if ((u.getHitPoints() - u.getType().getMaxHitPoints() != 0) &&
 					!u.isRepairing() && !damageBuildings.contains(u)) {
 				damageBuildings.add(u);
 			}
 		}
+		
 		if (damageBuildings.isEmpty()) {
 			return false;
 		}
+		
 		return true;
 	}
 	
 	/**
-	 * 
-	 * @return
+	 * Sends a SCV to repair a building
+	 * @return true if can, false otherwise
 	 */
 	public boolean repair() {
 		for (Unit vce : workers){
 			if (vce.isIdle()) {
 				boolean ret = vce.repair(damageBuildings.get(0), false);
-				//Si se va a reparar, se elimina de la lista.
+				//If it's going to be repaired, removes it from the list
 				if (ret)
 					damageBuildings.remove(0);
 				return ret;
@@ -804,14 +814,11 @@ public class JohnDoe extends GameHandler {
      */
     public void createMap() {
     	//La posición hay que desplazarla de 32 en 32 (tamaño de las casillas)
-    	//Position pos_aux = new Position(0,0, PosType.BUILD);
     	//Altura máxima del mapa en pixeles (Build)
 		int maxHeight = this.connector.getMap().getSize().getBY();
 		//Anchura máxima del mapa en pixeles (Build)
 		int maxWidth = this.connector.getMap().getSize().getBX();
-		//Altura de la casilla actual
-		//int altura = this.connector.getMap().getGroundHeight(pos_aux);
-		//Mapa a devolver
+		//Mapa a generar
 		map = new int[maxHeight][maxWidth];
 		//Tamaño máximo del edificio que se puede construir
 		int dimension;
@@ -829,8 +836,7 @@ public class JohnDoe extends GameHandler {
 				
 				//para cada posición se mira si se está en los límites del mapa y
 				//hay que verificar si la posición es construible
-				if (f+1>=maxHeight ||
-					c+1>=maxWidth ||
+				if (f+1>=maxHeight || c+1>=maxWidth ||
 					!this.connector.getMap().isBuildable(pos_aux)){ zonaLibre = false; }
 				
 				//Se obtiene la altura de la posición
@@ -841,8 +847,8 @@ public class JohnDoe extends GameHandler {
 					//Si alguna no lo es, se sale del while y se guarda el valor en el mapa
 					for(int i = 0; i < dimension; i++){
 						//matriz[i+f][c+dimension]	Comprueba columnas
-						if (this.connector.isBuildable(new Position(c+dimension, f+i, PosType.BUILD), true)){ // �Es construible?
-							if(this.connector.getMap().getGroundHeight(new Position(c+dimension, f+i, PosType.BUILD)) != altura){ // �Est�n a diferente altura?
+						if (this.connector.isBuildable(new Position(c+dimension, f+i, PosType.BUILD), true)){ // ¿Es construible?
+							if(this.connector.getMap().getGroundHeight(new Position(c+dimension, f+i, PosType.BUILD)) != altura){ // ¿Están a diferente altura?
 								zonaLibre = false;
 							}
 						}
