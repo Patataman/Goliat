@@ -592,12 +592,12 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean findPosition(UnitType building) {
 		//If there's already a position to build, don't search again
-		if (posBuild != null && 
-				this.connector.canBuildHere(posBuild, building, true) && 
-				this.connector.getMap().isBuildable(posBuild) &&
-				this.connector.isBuildable(posBuild, true)){
-			return true;
-		}
+//		if (posBuild != null && 
+//				this.connector.canBuildHere(posBuild, building, true) && 
+//				this.connector.getMap().isBuildable(posBuild) &&
+//				this.connector.isBuildable(posBuild, true)){
+//			return true;
+//		}
 		//Special case: Refinery
 		if (building == UnitTypes.Terran_Refinery) {
 			return findPositionRefinery();
@@ -795,8 +795,16 @@ public class JohnDoe extends GameHandler {
 						new Point((cc_select.getPosition().getBX()+pruebas[j][0]*UnitTypes.Terran_Missile_Turret.getTileWidth()*i),
 								(cc_select.getPosition().getBY()+pruebas[j][1]*UnitTypes.Terran_Missile_Turret.getTileHeight()*i)),
 								UnitTypes.Terran_Missile_Turret);
+				boolean pass = false;
+				//The bunkers have to be spread.
+				for (Unit u : finishedBuildings) { 
+					if (u.getType() == UnitTypes.Terran_Missile_Turret && 
+							u.getDistance(pos) < 300) {
+						pass = true;
+					}	
+				}
 				//If the position is valid...
-				if (this.connector.canBuildHere(pos, UnitTypes.Terran_Missile_Turret, true) && 
+				if (!pass && this.connector.canBuildHere(pos, UnitTypes.Terran_Missile_Turret, true) && 
 						this.connector.getMap().isBuildable(pos) &&
 						this.connector.isBuildable(pos, true) &&
 						dah_map.mapa[pos.getBY()][pos.getBX()] < 3){
@@ -815,7 +823,6 @@ public class JohnDoe extends GameHandler {
 	public boolean findPositionBunker() {
 		byte [][] pruebas = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
 		if (number_chokePoints == 1) {
-			System.out.println("Oli");
 			ChokePoint cp = (ChokePoint) this.connector.getMap().getRegion(cc_select.getPosition()).getChokePoints().toArray()[0];
 			Position cp_position = cp.getCenter();
 			for (int j=0; j<pruebas.length; j++) {
@@ -824,8 +831,16 @@ public class JohnDoe extends GameHandler {
 						new Point((cp_position.getBX()+pruebas[j][0]*UnitTypes.Terran_Bunker.getTileWidth()),
 								(cp_position.getBY()+pruebas[j][1]*UnitTypes.Terran_Bunker.getTileHeight())),
 								UnitTypes.Terran_Bunker);
+				boolean pass = false;
+				//The bunkers have to be spread.
+				for (Unit u : finishedBuildings) { 
+					if (u.getType() == UnitTypes.Terran_Bunker && 
+							u.getDistance(pos) < 300) {
+						pass = true;
+					}	
+				}
 				//If the position is valid...
-				if (this.connector.canBuildHere(pos, UnitTypes.Terran_Bunker, true) && 
+				if (!pass && this.connector.canBuildHere(pos, UnitTypes.Terran_Bunker, true) && 
 						this.connector.getMap().isBuildable(pos) &&
 						this.connector.isBuildable(pos, true) &&
 						dah_map.mapa[pos.getBY()][pos.getBX()] < 3){
