@@ -9,7 +9,6 @@ public class Troop {
 	
 	ArrayList<Unit> units;
 	Position destination;
-	byte distance;
 	byte status;
 	/*State's list:
 	 *	0: Doing nothing.
@@ -25,7 +24,6 @@ public class Troop {
 		units = new ArrayList<Unit>(0);
 		status = 0;
 		destination = null;
-		distance = 40;
 	}
 	
 	/**
@@ -50,17 +48,19 @@ public class Troop {
 	}
 	
 	/**
-	 * Check if first and last unit of "units" are too far.
-	 * @return true if the first and last unit are too far.
+	 * Check if unit average distant is > 50.
+	 * @return true if > 50, false if not.
 	 */
 	public boolean tooFar() {
+		int dist = 0;
+		Position dest = units.get((int) units.size()/2).getPosition();
 		for (Unit u : units) {
-			if (units.get(0).getPosition().getApproxWDistance(u.getPosition()) > distance) {
-				distance = 20;
-				return true;
-			}
+			dist += u.getPosition().getApproxWDistance(dest);
 		}
-		distance = 40;
+		dist /= units.size();
+		if (dist > 50) {
+			return true;
+		}
 		return false;
 	}
 	

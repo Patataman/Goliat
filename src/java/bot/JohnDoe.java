@@ -327,22 +327,22 @@ public class JohnDoe extends GameHandler {
 	public boolean checkStateTroops(){
 		ArrayList<Troop> remove = new ArrayList<Troop>(0);
 		for (Troop t : assaultTroop) {
-			if (t.status == 3) {
-				t.isInPosition();
-			}
 			//If all units are dead, resets status and destination
 			if (t.units.size() == 0 && t.status != 0) {
 				remove.add(t);
-			}
-			//If the attackGroup fell, retreat.
-			if ((t.status != 0) && t.units.size() <= 5 && t.units.size() > 0) {
-				t.destination = defendGroup.destination;
-				for (Unit u : t.units) {
-					u.move(t.destination.makeValid(), false);
-				}
-				t.status = 4;
+			} else {
+				t.isInPosition();
+				//If the attackGroup fell, retreat.
+				if (t.status != 0 && t.units.size() <= 5 && t.units.size() > 0) {
+					t.destination = defendGroup.destination;
+					for (Unit u : t.units) {
+						u.move(t.destination.makeValid(), false);
+					}
+					t.status = 4;
 //				return true;
+				}				
 			}
+			
 		}
 		assaultTroop.removeAll(remove);
 		return true;
@@ -355,25 +355,35 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean redistribuiteTroops() {
 		//Predicate to filter all troops
-		Predicate<Troop> predicado = new Predicate<Troop>() {
+		Predicate<Troop> predicate = new Predicate<Troop>() {
 			public boolean test(Troop t) {
 				return t.units.size() < 10 && (t.status == 4 || t.status == 5);
 				
 			}
 		};
-		
-		ArrayList <Troop> remove = new ArrayList<Troop>(0);
-		for (Object t : assaultTroop.stream().filter(predicado).toArray()) {
-			for (Object t2 : assaultTroop.stream().filter(predicado).toArray()) {
+		Predicate<Troop> predicate2 = new Predicate<Troop>() {
+			public boolean test(Troop t) {
+				return t.units.size() < 10 && (t.status == 4 || t.status == 5 || t.status == 0);
+				
+			}
+		};
+//		ArrayList <Troop> remove = new ArrayList<Troop>(0);
+		for (Object t : assaultTroop.stream().filter(predicate).toArray()) {
+			for (Object t2 : assaultTroop.stream().filter(predicate2).toArray()) {
 				//If aux doesn't contains any unit from t2 && their status it's the same -> merge units list.
-				if (!((Troop) t).units.contains(((Troop) t2).units) &&
-						((Troop) t2).status == ((Troop) t).status) {
+				if (!((Troop ) t).equals((Troop) t2) &&
+						((Troop) t2).status == ((Troop) t).status &&
+						((Troop) t).units.size() + ((Troop) t2).units.size() < 20) {
+					System.out.println("Antes t1: "+((Troop) t).units.size()+", t2: "+((Troop) t2).units.size());
 					((Troop) t).units.addAll(((Troop) t2).units);
-					remove.add((Troop) t2);
+					((Troop) t).status = 4;
+					((Troop) t).destination = defendGroup.destination;
+					System.out.println("Despues t1: "+((Troop) t).units.size());
+					assaultTroop.remove((Troop)t2);
 				}
 			}
 		}
-		assaultTroop.removeAll(remove);
+//		assaultTroop.removeAll(remove);
 		
 		return false;
 	}
@@ -390,7 +400,8 @@ public class JohnDoe extends GameHandler {
 				ArrayList<Unit> auxList = new ArrayList<Unit>(0);
 				
 				for (Unit u : boredSoldiers) {
-					if(u.isIdle() && u.isCompleted()) {
+					//Unit is idle, complete and not in a bunker
+					if(u.isIdle() && u.isCompleted() && !u.isLoaded()) {
 						assaultTroop.get(i).units.add(u);
 						auxList.add(u);
 					}
@@ -412,11 +423,20 @@ public class JohnDoe extends GameHandler {
 	 * @return True if can,  False otherwise.
 	 */
 	public boolean selectGroup() {
+		if (assaultTroop.size() > 0){
+			System.out.println("-------------------");
+			for (Troop t : assaultTroop){
+				System.out.println("Estado:"+t.status+", Tropas: "+t.units.size()+", Bored: "+boredSoldiers.size());
+			}
+			System.out.println("+++++++++++++++++++");			
+		}
+		
 		//Troops with status == 0
 		for (Troop t : assaultTroop){
 			if (t.status == 0) {
 				if (t.units.size() >= 10) {
 					attackGroup = t;
+					System.out.println("Selected Estado:"+t.status+", Tropas: "+t.units.size());
 					return true;
 				}				
 			}
@@ -426,17 +446,20 @@ public class JohnDoe extends GameHandler {
 		for (Troop t : assaultTroop) {
 			if (t.status >= 5 && t.units.size() >= 10) {
 				attackGroup = t;
+				System.out.println("Selected Estado:"+t.status+", Tropas: "+t.units.size());
 				return true;
 			}			
 		}
 		
 		//Troops with status == 1
 		for (Troop t : assaultTroop) {
-			if (t.status == 1 && !t.isInPosition() && t.units.size() >= 10) {
+			if (t.status == 1 && t.units.size() >= 10) {
 				attackGroup = t;
+				System.out.println("Selected Estado:"+t.status+", Tropas: "+t.units.size());
 				return true;
 			}			
 		}
+		
 		return false;
 	}
 
@@ -505,16 +528,19 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean sendToBunker() {
 		//Predicate to filter by type.
-		Predicate<Unit> predicado = new Predicate<Unit>() {
+		Predicate<Unit> predicate = new Predicate<Unit>() {
 			public boolean test(Unit u) {
-				return u.getType() == UnitTypes.Terran_Marine;
+				return u.getType() == UnitTypes.Terran_Marine && u.isCompleted();
 				
 			}
 		};
 		for (Unit b : bunkers) {
 			if (b.getLoadedUnits().size() < 4) {
-				for (Object u : boredSoldiers.stream().filter(predicado).toArray()) {
+				for (Object u : boredSoldiers.stream().filter(predicate).toArray()) {
 					b.load((Unit) u, false);
+					for (Troop t : assaultTroop) {
+						if (t.units.contains((Unit) u)) {t.units.remove((Unit) u ); }
+					}
 					return true;
 				}
 			}
@@ -549,9 +575,9 @@ public class JohnDoe extends GameHandler {
 	 * @return true if it isn't in range, false otherwise
 	 */
 	public boolean sendRegroup(){
-		if (attackGroup.status == 3) {
-			return false;
-		}
+//		if (attackGroup.status == 3) {
+//			return false;
+//		}
 		attackGroup.status = 3;
 		attackGroup.destination = attackGroup.units.get((int)attackGroup.units.size()/2).getPosition();
 		//if too far, group units
@@ -591,13 +617,6 @@ public class JohnDoe extends GameHandler {
 	 * @return true if can find a valid position, false otherwise
 	 */
 	public boolean findPosition(UnitType building) {
-		//If there's already a position to build, don't search again
-//		if (posBuild != null && 
-//				this.connector.canBuildHere(posBuild, building, true) && 
-//				this.connector.getMap().isBuildable(posBuild) &&
-//				this.connector.isBuildable(posBuild, true)){
-//			return true;
-//		}
 		//Special case: Refinery
 		if (building == UnitTypes.Terran_Refinery) {
 			return findPositionRefinery();
@@ -612,15 +631,11 @@ public class JohnDoe extends GameHandler {
 						building == UnitTypes.Terran_Starport) {
 			return findPositionAwayCP(building);
 		}
-		//Special case: Missile turrets
-		if (building == UnitTypes.Terran_Missile_Turret){
-			return findPositionTurret();
+		//Special case: Missile turrets and bunkers
+		if (building == UnitTypes.Terran_Missile_Turret || 
+				building == UnitTypes.Terran_Bunker){
+			return findPositionBunkerTurret(building);
 		}
-		//Special case: Bunkers
-		if (building == UnitTypes.Terran_Bunker){
-			return findPositionBunker();
-		}
-		
 		//No special case: others.
 		if (number_chokePoints == 1) {
 			//Gets the CP
@@ -782,45 +797,45 @@ public class JohnDoe extends GameHandler {
 		return false;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
-	public boolean findPositionTurret() {
-		byte [][] pruebas = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
-		for (int i=4; i>1; i--){
-			for (int j=0; j<pruebas.length; j++) {
-				//Point origen, Point maximo, UnitType building
-				Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
-						new Point((cc_select.getPosition().getBX()+pruebas[j][0]*UnitTypes.Terran_Missile_Turret.getTileWidth()*i),
-								(cc_select.getPosition().getBY()+pruebas[j][1]*UnitTypes.Terran_Missile_Turret.getTileHeight()*i)),
-								UnitTypes.Terran_Missile_Turret);
-				boolean pass = false;
-				//The bunkers have to be spread.
-				for (Unit u : finishedBuildings) { 
-					if (u.getType() == UnitTypes.Terran_Missile_Turret && 
-							u.getDistance(pos) < 300) {
-						pass = true;
-					}	
-				}
-				//If the position is valid...
-				if (!pass && this.connector.canBuildHere(pos, UnitTypes.Terran_Missile_Turret, true) && 
-						this.connector.getMap().isBuildable(pos) &&
-						this.connector.isBuildable(pos, true) &&
-						dah_map.mapa[pos.getBY()][pos.getBX()] < 3){
-					posBuild = pos;
-					return true;
-				}				
-			}
-		}
-		return false;
-	}
+//	/**
+//	 * 
+//	 * @return
+//	 */
+//	public boolean findPositionTurret() {
+//		byte [][] pruebas = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
+//		for (int i=4; i>1; i--){
+//			for (int j=0; j<pruebas.length; j++) {
+//				//Point origen, Point maximo, UnitType building
+//				Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
+//						new Point((cc_select.getPosition().getBX()+pruebas[j][0]*UnitTypes.Terran_Missile_Turret.getTileWidth()*i),
+//								(cc_select.getPosition().getBY()+pruebas[j][1]*UnitTypes.Terran_Missile_Turret.getTileHeight()*i)),
+//								UnitTypes.Terran_Missile_Turret);
+//				boolean pass = false;
+//				//The bunkers have to be spread.
+//				for (Unit u : finishedBuildings) { 
+//					if (u.getType() == UnitTypes.Terran_Missile_Turret && 
+//							u.getDistance(pos) < 300) {
+//						pass = true;
+//					}	
+//				}
+//				//If the position is valid...
+//				if (!pass && this.connector.canBuildHere(pos, UnitTypes.Terran_Missile_Turret, true) && 
+//						this.connector.getMap().isBuildable(pos) &&
+//						this.connector.isBuildable(pos, true) &&
+//						dah_map.mapa[pos.getBY()][pos.getBX()] < 3){
+//					posBuild = pos;
+//					return true;
+//				}				
+//			}
+//		}
+//		return false;
+//	}
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public boolean findPositionBunker() {
+	public boolean findPositionBunkerTurret(UnitType building) {
 		byte [][] pruebas = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
 		if (number_chokePoints == 1) {
 			ChokePoint cp = (ChokePoint) this.connector.getMap().getRegion(cc_select.getPosition()).getChokePoints().toArray()[0];
@@ -828,19 +843,19 @@ public class JohnDoe extends GameHandler {
 			for (int j=0; j<pruebas.length; j++) {
 				//Point origen, Point maximo, UnitType building
 				Position pos = findPlace(new Point(cp_position.getBX(), cp_position.getBY()),
-						new Point((cp_position.getBX()+pruebas[j][0]*UnitTypes.Terran_Bunker.getTileWidth()),
-								(cp_position.getBY()+pruebas[j][1]*UnitTypes.Terran_Bunker.getTileHeight())),
-								UnitTypes.Terran_Bunker);
+										new Point((cp_position.getBX()+pruebas[j][0]*building.getTileWidth()),
+												(cp_position.getBY()+pruebas[j][1]*building.getTileHeight())),
+										building);
 				boolean pass = false;
-				//The bunkers have to be spread.
+				//The bunkers/turrets have to be spread.
 				for (Unit u : finishedBuildings) { 
-					if (u.getType() == UnitTypes.Terran_Bunker && 
+					if (u.getType() == building && 
 							u.getDistance(pos) < 300) {
 						pass = true;
 					}	
 				}
 				//If the position is valid...
-				if (!pass && this.connector.canBuildHere(pos, UnitTypes.Terran_Bunker, true) && 
+				if (!pass && this.connector.canBuildHere(pos, building, true) && 
 						this.connector.getMap().isBuildable(pos) &&
 						this.connector.isBuildable(pos, true) &&
 						dah_map.mapa[pos.getBY()][pos.getBX()] < 3){
@@ -853,11 +868,19 @@ public class JohnDoe extends GameHandler {
 				for (int j=0; j<pruebas.length; j++) {
 					//Point origen, Point maximo, UnitType building
 					Position pos = findPlace(new Point(cc_select.getPosition().getBX(), cc_select.getPosition().getBY()),
-							new Point((cc_select.getPosition().getBX()+pruebas[j][0]*UnitTypes.Terran_Bunker.getTileWidth()*i),
-									(cc_select.getPosition().getBY()+pruebas[j][1]*UnitTypes.Terran_Bunker.getTileHeight()*i)),
-							UnitTypes.Terran_Bunker);
+											new Point((cc_select.getPosition().getBX()+pruebas[j][0]*building.getTileWidth()*i),
+													(cc_select.getPosition().getBY()+pruebas[j][1]*building.getTileHeight()*i)),
+											building);
+					boolean pass = false;
+					//The bunkers/turrets have to be spread.
+					for (Unit u : finishedBuildings) { 
+						if (u.getType() == building && 
+								u.getDistance(pos) < 300) {
+							pass = true;
+						}	
+					}
 					//If the position is valid...
-					if (this.connector.canBuildHere(pos, UnitTypes.Terran_Bunker, true) && 
+					if (!pass && this.connector.canBuildHere(pos, building, true) && 
 							this.connector.getMap().isBuildable(pos) &&
 							this.connector.isBuildable(pos, true) &&
 							dah_map.mapa[pos.getBY()][pos.getBX()] < 3){
