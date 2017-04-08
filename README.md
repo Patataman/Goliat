@@ -6,4 +6,3 @@ Esta versión tiene arreglado, mejorado y más elaborado el árbol de construcci
 También posee un árbol para gestionar la recolección de recursos de cada base (incluyendo expansiones).
 
 WIP
-CHECK

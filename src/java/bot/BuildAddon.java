@@ -4,17 +4,20 @@ import org.iaie.btree.state.State;
 import org.iaie.btree.task.leaf.Action;
 import org.iaie.btree.util.GameHandler;
 
-public class ChosseUnits extends Action {
+import jnibwapi.types.UnitType;
 
-	public ChosseUnits(String name, GameHandler gh) {
+public class BuildAddon extends Action {
+
+	UnitType addon;
+	public BuildAddon(String name, GameHandler gh, UnitType addon) {
 		super(name, gh);
+		this.addon = addon;
 	}
 
 	@Override
 	public State execute() {
-		return State.ERROR;
-		/*try{
-			if (((JohnDoe)this.handler).chosseUnits()) {
+		try {
+			if (((JohnDoe)this.handler).buildAddon(addon)) {
 				return State.SUCCESS;
 			} else {
 				return State.FAILURE;
@@ -22,7 +25,7 @@ public class ChosseUnits extends Action {
 		} catch (Exception e) {
 			e.printStackTrace();
 			return State.ERROR;
-		}*/
+		}
 	}
 
 }

@@ -21,7 +21,8 @@ public class FindPosition extends Conditional {
 		try{
 			//El decorador se hace aqui para ahorrar visitar el resto de nodos del árbol
 			if (edificio == UnitTypes.Terran_Supply_Depot &&
-					((JohnDoe)this.handler).supplies < ((JohnDoe)this.handler).totalSupplies*0.7){
+					( ((JohnDoe)this.handler).supplies < ((JohnDoe)this.handler).totalSupplies*0.7 || 
+					((JohnDoe)this.handler).totalSupplies == 400) ){
 				return State.FAILURE;
 			}
 			//Decorador para barracks. Límite a 2 por CC.
@@ -32,12 +33,12 @@ public class FindPosition extends Conditional {
 			}
 			//Decorador para la refinería. Va después de los barracks.
 			if (edificio == UnitTypes.Terran_Refinery &&
-					(((JohnDoe)this.handler).refinery == ((JohnDoe)this.handler).CCs.size() ||
-					((JohnDoe)this.handler).barracks == 0 )) {
+					((JohnDoe)this.handler).barracks == 0 ) {
 				return State.FAILURE;
 			}
 			//Decorador para la academy, va después de los barracks. Limite 1
-			if (edificio == UnitTypes.Terran_Academy && (((JohnDoe)this.handler).barracks == 0 || 
+			if (edificio == UnitTypes.Terran_Academy &&
+					(((JohnDoe)this.handler).barracks == 0 || 
 					((JohnDoe)this.handler).academy != 0)) {
 				return State.FAILURE;
 			}
