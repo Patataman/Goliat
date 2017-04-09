@@ -43,7 +43,9 @@ public class JohnDoe extends GameHandler {
 	byte barracks, refinery, factory, 
 		academy, armory, bay, max_vce, 
 		lab_cient, starport, number_chokePoints,
-		limit;
+		limit, vessels;
+	
+	boolean detector_first = false;
 	
 	List<ChokePoint>[][] chokePoints;
 	
@@ -82,10 +84,11 @@ public class JohnDoe extends GameHandler {
 		attackGroup				= new Troop();
 		defendGroup				= new Troop();
 		barracks = refinery = factory = 
-		academy = armory = bay = lab_cient = starport = 0;
-		limit = 4;
+			academy = armory = bay = lab_cient = 
+			starport = vessels = 0;
 		number_chokePoints 		= (byte) this.connector.getMap().getRegion(this.connector.getSelf().getStartLocation()).getChokePoints().size();
-		max_vce = 20;
+		limit 					= 4;
+		max_vce 				= 20;
 		dah_map 				= new InfluenceMap(bwapi.getMap().getSize().getBY(), bwapi.getMap().getSize().getBX());
 	}
 	
@@ -291,7 +294,9 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean findBuilding(UnitType building) {
 		for (Unit u : finishedBuildings) {
-			if (u.isCompleted() && u.getType() == building) {
+			if (u.isCompleted() && 
+					u.getType() == building &&
+					u.getAddon() == null) {
 				addonBuilding = u;
 				return true;
 			}
@@ -371,7 +376,6 @@ public class JohnDoe extends GameHandler {
 						u.move(t.destination.makeValid(), false);
 					}
 					t.status = 4;
-//				return true;
 				}				
 			}
 			
@@ -579,7 +583,11 @@ public class JohnDoe extends GameHandler {
 			attackGroup.destination = objective;
 			for (Unit u : attackGroup.units) {
 				if (!u.isAttacking() && !u.isMoving()) {
-					u.attack(objective, true);
+					if (u.getType() == UnitTypes.Terran_Science_Vessel) {
+						u.follow(attackGroup.units.get(0), true);
+					} else {
+						u.attack(objective, true);						
+					}
 				}
 			}			
 			return true;
@@ -772,7 +780,7 @@ public class JohnDoe extends GameHandler {
 					}				
 				}
 			}
-			limit++;
+//			limit++;
 			//If there's more than 1 CP, builds closer to the CC.
 		} else {
 			byte [][] tests = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
@@ -793,7 +801,7 @@ public class JohnDoe extends GameHandler {
 					}				
 				}
 			}
-			limit++;
+//			limit++;
 		}
 		return false;
 	}
@@ -1033,9 +1041,7 @@ public class JohnDoe extends GameHandler {
     	int width = (building == UnitTypes.Terran_Factory ||
 				building == UnitTypes.Terran_Starport ||
 				building == UnitTypes.Terran_Science_Facility) ? building.getTileWidth()+2 : building.getTileWidth();
-    	int height = (building == UnitTypes.Terran_Factory ||
-    					building == UnitTypes.Terran_Starport ||
-    					building == UnitTypes.Terran_Science_Facility) ? building.getTileHeight()+2 : building.getTileHeight();
+    	int height = building.getTileHeight();
     	
     	//Se considera que sea misma fila o columna.
     	if (origen.x == maximo.x && maximo.x + width < map[0].length) {
@@ -1102,17 +1108,18 @@ public class JohnDoe extends GameHandler {
      * La posición origen ha sido obtenida mediante el m�todo findPlace y la posición
      * destino ha sido calculada con el tama�o del edificio + la posición origen
      */
-    public void updateMap(Position origen, Position destino) {
-    	if (destino.getBX() > map[0].length) {
-    		if (destino.getBY() > map.length) {
-    			destino = new Position(map[0].length-1,map.length-1);
-    		} else {
-    			destino = new Position(map[0].length-1,destino.getBY());
-    		}
-    	}
+    public void updateMap(Position origen, Position destino, UnitType building) {
+//    	if (destino.getBX() > map[0].length) {
+//    		if (destino.getBY() > map.length) {
+//    			destino = new Position(map[0].length-1,map.length-1);
+//    		} else {
+//    			destino = new Position(map[0].length-1,destino.getBY());
+//    		}
+//    	}
+//    	System.out.println(building+", dimensiones: "+building.getTileWidth()+"x"+building.getTileHeight());
     	//se recorre la matriz entre las posiciones dadas
-    	for (int i = origen.getBY(); i < destino.getBY(); i++){
-    		for(int j = origen.getBX(); j < destino.getBX(); j++){
+    	for (int i = origen.getBY(); i <= destino.getBY(); i++){
+    		for(int j = origen.getBX(); j <= destino.getBX(); j++){
     			//se ponen como ocupadas las casillas
     			map[i][j] = 0;
     		}
@@ -1120,7 +1127,7 @@ public class JohnDoe extends GameHandler {
     	/*
     	 *  Para actualizar el resto de la matriz, tendremos que explorar las casillas superiores y por la izquierda.
     	 *  Dado que también hay que tener en cuenta las diagonales, se hará de tal forma que primero se actualicen
-    	 *  todas las superiores incluidas las diagonales y despu�s las de la izquierda. 
+    	 *  todas las superiores incluidas las diagonales y después las de la izquierda. 
     	 */
     	
     	// Esta variable se usará para saber si hemos terminado la actualización
@@ -1132,38 +1139,39 @@ public class JohnDoe extends GameHandler {
     	
     	// Bucle de actualización vertical
     	while (parada){
-    		int extra = (destino.getBX()-origen.getBX() <= ih ? ih-(destino.getBX()-origen.getBX()) : 0);
+//    		int extra = (destino.getBX()-origen.getBX() <= ih) ? ih-(destino.getBX()-origen.getBX()) : 0;
     		//Si no nos salimos del mapa, el valor actual de la dimensión no es 4 (máximo)
-    		if (((origen.getBY()-iv >= 0 && destino.getBX()-ih >= 0) && map[origen.getBY()-iv][destino.getBX()-ih] > iv) && (iv+extra < 4)){ // Si llegamos a 4 no es necesario seguir
-    			map[origen.getBY()-iv][destino.getBX()-ih] = (iv == 1 ? iv+extra : iv);
+    		if (((origen.getBY()-iv >= 0 && destino.getBX()-ih >= 0) && 
+    				map[origen.getBY()-iv][destino.getBX()-ih] > iv) && 
+    				(iv < 6) ) { // Si llegamos a 4 no es necesario seguir
+    			map[origen.getBY()-iv][destino.getBX()-ih] = iv;
     			iv++;
-    		}
-    		else{ // Hemos terminado con la columna, pasamos a la siguiente (hacia atrás en el mapa)
+    		} else{ // Hemos terminado con la columna, pasamos a la siguiente (hacia atrás en el mapa)
     			if (iv == 1){
     				parada = false; // Si en la primera casilla no hay que actualizar, significa que hemos terminado.
-    			}
-    			else{
+    			} else {
     				ih++;
         			iv = 1;
     			}
     		}
     	}
     	
+    	//Resetear valores
+    	parada = true;
     	ih = 1;
     	iv = 0;
   
-    	parada = true;
     	// Bucle horizontal
     	while (parada){
-    		if (((origen.getBY()+iv >= 0 && origen.getBX()-ih >= 0) && map[origen.getBY()+iv][origen.getBX()-ih] > ih) && (ih < 4)){ // Si llegamos a 4 no es necesario seguir
+    		if (((origen.getBY()+iv < map.length && origen.getBX()-ih >= 0) &&
+    				map[origen.getBY()+iv][origen.getBX()-ih] > ih) && 
+    				(ih < 6) ) { // Si llegamos a 4 no es necesario seguir
     			map[origen.getBY()+iv][origen.getBX()-ih] = ih;
     			ih++;
-    		}
-    		else{ // Hemos terminado con la fila, pasamos a la siguiente (hacia abajo en el mapa)
+    		} else { // Hemos terminado con la fila, pasamos a la siguiente (hacia abajo en el mapa)
     			if (ih == 1 || origen.getBY()+iv == destino.getBY()){
     				parada = false; // Si en la primera casilla no hay que actualizar, significa que hemos terminado.
-    			}
-    			else{
+    			} else {
     				iv++;
         			ih = 1;
     			}
