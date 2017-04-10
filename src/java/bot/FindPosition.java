@@ -39,22 +39,17 @@ public class FindPosition extends Conditional {
 			//Decorador para la academy, va después de los barracks. Limite 1
 			if (building == UnitTypes.Terran_Academy &&
 					(((JohnDoe)this.handler).barracks == 0 || 
-					((JohnDoe)this.handler).academy != 0)) {
+					((JohnDoe)this.handler).academy > 0)) {
 				return State.FAILURE;
 			}
 			//Decorador para la bahía de ingeniería
-			if (building == UnitTypes.Terran_Engineering_Bay && (((JohnDoe)this.handler).bay != 0 
+			if (building == UnitTypes.Terran_Engineering_Bay && (((JohnDoe)this.handler).bay > 0 
 					|| ((JohnDoe)this.handler).barracks == 0)) {
 				return State.FAILURE;
 			}
 			//Decorador para la fábrica, va después de los barracks. Límite a 2 por CC.
 			if (building == UnitTypes.Terran_Factory && (((JohnDoe)this.handler).barracks == 0 ||
 					((JohnDoe)this.handler).factory >= ((JohnDoe)this.handler).CCs.size())) {
-				return State.FAILURE;
-			}
-			//Decorador para el armory. Límite a 1
-			if (building == UnitTypes.Terran_Armory && (((JohnDoe)this.handler).factory == 0 ||
-					((JohnDoe)this.handler).armory >= 1)) {
 				return State.FAILURE;
 			}
 			//Decorador para construir expansiones.
@@ -64,19 +59,32 @@ public class FindPosition extends Conditional {
 					((JohnDoe)this.handler).CCs.size() == 2)) {
 				return State.FAILURE;
 			}
-			//Decorador para construir laboratorios cientificos.
-			//Sólo se construye 1
-			if (building == UnitTypes.Terran_Science_Facility && ((JohnDoe)this.handler).lab_cient == 1) {
-				return State.FAILURE;
-			}
-			//Decorador para construir laboratorios cientificos.
-			//Sólo se construye 1
-			if (building == UnitTypes.Terran_Starport && ((JohnDoe)this.handler).starport == 1) {
+			
+			if (building == UnitTypes.Terran_Bunker &&
+					((JohnDoe)this.handler).barracks == 0 &&
+					((JohnDoe)this.handler).bunkers.size() >= 2) {
 				return State.FAILURE;
 			}
 			
-			if (building == UnitTypes.Terran_Bunker && ((JohnDoe)this.handler).barracks == 0 &&
-					((JohnDoe)this.handler).bunkers.size() >= 2) {
+			//Decorador para construir laboratorios cientificos.
+			//Sólo se construye 1
+			if (building == UnitTypes.Terran_Science_Facility &&
+					( ((JohnDoe)this.handler).CCs.size() <= 1 ||
+					((JohnDoe)this.handler).lab_cient > 0)) {
+				return State.FAILURE;
+			}
+			//Decorador para construir laboratorios cientificos.
+			//Sólo se construye 1
+			if (building == UnitTypes.Terran_Starport &&
+					( ((JohnDoe)this.handler).CCs.size() <= 1 ||
+					((JohnDoe)this.handler).starport > 0)) {
+				return State.FAILURE;
+			}
+			//Decorador para el armory. Límite a 1
+			if (building == UnitTypes.Terran_Armory &&
+					( ((JohnDoe)this.handler).CCs.size() <= 1 ||
+					(((JohnDoe)this.handler).factory == 0 ||
+					((JohnDoe)this.handler).armory > 0))) {
 				return State.FAILURE;
 			}
 			

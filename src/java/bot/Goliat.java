@@ -75,7 +75,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				gh.cc = cc;
 				gh.cc_select = cc;
 				gh.CCs.add(cc.getID());
-				gh.addCC(0);
+				gh.addCC();
 				gh.finishedBuildings.add(cc);
 			}
 		}
@@ -235,8 +235,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		buildLab.addChild(new Build("Build facility", gh, UnitTypes.Terran_Science_Facility));
 		
 		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks,
-															buildRefinery, buildBunker, buildAcademy, buildFactory, buildStarport, buildLab, 
-															buildBay, buildTurret, buildArmory, buildCC);
+															buildRefinery, buildBunker, buildAcademy, buildFactory, buildCC, buildStarport, buildLab, 
+															buildBay, buildTurret, buildArmory);
 		// ---------- END BUILD -----------
 		
 		// ---------- Build addons ----------
@@ -330,12 +330,12 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		// ------------- END REPAIR --------------------
 		
 		// ----------- CC managment -----------
-//		Sequence ccManage = new Sequence("CC managment");
-//		ccManage.addChild(new getCC("Select a CC", gh));
+		Sequence ccManage = new Sequence("CC managment");
+		ccManage.addChild(new SelectCC("Select a CC", gh));
 		// ----------- END CC managment
 		
 		CollectTree = new BehavioralTree("Gather/Repair tree");
-		CollectTree.addChild(new Selector<>("MAIN SELECTOR", collect, repair));
+		CollectTree.addChild(new Selector<>("MAIN SELECTOR", ccManage, collect, repair));
 		BuildTree  = new BehavioralTree("Build/Research tree");
 		BuildTree.addChild(new Selector<>("MAIN SELECTOR", selectorBuild, selectorResearch));
 		AddonTree = new BehavioralTree("Addons tree");
@@ -363,7 +363,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		UpdateTroopsTree.run();
 		AttackTree.run();
 		
-		if(frames < 150){ // Cada 150 frames se recalculan las influencias.
+		if(frames < 150){ //Cada 150 frames se recalculan las influencias.
 			frames++;
 		}else{
 			frames = 0;
@@ -485,9 +485,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		/////////////////////////////////////
 		
 //		Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
-//		String workingDirectory = System.getProperty("user.dir");
-//		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
-//		createANDwriteInfluencia(path);
+		String workingDirectory = System.getProperty("user.dir");
+		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
+		createANDwriteInfluencia(path);
 		
 		//Se actualizan la cosa nostra
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
@@ -526,16 +526,13 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Starport) gh.starport++;
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Command_Center) {
 					if (gh.CCs.indexOf((Integer) unitID) == -1){
+						gh.expanded = true;
 						gh.CCs.add(unitID);
-						gh.addCC(gh.CCs.indexOf(unitID));
+						gh.addCC();
 					}
 				}
 				
 				//Se actualiza el mapa.
-//				gh.updateMap(bwapi.getUnit(unitID).getTopLeft(),
-//						new Position(bwapi.getUnit(unitID).getTopLeft().getBX()+bwapi.getUnit(unitID).getType().getTileWidth(),
-//									bwapi.getUnit(unitID).getTopLeft().getBY()+bwapi.getUnit(unitID).getType().getTileHeight(),
-//									PosType.BUILD));
 				gh.updateMap(bwapi.getUnit(unitID).getTopLeft(), bwapi.getUnit(unitID).getBottomRight(), bwapi.getUnit(unitID).getType());
 
 				//Sección de código para escribir en un fichero el mapa y verificar que se crea bien.

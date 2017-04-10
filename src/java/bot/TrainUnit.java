@@ -31,12 +31,15 @@ public class TrainUnit extends Action {
 			}
 			if (unit == UnitTypes.Terran_SCV){
 				//Se mira a ver si es posible entrenar algún VCE
-				if (((JohnDoe)this.handler).VCEs.get(0).size() >= ((JohnDoe)this.handler).max_vce) {
+				if (((JohnDoe)this.handler).VCEs.get(
+						((JohnDoe)this.handler).CCs.indexOf(
+								((JohnDoe)this.handler).cc_select.getID())
+													).size() >= ((JohnDoe)this.handler).max_vce) {
 					return State.FAILURE; 					
 				}
 			}
-			if (((JohnDoe)this.handler).detector_first && 
-					((JohnDoe)this.handler).militaryUnits.size() > 30) {
+			if ( ( ((JohnDoe)this.handler).detector_first || ((JohnDoe)this.handler).CCs.size() <= 1) && 
+					((JohnDoe)this.handler).militaryUnits.size() > 20) {
 				return State.FAILURE;
 			}
 			//Por cada 5 marines+fire_bat debe entrenarse un médico
