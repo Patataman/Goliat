@@ -440,7 +440,8 @@ public class JohnDoe extends GameHandler {
 		};
 		Predicate<Troop> predicate2 = new Predicate<Troop>() {
 			public boolean test(Troop t) {
-				return t.units.size() < 10 && (t.status == 4 || t.status == 5 || t.status == 0);
+				return t.units.size() > 0 && t.units.size() < 10 &&
+						(t.status == 4 || t.status == 5 || t.status == 0);
 				
 			}
 		};
@@ -448,7 +449,6 @@ public class JohnDoe extends GameHandler {
 			for (Object t2 : assaultTroop.stream().filter(predicate2).toArray()) {
 				//If aux doesn't contains any unit from t2 && their status it's the same -> merge units list.
 				if (!((Troop ) t).equals((Troop) t2) &&
-						((Troop) t2).status == ((Troop) t).status &&
 						((Troop) t).units.size() + ((Troop) t2).units.size() < 20) {
 					((Troop) t).units.addAll(((Troop) t2).units);
 					((Troop) t).status = 4;
