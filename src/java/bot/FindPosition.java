@@ -59,10 +59,15 @@ public class FindPosition extends Conditional {
 					((JohnDoe)this.handler).CCs.size() == 2)) {
 				return State.FAILURE;
 			}
-			
+			//Decorador para bunkeres
 			if (building == UnitTypes.Terran_Bunker &&
-					((JohnDoe)this.handler).barracks == 0 &&
-					((JohnDoe)this.handler).bunkers.size() >= 2) {
+					(((JohnDoe)this.handler).barracks == 0 ||
+					((JohnDoe)this.handler).bunkers.size() >= 2)) {
+				return State.FAILURE;
+			}
+			
+			//Decorador para torretas
+			if (building == UnitTypes.Terran_Missile_Turret && ((JohnDoe)this.handler).bay == 0) {
 				return State.FAILURE;
 			}
 			

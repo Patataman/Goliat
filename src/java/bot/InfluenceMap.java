@@ -168,7 +168,7 @@ public class InfluenceMap {
 	 * @param y: coordenada y para el im
 	 */
 	public void newUnit(Unit unit, int influencia, int x, int y) {
-		ArrayList<Integer> tupla = new ArrayList<Integer>();
+		ArrayList<Integer> tupla = new ArrayList<Integer>(4);
 		tupla.add(unit.getID());
 		tupla.add(x);
 		tupla.add(y);
@@ -195,16 +195,16 @@ public class InfluenceMap {
 		} else if (unit.getType().isAttackCapable() && !unit.getType().isWorker()) {
 		// Las unidades ofensivas hacen cosas de unidades, no de edificios
 			if (unit.getType().isMechanical()) {
-				updateCellInfluence(new Point(x,y), 3*influencia);
+//				updateCellInfluence(new Point(x,y), 3*influencia);
 				tupla.add(2*influencia);
 				unidades.add(tupla);
 			} else if (unit.getType().isFlyer()) {
-				updateCellInfluence(new Point(x,y), 6*influencia);
+//				updateCellInfluence(new Point(x,y), 6*influencia);
 				tupla.add(3*influencia);
 				unidades.add(tupla);
 			} else {
 				//Si no es mecánica ni voladora, es normal
-				updateCellInfluence(new Point(x,y), 1*influencia);
+//				updateCellInfluence(new Point(x,y), 1*influencia);
 				tupla.add(1*influencia);
 				unidades.add(tupla);
 			}
@@ -227,11 +227,10 @@ public class InfluenceMap {
 			y = currentUnit.getPosition().getBY();
 			if(x != unitTupla.get(1) || y != unitTupla.get(2)){ // Y se ha desplazado, se actualiza la influencia
 				updateCellInfluence(new Point(x,y), unitTupla.get(3));// Actualizamos la nueva influencia
-				updateCellInfluence(new Point(unitTupla.get(1),unitTupla.get(2)), 0);// Retiramos la influencia anterior
+	//			updateCellInfluence(new Point(unitTupla.get(1),unitTupla.get(2)), 0);// Retiramos la influencia anterior
 				unitTupla.set(1, x); // actualizamos la nueva posición de la unidad.
 				unitTupla.set(2, y);
 			}
-
 		}
 	}
 	

@@ -261,7 +261,9 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean trainUnit(UnitType building, UnitType unit){
 		for (Unit u : finishedBuildings){
-			if (u.getType() == building && !u.isTraining()){
+			if (u.getType() == building &&
+					!u.isTraining() &&
+					!u.isConstructing()){
 				u.train(unit);
 				remainingUnits.add(unit);
 				return true;
@@ -388,6 +390,25 @@ public class JohnDoe extends GameHandler {
 			if (t.units.size() == 0 && t.status != 0) {
 				remove.add(t);
 			} else {
+				ArrayList<Unit> removeU = new ArrayList<Unit>(0);
+				boolean detector = false;
+				for (Unit u : t.units) {
+					if (u.isLoaded()) {
+						removeU.add(u);
+					}
+				}
+				t.units.removeAll(removeU);
+				
+				//To avoid a troop only form by vessels
+				for (Unit u : t.units) {
+					if (u.getType() == UnitTypes.Terran_Science_Vessel) {
+						t.hasDetector = true;
+						detector = true;
+						break;
+					}
+				}
+				if (!detector) { t.hasDetector = false; }
+				
 				t.isInPosition();
 				//If the attackGroup fell, retreat.
 				if (t.status != 0 && t.units.size() <= 5 && t.units.size() > 0) {
@@ -396,7 +417,7 @@ public class JohnDoe extends GameHandler {
 						u.move(t.destination.makeValid(), false);
 					}
 					t.status = 4;
-				}				
+				}
 			}
 			
 		}
@@ -432,6 +453,10 @@ public class JohnDoe extends GameHandler {
 					((Troop) t).units.addAll(((Troop) t2).units);
 					((Troop) t).status = 4;
 					((Troop) t).destination = defendGroup.destination;
+					
+					if (((Troop) t2).hasDetector){
+						((Troop) t).hasDetector = true;
+					}
 					assaultTroop.remove((Troop)t2);
 				}
 			}
@@ -453,8 +478,16 @@ public class JohnDoe extends GameHandler {
 				for (Unit u : boredSoldiers) {
 					//Unit is idle, complete and not in a bunker
 					if(u.isIdle() && u.isCompleted() && !u.isLoaded()) {
-						assaultTroop.get(i).units.add(u);
-						auxList.add(u);
+						if (u.getType() == UnitTypes.Terran_Science_Vessel) {
+							if (!assaultTroop.get(i).hasDetector){
+								assaultTroop.get(i).units.add(u);
+								assaultTroop.get(i).hasDetector = true;
+								auxList.add(u);
+							}
+						} else {
+							assaultTroop.get(i).units.add(u);
+							auxList.add(u);
+						}
 					}
 				}
 				
@@ -474,7 +507,15 @@ public class JohnDoe extends GameHandler {
 	 * @return True if can,  False otherwise.
 	 */
 	public boolean selectGroup() {
-		if (!expanded) {
+		if (assaultTroop.size() > 0){
+			System.out.println("-------------------");
+			for (Troop t : assaultTroop){
+				System.out.println("Estado:"+t.status+", Tropas: "+t.units.size());
+			}
+			System.out.println("+++++++++++++++++++");			
+		}
+		
+		if (!expanded && militaryUnits.size() < 15) {
 			return false;
 		}
 		//Troops with status == 0
@@ -526,13 +567,15 @@ public class JohnDoe extends GameHandler {
 		ArrayList<int[]> positions = dah_map.getEnemyPositions(); //Enemy positions
 		Position ret = new Position(positions.get(0)[1], positions.get(0)[0], PosType.BUILD); //Default position
 		double infl = dah_map.mapa[positions.get(0)[0]][positions.get(0)[1]]; //Default influence
-		int dist = cc_select.getPosition().getApproxWDistance(ret); //Initial distance
+		int dist = cc.getPosition().getApproxWDistance(ret); //Initial distance
 		
 		for (int[] i : positions) {
 			Position aux = new Position(i[1], i[0], PosType.BUILD);
-			if (dah_map.mapa[i[0]][i[1]] < -1 && dah_map.mapa[i[0]][i[1]] < infl && cc_select.getPosition().getApproxWDistance(aux) < dist) {
+			if (dah_map.mapa[i[0]][i[1]] < -0.5 && 
+					dah_map.mapa[i[0]][i[1]] < infl && 
+					cc.getPosition().getApproxWDistance(aux) < dist) {
 				//updates values
-				dist = cc_select.getPosition().getApproxBDistance(aux);
+				dist = cc.getPosition().getApproxBDistance(aux);
 				ret = aux;
 				infl = dah_map.mapa[i[0]][i[1]];
 			}
@@ -551,11 +594,7 @@ public class JohnDoe extends GameHandler {
 					defendGroup.units.add(u);
 				}
 				if (u.getPosition().getApproxWDistance(defendGroup.destination) > 50) {
-					if (u.isIdle()) {
-						u.attack(defendGroup.destination, false);
-					} else {
-						u.attack(defendGroup.destination.makeValid(), false);					
-					}
+					u.attack(defendGroup.destination.makeValid(), true);					
 				}
 			}
 		}
@@ -598,7 +637,7 @@ public class JohnDoe extends GameHandler {
 	 * @return true if sends unit to attack, false otherwise
 	 */
 	public boolean sendAttack(){
-		if (attackGroup.tooFar()) {
+		if (attackGroup.tooFar() && militaryUnits.size() < 30) {
 			return false;
 		}
 		if (attackGroup.status != 2 && attackGroup.status != 4) {
@@ -607,7 +646,7 @@ public class JohnDoe extends GameHandler {
 			for (Unit u : attackGroup.units) {
 				if (!u.isAttacking() && !u.isMoving()) {
 					if (u.getType() == UnitTypes.Terran_Science_Vessel) {
-						u.follow(attackGroup.units.get(0), true);
+						u.follow(attackGroup.units.get((int) Math.random()*attackGroup.units.size()), true);
 					} else {
 						u.attack(objective, true);						
 					}
@@ -627,10 +666,10 @@ public class JohnDoe extends GameHandler {
 		attackGroup.destination = attackGroup.units.get((int)attackGroup.units.size()/2).getPosition();
 		//if too far, group units
 		for (Unit u : attackGroup.units) {
-			if (u.getPosition().getApproxWDistance(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition()) > 50) {
-				u.attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition().makeValid(), false);					
+			if (u.getPosition().getApproxWDistance(attackGroup.destination) > 50) {
+				u.attack(attackGroup.destination.makeValid(), true);					
 			} else {
-				u.attack(attackGroup.units.get((int)attackGroup.units.size()/2).getPosition(), false);
+				u.attack(attackGroup.destination.makeValid(), true);
 			}
 		}
 		
@@ -644,6 +683,9 @@ public class JohnDoe extends GameHandler {
 	 * @return true if can find a valid position, false otherwise
 	 */
 	public boolean findPosition(UnitType building) {
+		if (remainingBuildings.contains(building)) {
+			return false;
+		}
 		//Special case: Refinery
 		if (building == UnitTypes.Terran_Refinery) {
 			return findPositionRefinery();
@@ -838,28 +880,30 @@ public class JohnDoe extends GameHandler {
 		if (number_chokePoints == 1) {
 			ChokePoint cp = (ChokePoint) this.connector.getMap().getRegion(cc_select.getPosition()).getChokePoints().toArray()[0];
 			Position cp_position = cp.getCenter();
-			for (int j=0; j<pruebas.length; j++) {
-				//Point origen, Point maximo, UnitType building
-				Position pos = findPlace(new Point(cp_position.getBX(), cp_position.getBY()),
-										new Point((cp_position.getBX()+pruebas[j][0]*building.getTileWidth()),
-												(cp_position.getBY()+pruebas[j][1]*building.getTileHeight())),
-										building);
-				boolean pass = false;
-				//The bunkers/turrets have to be spread.
-				for (Unit u : finishedBuildings) { 
-					if (u.getType() == building && 
-							u.getDistance(pos) < 300) {
-						pass = true;
-					}	
+			for (int i=1; i<3; i++){
+				for (int j=0; j<pruebas.length; j++) {
+					//Point origen, Point maximo, UnitType building
+					Position pos = findPlace(new Point(cp_position.getBX(), cp_position.getBY()),
+											new Point((cp_position.getBX()+pruebas[j][0]*building.getTileWidth()*i),
+													(cp_position.getBY()+pruebas[j][1]*building.getTileHeight()*i) ),
+											building);
+					boolean pass = false;
+					//The bunkers/turrets have to be spread.
+					for (Unit u : finishedBuildings) { 
+						if (u.getType() == building && 
+								u.getDistance(pos) < 300) {
+							pass = true;
+						}	
+					}
+					//If the position is valid...
+					if (!pass && this.connector.canBuildHere(pos, building, true) && 
+							this.connector.getMap().isBuildable(pos) &&
+							this.connector.isBuildable(pos, true) &&
+							dah_map.mapa[pos.getBY()][pos.getBX()] < 1){
+						posBuild = pos;
+						return true;
+					}				
 				}
-				//If the position is valid...
-				if (!pass && this.connector.canBuildHere(pos, building, true) && 
-						this.connector.getMap().isBuildable(pos) &&
-						this.connector.isBuildable(pos, true) &&
-						dah_map.mapa[pos.getBY()][pos.getBX()] < 3){
-					posBuild = pos;
-					return true;
-				}				
 			}
 		} else {
 			for (int i=4; i>1; i--){
@@ -881,7 +925,7 @@ public class JohnDoe extends GameHandler {
 					if (!pass && this.connector.canBuildHere(pos, building, true) && 
 							this.connector.getMap().isBuildable(pos) &&
 							this.connector.isBuildable(pos, true) &&
-							dah_map.mapa[pos.getBY()][pos.getBX()] < 3){
+							dah_map.mapa[pos.getBY()][pos.getBX()] < 1){
 						posBuild = pos;
 						return true;
 					}				
@@ -912,7 +956,7 @@ public class JohnDoe extends GameHandler {
 		for (Unit u : finishedBuildings){
 			//If the building it's damaged, not being repaired and isn't in the damageBuildings list
 			if ((u.getHitPoints() - u.getType().getMaxHitPoints() != 0) &&
-					!u.isRepairing() && !damageBuildings.contains(u)) {
+					!u.isBeingHealed() && !damageBuildings.contains(u)) {
 				damageBuildings.add(u);
 			}
 		}
@@ -1132,9 +1176,18 @@ public class JohnDoe extends GameHandler {
      * destino ha sido calculada con el tamaño del edificio + la posición origen
      */
     public void updateMap(Position origen, Position destino, UnitType building) {
+    	int extraX = 0;
+    	int extraY = (destino.getBY()+1 < this.map.length && 
+    			(building != UnitTypes.Terran_Bunker || building != UnitTypes.Terran_Missile_Turret)) ? 1 : 0;
+    	if (building == UnitTypes.Terran_Factory || 
+    			building == UnitTypes.Terran_Starport || 
+    					building == UnitTypes.Terran_Science_Facility) {
+    		extraX = 2;
+    	}
+    	
     	//se recorre la matriz entre las posiciones dadas
-    	for (int i = origen.getBY(); i <= destino.getBY(); i++){
-    		for(int j = origen.getBX(); j <= destino.getBX(); j++){
+    	for (int i = origen.getBY(); i <= destino.getBY()+extraY; i++){
+    		for(int j = origen.getBX(); j <= destino.getBX()+extraX; j++){
     			//se ponen como ocupadas las casillas
     			map[i][j] = 0;
     		}
@@ -1155,10 +1208,10 @@ public class JohnDoe extends GameHandler {
     	// Bucle de actualización vertical
     	while (parada){
     		//Si no nos salimos del mapa, el valor actual de la dimensión no es 4 (máximo)
-    		if (((origen.getBY()-iv >= 0 && destino.getBX()-ih >= 0) && 
-    				map[origen.getBY()-iv][destino.getBX()-ih] > iv) && 
+    		if (((origen.getBY()-iv >= 0 && destino.getBX()+extraX-ih >= 0) && 
+    				map[origen.getBY()-iv][destino.getBX()+extraX-ih] > iv) && 
     				(iv < 6) ) { // Si llegamos a 4 no es necesario seguir
-    			map[origen.getBY()-iv][destino.getBX()-ih] = iv;
+    			map[origen.getBY()-iv][destino.getBX()+extraX-ih] = iv;
     			iv++;
     		} else{ // Hemos terminado con la columna, pasamos a la siguiente (hacia atrás en el mapa)
     			if (iv == 1){
@@ -1183,7 +1236,7 @@ public class JohnDoe extends GameHandler {
     			map[origen.getBY()+iv][origen.getBX()-ih] = ih;
     			ih++;
     		} else { // Hemos terminado con la fila, pasamos a la siguiente (hacia abajo en el mapa)
-    			if (ih == 1 || origen.getBY()+iv == destino.getBY()){
+    			if (ih == 1 || origen.getBY()+iv == destino.getBY()+extraY){
     				parada = false; // Si en la primera casilla no hay que actualizar, significa que hemos terminado.
     			} else {
     				iv++;

@@ -37,26 +37,26 @@ public class TrainUnit extends Action {
 													).size() >= ((JohnDoe)this.handler).max_vce) {
 					return State.FAILURE; 					
 				}
-			}
-			if ( ( ((JohnDoe)this.handler).detector_first || ((JohnDoe)this.handler).CCs.size() <= 1) && 
-					((JohnDoe)this.handler).militaryUnits.size() > 20) {
+			} else if ( ( ((JohnDoe)this.handler).detector_first || !((JohnDoe)this.handler).expanded) && 
+					((JohnDoe)this.handler).supplies > ((JohnDoe)this.handler).totalSupplies*0.7) {
 				return State.FAILURE;
-			}
-			//Por cada 5 marines+fire_bat debe entrenarse un médico
-			if (unit == UnitTypes.Terran_Medic && ((marines+fire_bat+medic)%4 != 0 || marines+fire_bat == 0)) {
-				return State.FAILURE;
-			}
-			//Por cada 3 marines 1 murcielago debe entrenarse
-			if (unit == UnitTypes.Terran_Firebat && ((marines+fire_bat)%3 != 0 || marines+fire_bat == 0)) {
-				return State.FAILURE;
-			}
-			//Se construirá una nave científica por tropa.
-			if (unit == UnitTypes.Terran_Science_Vessel && vessel>=((JohnDoe)this.handler).assaultTroop.size()) {
-				return State.FAILURE;
-			}
-			//Tankes por cada 10 soldados en general.
-			if (unit == UnitTypes.Terran_Siege_Tank_Tank_Mode && tank > (marines+fire_bat+medic)/8) {
-				return State.FAILURE;
+			} else {
+				//Por cada 5 marines+fire_bat debe entrenarse un médico
+				if (unit == UnitTypes.Terran_Medic && (marines+fire_bat > medic*4 || marines+fire_bat == 0)) {
+					return State.FAILURE;
+				}
+				//Por cada 3 marines 1 murcielago debe entrenarse
+				if (unit == UnitTypes.Terran_Firebat && ((marines+fire_bat)%3 != 0 || marines+fire_bat == 0)) {
+					return State.FAILURE;
+				}
+				//Se construirá una nave científica por tropa.
+				if (unit == UnitTypes.Terran_Science_Vessel && vessel>=((JohnDoe)this.handler).assaultTroop.size()) {
+					return State.FAILURE;
+				}
+				//Tankes por cada 10 soldados en general.
+				if (unit == UnitTypes.Terran_Siege_Tank_Tank_Mode && tank > (marines+fire_bat+medic)/8) {
+					return State.FAILURE;
+				}
 			}
 			if (unit == UnitTypes.Terran_Science_Vessel && vessel>=((JohnDoe)this.handler).assaultTroop.size()) {
 				return State.FAILURE;

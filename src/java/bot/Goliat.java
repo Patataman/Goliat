@@ -90,7 +90,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		
 		bwapi.drawCircle(gh.defendGroup.destination, 10, BWColor.Blue, true, true);
 		gh.supplies = bwapi.getSelf().getSupplyUsed();
-		gh.totalSupplies = bwapi.getSelf().getSupplyTotal();
+//		gh.totalSupplies = UnitTypes.Terran_Command_Center.getSup;
 		
 		gh.createMap();
 		
@@ -142,7 +142,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		TrainVessel.addChild(new ChooseBuilding("Check training science vessels", gh, UnitTypes.Terran_Science_Vessel));
 		TrainVessel.addChild(new TrainUnit("Train Science vessel", gh, UnitTypes.Terran_Science_Vessel, UnitTypes.Terran_Starport));
 
-		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVCE, TrainVessel, TrainGoliat, TrainSiegeTank, 
+		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVessel, TrainGoliat, TrainVCE, TrainSiegeTank, 
 																				TrainMedic, TrainFirebat, TrainMarine);
 //		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVCE);
 		// ----------- END TRAIN ---------
@@ -234,9 +234,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		buildLab.addChild(new MoveTo("Move builder", gh));
 		buildLab.addChild(new Build("Build facility", gh, UnitTypes.Terran_Science_Facility));
 		
-		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks,
-															buildRefinery, buildBunker, buildAcademy, buildFactory, buildCC, buildStarport, buildLab, 
-															buildBay, buildTurret, buildArmory);
+		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks, buildBay,
+															buildRefinery, buildTurret, buildBunker, buildAcademy, 
+															buildFactory, buildCC, buildStarport, buildLab, buildArmory);
 		// ---------- END BUILD -----------
 		
 		// ---------- Build addons ----------
@@ -363,7 +363,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		UpdateTroopsTree.run();
 		AttackTree.run();
 		
-		if(frames < 150){ //Cada 150 frames se recalculan las influencias.
+		if(frames < 300){ //Cada 300 frames se recalculan las influencias de las unidades no edificios.
 			frames++;
 		}else{
 			frames = 0;
@@ -413,6 +413,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 					gh.totalSupplies -= UnitTypes.Terran_Supply_Depot.getSupplyProvided();
 				}
 				if (((Unit) u).getType() == UnitTypes.Terran_Command_Center) {
+					gh.totalSupplies -= UnitTypes.Terran_Command_Center.getSupplyProvided();
 					gh.CCs.remove((Integer) unitID);
 				}
 				control++;
@@ -525,6 +526,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Science_Facility) gh.lab_cient++;
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Starport) gh.starport++;
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Command_Center) {
+					gh.totalSupplies += UnitTypes.Terran_Command_Center.getSupplyProvided();
 					if (gh.CCs.indexOf((Integer) unitID) == -1){
 						gh.expanded = true;
 						gh.CCs.add(unitID);
@@ -536,9 +538,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				gh.updateMap(bwapi.getUnit(unitID).getTopLeft(), bwapi.getUnit(unitID).getBottomRight(), bwapi.getUnit(unitID).getType());
 
 				//Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
-//				String workingDirectory = System.getProperty("user.dir");
-//				String path = workingDirectory + File.separator + "mapa.txt";
-//				createANDwrite(path);
+				workingDirectory = System.getProperty("user.dir");
+				path = workingDirectory + File.separator + "mapa.txt";
+				createANDwrite(path);
 			}
 		}
 	}
@@ -569,7 +571,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	public void unitShow(int unitID) {
 		//Enemy player
 		if (bwapi.getUnit(unitID).getPlayer().getID() != bwapi.getSelf().getID() && 
-				bwapi.getUnit(unitID).getPlayer().getRace() != RaceTypes.Terran &&
+				( bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Protoss || 
+						bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Zerg ) &&
 				gh.vessels == 0) {
 			gh.detector_first = true;			
 		}
