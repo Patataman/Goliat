@@ -64,6 +64,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
         this.bwapi.setGameSpeed(Options.getInstance().getSpeed());
         
         this.bwapi.drawTargets(true);
+        this.bwapi.drawHealth(true);
 		
 		gh = new JohnDoe(bwapi);
 		
@@ -88,7 +89,6 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			gh.defendGroup.destination = gh.cc.getPosition().makeValid();
 		}
 		
-		bwapi.drawCircle(gh.defendGroup.destination, 10, BWColor.Blue, true, true);
 		gh.supplies = bwapi.getSelf().getSupplyUsed();
 //		gh.totalSupplies = UnitTypes.Terran_Command_Center.getSup;
 		

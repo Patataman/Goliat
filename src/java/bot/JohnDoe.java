@@ -411,7 +411,7 @@ public class JohnDoe extends GameHandler {
 				
 				t.isInPosition();
 				//If the attackGroup fell, retreat.
-				if (t.status != 0 && t.units.size() <= 5 && t.units.size() > 0) {
+				if (t.status != 0 && t.status != 2 && t.units.size() <= 5 && t.units.size() > 0) {
 					t.destination = defendGroup.destination;
 					for (Unit u : t.units) {
 						u.move(t.destination.makeValid(), false);
@@ -507,13 +507,13 @@ public class JohnDoe extends GameHandler {
 	 * @return True if can,  False otherwise.
 	 */
 	public boolean selectGroup() {
-		if (assaultTroop.size() > 0){
-			System.out.println("-------------------");
-			for (Troop t : assaultTroop){
-				System.out.println("Estado:"+t.status+", Tropas: "+t.units.size());
-			}
-			System.out.println("+++++++++++++++++++");			
-		}
+//		if (assaultTroop.size() > 0){
+//			System.out.println("-------------------");
+//			for (Troop t : assaultTroop){
+//				System.out.println("Estado:"+t.status+", Tropas: "+t.units.size());
+//			}
+//			System.out.println("+++++++++++++++++++");			
+//		}
 		
 		if (!expanded && militaryUnits.size() < 15) {
 			return false;
@@ -521,7 +521,8 @@ public class JohnDoe extends GameHandler {
 		//Troops with status == 0
 		for (Troop t : assaultTroop){
 			if (t.status == 0) {
-				if (t.units.size() >= 10) {
+				if (t.units.size() >= 10 || 
+						(t.units.size() > 0 && cc_select.getPosition().getWDistance(objective) < 100)) {
 					attackGroup = t;
 					return true;
 				}				
@@ -530,7 +531,8 @@ public class JohnDoe extends GameHandler {
 		
 		//Troops with status >= 5
 		for (Troop t : assaultTroop) {
-			if (t.status >= 5 && t.units.size() >= 10) {
+			if ((t.status >= 5 && t.units.size() >= 10) || 
+					(t.units.size() > 0 && cc_select.getPosition().getWDistance(objective) < 100)) {
 				attackGroup = t;
 				return true;
 			}			
@@ -538,7 +540,8 @@ public class JohnDoe extends GameHandler {
 		
 		//Troops with status == 1
 		for (Troop t : assaultTroop) {
-			if (t.status == 1 && t.units.size() >= 10) {
+			if ((t.status == 1 && t.units.size() >= 10) || 
+					(t.units.size() > 0 && cc_select.getPosition().getWDistance(objective) < 100)) {
 				attackGroup = t;
 				return true;
 			}			
@@ -553,6 +556,7 @@ public class JohnDoe extends GameHandler {
 	*/
 	public boolean chooseDestination() {
 		objective = getPosToAttack();
+		if (objective.getBX() == -1) return false;
 		return true;
 	}
 	
@@ -565,6 +569,10 @@ public class JohnDoe extends GameHandler {
 	 */
 	public Position getPosToAttack() {
 		ArrayList<int[]> positions = dah_map.getEnemyPositions(); //Enemy positions
+		if (positions.size() == 0) {
+			if (this.connector.getEnemyUnits().size() == 0) return new Position(-1,-1, PosType.BUILD);
+			return this.connector.getEnemyUnits().get(0).getPosition();
+		}
 		Position ret = new Position(positions.get(0)[1], positions.get(0)[0], PosType.BUILD); //Default position
 		double infl = dah_map.mapa[positions.get(0)[0]][positions.get(0)[1]]; //Default influence
 		int dist = cc.getPosition().getApproxWDistance(ret); //Initial distance
@@ -637,11 +645,11 @@ public class JohnDoe extends GameHandler {
 	 * @return true if sends unit to attack, false otherwise
 	 */
 	public boolean sendAttack(){
-		if (attackGroup.tooFar() && militaryUnits.size() < 30) {
+		if (attackGroup.tooFar()) {
 			return false;
 		}
 		if (attackGroup.status != 2 && attackGroup.status != 4) {
-			attackGroup.status = 1;
+			attackGroup.status = (cc_select.getPosition().getWDistance(objective) < 100) ? (byte) 2 : (byte) 1;
 			attackGroup.destination = objective;
 			for (Unit u : attackGroup.units) {
 				if (!u.isAttacking() && !u.isMoving()) {
@@ -666,11 +674,7 @@ public class JohnDoe extends GameHandler {
 		attackGroup.destination = attackGroup.units.get((int)attackGroup.units.size()/2).getPosition();
 		//if too far, group units
 		for (Unit u : attackGroup.units) {
-			if (u.getPosition().getApproxWDistance(attackGroup.destination) > 50) {
-				u.attack(attackGroup.destination.makeValid(), true);					
-			} else {
-				u.attack(attackGroup.destination.makeValid(), true);
-			}
+			u.attack(attackGroup.destination.makeValid(), false);
 		}
 		
 		return true;
@@ -795,7 +799,7 @@ public class JohnDoe extends GameHandler {
 			if (!aux.isStartLocation() &&
 					cc.getPosition().getApproxWDistance(aux.getCenter()) < dist &&
 					this.connector.canBuildHere(aux.getPosition(), UnitTypes.Terran_Command_Center, false) &&
-					!(aux.isIsland() || aux.isMineralOnly())) {
+					(!aux.isIsland() && (!expanded || !aux.isMineralOnly()))) {
 				//If closer, updates "dist" and "pos".
 				dist = cc.getPosition().getApproxWDistance(aux.getCenter());
 				pos = aux;
@@ -948,16 +952,23 @@ public class JohnDoe extends GameHandler {
 	 * @return true if there's at least 1 building, false otherwise.
 	 */
 	public boolean checkBuildings() {
+		Predicate<Unit> predicate = new Predicate<Unit>() {
+			public boolean test(Unit u) {
+				return u.getType().isBuilding();
+				
+			}
+		};
+		
 		//To save time, if the list isn't empty, return true
 		if (!damageBuildings.isEmpty()) {
 			return true;
 		}
 		//If the list it's empty, look for damaged building
-		for (Unit u : finishedBuildings){
+		for (Object u : this.connector.getMyUnits().stream().filter(predicate).toArray()) {
 			//If the building it's damaged, not being repaired and isn't in the damageBuildings list
-			if ((u.getHitPoints() - u.getType().getMaxHitPoints() != 0) &&
-					!u.isBeingHealed() && !damageBuildings.contains(u)) {
-				damageBuildings.add(u);
+			if ((((Unit) u).getHitPoints() - ((Unit) u).getType().getMaxHitPoints() != 0) &&
+					(!((Unit) u).isCompleted() && !((Unit) u).isBeingConstructed()) && !damageBuildings.contains(u)) {
+				damageBuildings.add(((Unit) u));
 			}
 		}
 		

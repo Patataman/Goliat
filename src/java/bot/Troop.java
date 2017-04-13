@@ -61,7 +61,7 @@ public class Troop {
 			dist += u.getPosition().getApproxWDistance(dest);
 		}
 		dist /= units.size();
-		if (dist > 30) {
+		if (dist > 20) {
 			return true;
 		}
 		return false;

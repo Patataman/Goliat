@@ -19,6 +19,10 @@ public class FindPosition extends Conditional {
 	@Override
 	public State execute() {
 		try{
+			if (building == UnitTypes.Terran_Supply_Depot &&
+					((JohnDoe)this.handler).totalSupplies > 300){
+				System.out.println("ops");
+			}
 			//El decorador se hace aqui para ahorrar visitar el resto de nodos del árbol
 			if (building == UnitTypes.Terran_Supply_Depot &&
 					( ((JohnDoe)this.handler).supplies < ((JohnDoe)this.handler).totalSupplies*0.7 || 
@@ -26,8 +30,8 @@ public class FindPosition extends Conditional {
 				return State.FAILURE;
 			}
 			//Decorador para barracks. Límite a 2 por CC.
-			if (building == UnitTypes.Terran_Barracks &&
-					(((JohnDoe)this.handler).barracks >= ((JohnDoe)this.handler).CCs.size()+1 ||
+			if (building == UnitTypes.Terran_Barracks && ( ((JohnDoe)this.handler).barracks > 4 ||
+					((JohnDoe)this.handler).barracks >= ((JohnDoe)this.handler).CCs.size()+1 ||
 					(((JohnDoe)this.handler).barracks != 0 && ((JohnDoe)this.handler).refinery == 0))) {
 				return State.FAILURE;
 			}
@@ -47,22 +51,20 @@ public class FindPosition extends Conditional {
 					|| ((JohnDoe)this.handler).barracks == 0)) {
 				return State.FAILURE;
 			}
-			//Decorador para la fábrica, va después de los barracks. Límite a 2 por CC.
+			//Decorador para la fábrica, va después de los barracks. Límite a 1 por CC.
 			if (building == UnitTypes.Terran_Factory && (((JohnDoe)this.handler).barracks == 0 ||
 					((JohnDoe)this.handler).factory >= ((JohnDoe)this.handler).CCs.size())) {
 				return State.FAILURE;
 			}
 			//Decorador para construir expansiones.
 			//Sólo se construye cuando está construido el barracón
-			if (building == UnitTypes.Terran_Command_Center && 
-					(((JohnDoe)this.handler).barracks == 0 ||
-					((JohnDoe)this.handler).CCs.size() == 2)) {
+			if (building == UnitTypes.Terran_Command_Center && ((JohnDoe)this.handler).barracks == 0) {
 				return State.FAILURE;
 			}
 			//Decorador para bunkeres
 			if (building == UnitTypes.Terran_Bunker &&
 					(((JohnDoe)this.handler).barracks == 0 ||
-					((JohnDoe)this.handler).bunkers.size() >= 2)) {
+					((JohnDoe)this.handler).bunkers.size() >= ((JohnDoe)this.handler).CCs.size() )) {
 				return State.FAILURE;
 			}
 			
@@ -78,11 +80,11 @@ public class FindPosition extends Conditional {
 					((JohnDoe)this.handler).lab_cient > 0)) {
 				return State.FAILURE;
 			}
-			//Decorador para construir laboratorios cientificos.
+			//Decorador para construir puertos estelares.
 			//Sólo se construye 1
 			if (building == UnitTypes.Terran_Starport &&
 					( ((JohnDoe)this.handler).CCs.size() <= 1 ||
-					((JohnDoe)this.handler).starport > 0)) {
+					((JohnDoe)this.handler).starport > 2)) {
 				return State.FAILURE;
 			}
 			//Decorador para el armory. Límite a 1
