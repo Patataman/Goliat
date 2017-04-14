@@ -21,7 +21,7 @@ public class FindPosition extends Conditional {
 		try{
 			if (building == UnitTypes.Terran_Supply_Depot &&
 					((JohnDoe)this.handler).totalSupplies > 300){
-				System.out.println("ops");
+//				System.out.println("ops");
 			}
 			//El decorador se hace aqui para ahorrar visitar el resto de nodos del árbol
 			if (building == UnitTypes.Terran_Supply_Depot &&

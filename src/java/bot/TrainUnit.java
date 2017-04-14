@@ -37,7 +37,7 @@ public class TrainUnit extends Action {
 													).size() >= ((JohnDoe)this.handler).max_vce) {
 					return State.FAILURE; 					
 				}
-			} else if ( ( ((JohnDoe)this.handler).detector_first || !((JohnDoe)this.handler).expanded) && 
+			} else if ( (!((JohnDoe)this.handler).expanded) && 
 					((JohnDoe)this.handler).supplies > ((JohnDoe)this.handler).totalSupplies*0.7) {
 				return State.FAILURE;
 			} else {
