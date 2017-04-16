@@ -4,17 +4,15 @@ import org.iaie.btree.state.State;
 import org.iaie.btree.task.leaf.Action;
 import org.iaie.btree.util.GameHandler;
 
-public class SendUnits extends Action {
+public class SelectCC extends Action {
 
-	public SendUnits(String name, GameHandler gh) {
+	public SelectCC(String name, GameHandler gh) {
 		super(name, gh);
 	}
 
-	@Override
 	public State execute() {
-		return State.ERROR;
-		/*try{
-			if (((JohnDoe)this.handler).sendUnits()) {
+		try{
+			if (((JohnDoe)this.handler).selectCC()) {
 				return State.SUCCESS;
 			} else {
 				return State.FAILURE;
@@ -22,7 +20,7 @@ public class SendUnits extends Action {
 		} catch (Exception e) {
 			e.printStackTrace();
 			return State.ERROR;
-		}*/
+		}
 	}
 
 }

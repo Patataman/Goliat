@@ -32,7 +32,7 @@ public class InfluenceMap {
 	 * Hay que tener en cuenta que la modificación de la influencia de una casilla supone también la propagación
 	 * de la influencia a las casillas que la rodean
 	 */
-	public void updateCellInfluence(Point punto, int influencia){
+	public void updateCellInfluence_building(Point punto, int influencia){
 		// Obtenemos el area de efecto limitada a la dimensión del mapa en esa posición.
 		int n = ((int)punto.getY()-radio>0) ? (int)punto.getY()-radio : 0;
 		int s = ((int)punto.getY()+radio<mapa.length) ? (int)punto.getY()+radio : mapa.length-1;
@@ -42,6 +42,20 @@ public class InfluenceMap {
 		for(int i = n; i<s; i++) {
 			for(int j = w; j<e; j++) {
 				mapa[i][j] = redondear(mapa[i][j] + influencia/Math.pow((1+distanciaEuclidea(punto, i, j)),2));
+			}
+		}
+	}
+	
+	public void updateCellInfluence_unit(Point punto, int influencia){
+		// Obtenemos el area de efecto limitada a la dimensión del mapa en esa posición.
+		int n = ((int)punto.getY()-radio>0) ? (int)punto.getY()-radio : 0;
+		int s = ((int)punto.getY()+radio<mapa.length) ? (int)punto.getY()+radio : mapa.length-1;
+		int w = ((int)punto.getX()-radio>0) ? (int)punto.getX()-radio : 0;
+		int e = ((int)punto.getX()+radio<mapa.length) ? (int)punto.getX()+radio : mapa[0].length-1;
+		
+		for(int i = n; i<s; i++) {
+			for(int j = w; j<e; j++) {
+				mapa[i][j] = influencia/Math.pow((1+distanciaEuclidea(punto, i, j)),2);
 			}
 		}
 	}
@@ -56,7 +70,7 @@ public class InfluenceMap {
 	 */
 	public void updateCellsInfluence(List<Point> puntos, int influencia){
 		for(Point p : puntos){
-			updateCellInfluence(p, influencia);
+			updateCellInfluence_unit(p, influencia);
 		}
 	}
 	
@@ -168,14 +182,14 @@ public class InfluenceMap {
 	 * @param y: coordenada y para el im
 	 */
 	public void newUnit(Unit unit, int influencia, int x, int y) {
-		ArrayList<Integer> tupla = new ArrayList<Integer>();
+		ArrayList<Integer> tupla = new ArrayList<Integer>(4);
 		tupla.add(unit.getID());
 		tupla.add(x);
 		tupla.add(y);
 		// Los edificios hacen cosas de edificios
 		if (unit.getType().isBuilding() && !unit.getType().isResourceContainer()){
 			if (unit.getType().isAttackCapable()) {
-				updateCellInfluence(new Point(x,y), 4*influencia);
+				updateCellInfluence_building(new Point(x,y), 4*influencia);
 				tupla.add(4*influencia);
 				unidades.add(tupla);
 			} else if (unit.getType() == UnitTypes.Terran_Bunker ||
@@ -183,11 +197,17 @@ public class InfluenceMap {
 					unit.getType() == UnitTypes.Zerg_Spore_Colony) {
 				//Estas son los únicos edificios que se 
 				//pueden considerar verdaderamente defensivas en el juego
-				updateCellInfluence(new Point(x,y), 5*influencia);
+				updateCellInfluence_building(new Point(x,y), 5*influencia);
 				tupla.add(5*influencia);
 				unidades.add(tupla);
+			} else if (unit.getType() == UnitTypes.Terran_Command_Center ||
+					unit.getType() == UnitTypes.Zerg_Hatchery ||
+					unit.getType() == UnitTypes.Protoss_Nexus) {
+				updateCellInfluence_building(new Point(x,y), 7*influencia);
+				tupla.add(7*influencia);
+				unidades.add(tupla);
 			} else {
-				updateCellInfluence(new Point(x,y), 3*influencia);
+				updateCellInfluence_building(new Point(x,y), 3*influencia);
 				tupla.add(3*influencia);
 				unidades.add(tupla);
 				
@@ -195,16 +215,16 @@ public class InfluenceMap {
 		} else if (unit.getType().isAttackCapable() && !unit.getType().isWorker()) {
 		// Las unidades ofensivas hacen cosas de unidades, no de edificios
 			if (unit.getType().isMechanical()) {
-				updateCellInfluence(new Point(x,y), 3*influencia);
+				updateCellInfluence_unit(new Point(x,y), 3*influencia);
 				tupla.add(2*influencia);
 				unidades.add(tupla);
 			} else if (unit.getType().isFlyer()) {
-				updateCellInfluence(new Point(x,y), 6*influencia);
+				updateCellInfluence_unit(new Point(x,y), 6*influencia);
 				tupla.add(3*influencia);
 				unidades.add(tupla);
 			} else {
 				//Si no es mecánica ni voladora, es normal
-				updateCellInfluence(new Point(x,y), 1*influencia);
+				updateCellInfluence_unit(new Point(x,y), 2*influencia);
 				tupla.add(1*influencia);
 				unidades.add(tupla);
 			}
@@ -225,13 +245,12 @@ public class InfluenceMap {
 			currentUnit = connector.getUnit(unitTupla.get(0));						
 			x = currentUnit.getPosition().getBX();
 			y = currentUnit.getPosition().getBY();
-			if(x != unitTupla.get(1) || y != unitTupla.get(2)){ // Y se ha desplazado, se actualiza la influencia
-				updateCellInfluence(new Point(x,y), unitTupla.get(3));// Actualizamos la nueva influencia
-				updateCellInfluence(new Point(unitTupla.get(1),unitTupla.get(2)), 0);// Retiramos la influencia anterior
+//			if(x != unitTupla.get(1) || y != unitTupla.get(2)){ // Y se ha desplazado, se actualiza la influencia
+				updateCellInfluence_unit(new Point(unitTupla.get(1),unitTupla.get(2)), 0);// Retiramos la influencia anterior
+				updateCellInfluence_unit(new Point(x,y), unitTupla.get(3));// Actualizamos la nueva influencia
 				unitTupla.set(1, x); // actualizamos la nueva posición de la unidad.
 				unitTupla.set(2, y);
-			}
-
+//			}
 		}
 	}
 	
@@ -251,7 +270,7 @@ public class InfluenceMap {
 		if(indice == -1){
 			return;
 		}
-		updateCellInfluence(new Point(unidades.get(indice).get(1),unidades.get(indice).get(2)), 0);// Retiramos la influencia anterior
+		updateCellInfluence_unit(new Point(unidades.get(indice).get(1),unidades.get(indice).get(2)), 0);// Retiramos la influencia anterior
 		unidades.remove(indice);
 	}
 	

@@ -23,13 +23,14 @@ import jnibwapi.JNIBWAPI;
 import jnibwapi.Position;
 import jnibwapi.Unit;
 import jnibwapi.Position.PosType;
+import jnibwapi.types.RaceType.RaceTypes;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.types.UpgradeType.UpgradeTypes;
 import jnibwapi.util.BWColor;
 
 public class Goliat extends Agent implements BWAPIEventListener {
 
-	BehavioralTree CollectTree, BuildTree, TrainTree, AttackTree, DefenseTree, UpdateTroopsTree;
+	BehavioralTree CollectTree, BuildTree, TrainTree, AttackTree, DefenseTree, UpdateTroopsTree, AddonTree;
 	Unit buildingTree;
 	JohnDoe gh;
 	int frames;
@@ -63,6 +64,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
         this.bwapi.setGameSpeed(Options.getInstance().getSpeed());
         
         this.bwapi.drawTargets(true);
+        this.bwapi.drawHealth(true);
 		
 		gh = new JohnDoe(bwapi);
 		
@@ -74,7 +76,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				gh.cc = cc;
 				gh.cc_select = cc;
 				gh.CCs.add(cc.getID());
-				gh.addCC(0);
+				gh.addCC();
 				gh.finishedBuildings.add(cc);
 			}
 		}
@@ -87,9 +89,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			gh.defendGroup.destination = gh.cc.getPosition().makeValid();
 		}
 		
-		bwapi.drawCircle(gh.defendGroup.destination, 10, BWColor.Blue, true, true);
 		gh.supplies = bwapi.getSelf().getSupplyUsed();
-		gh.totalSupplies = bwapi.getSelf().getSupplyTotal();
+//		gh.totalSupplies = UnitTypes.Terran_Command_Center.getSup;
 		
 		gh.createMap();
 		
@@ -126,22 +127,24 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		TrainFirebat.addChild(new ChooseBuilding("Check training firebat", gh, UnitTypes.Terran_Firebat));
 		TrainFirebat.addChild(new TrainUnit("Train Firebat", gh, UnitTypes.Terran_Firebat, UnitTypes.Terran_Barracks));
 		//Train siege tanks
-		/*Sequence TrainSiegeTank = new Sequence("Train Siege Tank");
+		Sequence TrainSiegeTank = new Sequence("Train Siege Tank");
 		TrainSiegeTank.addChild(new CheckResources("Check resources siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode));
 		TrainSiegeTank.addChild(new ChooseBuilding("Check training siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode));
-		TrainSiegeTank.addChild(new TrainUnit("Train siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode, UnitTypes.Terran_Siege_Tank_Tank_Mode));*/
+		TrainSiegeTank.addChild(new TrainUnit("Train siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode, UnitTypes.Terran_Factory));
 		//Train goliats
 		Sequence TrainGoliat = new Sequence("Train Goliat");
 		TrainGoliat.addChild(new CheckResources("Check resources goliat", gh, UnitTypes.Terran_Goliath));
 		TrainGoliat.addChild(new ChooseBuilding("Check training goliat", gh, UnitTypes.Terran_Goliath));
 		TrainGoliat.addChild(new TrainUnit("Train goliat", gh, UnitTypes.Terran_Goliath, UnitTypes.Terran_Factory));
-//		//Train science vessels
-//		Sequence TrainVessel = new Sequence(Train science vessel");
-//		TrainVessel.addChild(new CheckResources("Check resources science vessel", gh, UnitTypes.Terran_Science_Vessel));
-//		TrainVessel.addChild(new ChooseBuilding("Check training science vessels", gh, UnitTypes.Terran_Science_Vessel));
-//		TrainVessel.addChild(new TrainUnit("Train Science vessel nave cientifica", gh, UnitTypes.Terran_Science_Vessel, UnitTypes.Terran_Starport));
-		//Selector con todos los posibles entrenamientos
-		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVCE, TrainGoliat, TrainMedic, TrainFirebat, TrainMarine);
+		//Train science vessels
+		Sequence TrainVessel = new Sequence("Train science vessel");
+		TrainVessel.addChild(new CheckResources("Check resources science vessel", gh, UnitTypes.Terran_Science_Vessel));
+		TrainVessel.addChild(new ChooseBuilding("Check training science vessels", gh, UnitTypes.Terran_Science_Vessel));
+		TrainVessel.addChild(new TrainUnit("Train Science vessel", gh, UnitTypes.Terran_Science_Vessel, UnitTypes.Terran_Starport));
+
+		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVessel, TrainGoliat, TrainVCE, TrainSiegeTank, 
+																				TrainMedic, TrainFirebat, TrainMarine);
+//		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVCE);
 		// ----------- END TRAIN ---------
 
 		
@@ -216,24 +219,45 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		buildCC.addChild(new FreeBuilder("Find builder", gh));
 		buildCC.addChild(new MoveTo("Move builder", gh));
 		buildCC.addChild(new Build("Build CC", gh, UnitTypes.Terran_Command_Center));
-//		//Build starport
-//		Sequence buildStarport = new Sequence("Build starport");
-//		buildStarport.addChild(new CheckResources("Check resources starport", gh, UnitTypes.Terran_Starport));
-//		buildStarport.addChild(new FindPosition("Find position", gh, UnitTypes.Terran_Starport));
-//		buildStarport.addChild(new FreeBuilder("Find builder", gh));
-//		buildStarport.addChild(new MoveTo("Move builder", gh));
-//		buildStarport.addChild(new Build("Build starport", gh, UnitTypes.Terran_Starport));
-//		//Build science facility
-//		Sequence buildLab = new Sequence("Build science facility");
-//		buildLab.addChild(new CheckResources("Check resources facility", gh, UnitTypes.Terran_Science_Facility));
-//		buildLab.addChild(new FindPosition("Find position", gh, UnitTypes.Terran_Science_Facility));
-//		buildLab.addChild(new FreeBuilder("Find builder", gh));
-//		buildLab.addChild(new MoveTo("Move builder", gh));
-//		buildLab.addChild(new Build("Build facility", gh, UnitTypes.Terran_Science_Facility));
+		//Build starport
+		Sequence buildStarport = new Sequence("Build starport");
+		buildStarport.addChild(new CheckResources("Check resources starport", gh, UnitTypes.Terran_Starport));
+		buildStarport.addChild(new FindPosition("Find position", gh, UnitTypes.Terran_Starport));
+		buildStarport.addChild(new FreeBuilder("Find builder", gh));
+		buildStarport.addChild(new MoveTo("Move builder", gh));
+		buildStarport.addChild(new Build("Build starport", gh, UnitTypes.Terran_Starport));
+		//Build science facility
+		Sequence buildLab = new Sequence("Build science facility");
+		buildLab.addChild(new CheckResources("Check resources facility", gh, UnitTypes.Terran_Science_Facility));
+		buildLab.addChild(new FindPosition("Find position", gh, UnitTypes.Terran_Science_Facility));
+		buildLab.addChild(new FreeBuilder("Find builder", gh));
+		buildLab.addChild(new MoveTo("Move builder", gh));
+		buildLab.addChild(new Build("Build facility", gh, UnitTypes.Terran_Science_Facility));
 		
-		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks, buildBunker,
-													buildRefinery, buildAcademy, buildFactory, buildBay, buildTurret, buildArmory, buildCC);
+		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks, buildBay,
+															buildRefinery, buildTurret, buildBunker, buildAcademy, 
+															buildFactory, buildCC, buildStarport, buildLab, buildArmory);
 		// ---------- END BUILD -----------
+		
+		// ---------- Build addons ----------
+		//Factory's addon
+		Sequence addonFactory = new Sequence("Factory's addon");
+		addonFactory.addChild(new CheckResources("Check resources addon", gh, UnitTypes.Terran_Machine_Shop));
+		addonFactory.addChild(new FindBuilding("Find building", gh, UnitTypes.Terran_Factory));
+		addonFactory.addChild(new BuildAddon("Build factory's addon", gh, UnitTypes.Terran_Machine_Shop));
+		//Science facility's addon
+		Sequence addonFacility = new Sequence("Facility's addon");
+		addonFacility.addChild(new CheckResources("Check resources addon", gh, UnitTypes.Terran_Physics_Lab));
+		addonFacility.addChild(new FindBuilding("Find building", gh, UnitTypes.Terran_Science_Facility));
+		addonFacility.addChild(new BuildAddon("Build facility's addon", gh, UnitTypes.Terran_Physics_Lab));
+		//Starport's addon
+		Sequence addonStarport = new Sequence("Starport addon");
+		addonStarport.addChild(new CheckResources("Check resources addon", gh, UnitTypes.Terran_Control_Tower));
+		addonStarport.addChild(new FindBuilding("Find building", gh, UnitTypes.Terran_Starport));
+		addonStarport.addChild(new BuildAddon("Build starport's addon", gh, UnitTypes.Terran_Control_Tower));
+		
+		Selector<Sequence> selectorAddons = new Selector<>("Selector addon", addonFactory, addonFacility, addonStarport);
+		// ---------- END addons ----------
 		
 		// ---------- Compact troops
 		Sequence compactTroops = new Sequence("Redistribuite units in troops");
@@ -250,19 +274,18 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		// -------- Attack sequence ---------
 		Sequence attack = new Sequence("Send to attack the troops");
 		attack.addChild(new CheckStateTroops("Check troops status", gh));
-		attack.addChild(new SelectGroup("Select one troop to attack", gh));
 		attack.addChild(new ChooseDestination("Choose destination", gh));
-		Selector<GameHandler> attackSelector = new Selector<>("Attack/Explore");
+		attack.addChild(new SelectGroup("Select one troop to attack", gh));
+		Selector<GameHandler> attackSelector = new Selector<>("Attack/Regroup");
 		attackSelector.addChild(new SendAttack("Send to attack", gh));
 		attackSelector.addChild(new SendRegroup("Regroup", gh));		
-		attackSelector.addChild(new SendExplorer("Send to explore", gh));
 		attack.addChild(attackSelector);
-		// ---------- FIN ATTACK -----------
+		// ---------- END ATTACK -----------
 		
 		// --------- Defend sequence ---------
 		Sequence defendBase = new Sequence("Defend base");
 		defendBase.addChild(new SendDefend("Send to defend", gh));
-		// --------- FIN DEFENSE -----------
+		// --------- END DEFENSE -----------
 		
 		// --------- Fill bunker ---------
 		Sequence fillBunker = new Sequence("Fill bunker");
@@ -295,8 +318,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		vehicleWeapons.addChild(new CheckResearch("Checks if it can be researched", gh, UpgradeTypes.Terran_Vehicle_Weapons));
 		vehicleWeapons.addChild(new Research("Research", gh, UnitTypes.Terran_Armory, UpgradeTypes.Terran_Vehicle_Weapons));
 		
-		Selector<Sequence> selectorResearch = new Selector<>("Selector research", u238, caudecus, infantryArmor, infantryWeapons, vehicleArmor, vehicleWeapons); 
-		// --------------- FIN RESEARCH ---------------
+		Selector<Sequence> selectorResearch = new Selector<>("Selector research", u238, caudecus, infantryArmor, 
+																infantryWeapons, vehicleArmor, vehicleWeapons); 
+		// --------------- END RESEARCH ---------------
 		
 		// ----------- Repair sequence ---------		
 		Sequence repair = new Sequence("Repair");
@@ -305,16 +329,22 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		repair.addChild(new RepairBuilding("Repair building", gh));
 		// ------------- END REPAIR --------------------
 		
+		// ----------- CC managment -----------
+		Sequence ccManage = new Sequence("CC managment");
+		ccManage.addChild(new SelectCC("Select a CC", gh));
+		// ----------- END CC managment
+		
 		CollectTree = new BehavioralTree("Gather/Repair tree");
-		CollectTree.addChild(new Selector<>("MAIN SELECTOR", collect, repair));
+		CollectTree.addChild(new Selector<>("MAIN SELECTOR", ccManage, collect, repair));
 		BuildTree  = new BehavioralTree("Build/Research tree");
 		BuildTree.addChild(new Selector<>("MAIN SELECTOR", selectorBuild, selectorResearch));
+		AddonTree = new BehavioralTree("Addons tree");
+		AddonTree.addChild(new Selector<>("MAIN SELECTOR", selectorAddons));
 		TrainTree  = new BehavioralTree("Training tree");
 		TrainTree.addChild(new Selector<>("MAIN SELECTOR", selectorTrain));
 		UpdateTroopsTree = new BehavioralTree("Update/Check troops status");
 		UpdateTroopsTree.addChild(new Selector<>("MAIN SELECTOR", compactTroops, createTroop));
 		DefenseTree  = new BehavioralTree("Defense tree");
-		//DefenseTree.addChild(new Selector<>("MAIN SELECTOR", defendBase));
 		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", fillBunker, defendBase));
 		AttackTree  = new BehavioralTree("Attack tree");
 		AttackTree.addChild(new Selector<>("MAIN SELECTOR", attack));
@@ -327,12 +357,13 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	public void matchFrame() {
 		CollectTree.run();
 		BuildTree.run();
+		AddonTree.run();
 		TrainTree.run();
 		DefenseTree.run();
 		UpdateTroopsTree.run();
 		AttackTree.run();
 		
-		if(frames < 150){ // Cada 200 frames se recalculan las influencias.
+		if(frames < 300){ //Cada 300 frames se recalculan las influencias de las unidades no edificios.
 			frames++;
 		}else{
 			frames = 0;
@@ -377,10 +408,12 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				if (((Unit) u).getType() == UnitTypes.Terran_Armory) gh.armory--;
 				if (((Unit) u).getType() == UnitTypes.Terran_Refinery) gh.refinery--;
 				if (((Unit) u).getType() == UnitTypes.Terran_Science_Facility) gh.lab_cient--;
+				if (((Unit) u).getType() == UnitTypes.Terran_Starport) gh.starport--;
 				if (((Unit) u).getType() == UnitTypes.Terran_Supply_Depot) {
 					gh.totalSupplies -= UnitTypes.Terran_Supply_Depot.getSupplyProvided();
 				}
 				if (((Unit) u).getType() == UnitTypes.Terran_Command_Center) {
+					gh.totalSupplies -= UnitTypes.Terran_Command_Center.getSupplyProvided();
 					gh.CCs.remove((Integer) unitID);
 				}
 				control++;
@@ -453,9 +486,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		/////////////////////////////////////
 		
 //		Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
-//		String workingDirectory = System.getProperty("user.dir");
-//		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
-//		createANDwriteInfluencia(path);
+		String workingDirectory = System.getProperty("user.dir");
+		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
+		createANDwriteInfluencia(path);
 		
 		//Se actualizan la cosa nostra
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
@@ -472,6 +505,10 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				if (bwapi.getUnit(unitID).getType() != UnitTypes.Terran_SCV) {
 					gh.militaryUnits.add(bwapi.getUnit(unitID));
 					gh.boredSoldiers.add(bwapi.getUnit(unitID));
+					if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Science_Vessel) {
+						gh.vessels++;
+						gh.detector_first = false;
+					}
 				}
 			}
 			//Cuando se cree un edificio pendiente, se elimina de la lista y se pone como construido
@@ -487,23 +524,23 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Armory) gh.armory++;
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Bunker) gh.bunkers.add(bwapi.getUnit(unitID));
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Science_Facility) gh.lab_cient++;
+				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Starport) gh.starport++;
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Command_Center) {
+					gh.totalSupplies += UnitTypes.Terran_Command_Center.getSupplyProvided();
 					if (gh.CCs.indexOf((Integer) unitID) == -1){
+						gh.expanded = true;
 						gh.CCs.add(unitID);
-						gh.addCC(gh.CCs.indexOf(unitID));
+						gh.addCC();
 					}
 				}
 				
 				//Se actualiza el mapa.
-				gh.updateMap(bwapi.getUnit(unitID).getTopLeft(),
-						new Position(bwapi.getUnit(unitID).getTopLeft().getBX()+bwapi.getUnit(unitID).getType().getTileWidth(),
-									bwapi.getUnit(unitID).getTopLeft().getBY()+bwapi.getUnit(unitID).getType().getTileHeight(),
-									PosType.BUILD));
-				
-/*				//Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
-				String workingDirectory = System.getProperty("user.dir");
-				String path = workingDirectory + File.separator + "mapa.txt";
-				createANDwrite(path);*/
+				gh.updateMap(bwapi.getUnit(unitID).getTopLeft(), bwapi.getUnit(unitID).getBottomRight(), bwapi.getUnit(unitID).getType());
+
+				//Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
+				workingDirectory = System.getProperty("user.dir");
+				path = workingDirectory + File.separator + "mapa.txt";
+				createANDwrite(path);
 			}
 		}
 	}
@@ -530,8 +567,16 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	public void nukeDetect(Position p) { }
 	public void nukeDetect() { }
 	public void unitDiscover(int unitID) { }
-	public void unitEvade(int unitID) { }
-	public void unitShow(int unitID) { }
+	public void unitEvade(int unitID) {	}
+	public void unitShow(int unitID) {
+		//Enemy player
+		if (bwapi.getUnit(unitID).getPlayer().getID() != bwapi.getSelf().getID() && 
+				( bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Protoss || 
+						bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Zerg ) &&
+				gh.vessels == 0) {
+			gh.detector_first = true;			
+		}
+	}
 	public void unitHide(int unitID) { }
 	public void unitRenegade(int unitID) { }
 	public void saveGame(String gameName) {	}

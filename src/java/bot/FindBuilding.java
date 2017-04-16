@@ -4,24 +4,21 @@ import org.iaie.btree.state.State;
 import org.iaie.btree.task.leaf.Conditional;
 import org.iaie.btree.util.GameHandler;
 
-import jnibwapi.types.UpgradeType;
+import jnibwapi.types.UnitType;
 
-public class CheckResearch extends Conditional {
+public class FindBuilding extends Conditional {
 
-	UpgradeType research;
+	UnitType building;
 	
-	public CheckResearch(String name, GameHandler gh, UpgradeType research) {
+	public FindBuilding(String name, GameHandler gh, UnitType building) {
 		super(name, gh);
-		this.research = research;
+		this.building = building;
 	}
 
 	@Override
 	public State execute() {
-		try{
-			if (((JohnDoe)this.handler).detector_first) {
-				return State.FAILURE;
-			}
-			if (((JohnDoe)this.handler).checkResearch(research)) {
+		try {
+			if (((JohnDoe)this.handler).findBuilding(building)) {
 				return State.SUCCESS;
 			} else {
 				return State.FAILURE;

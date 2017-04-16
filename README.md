@@ -22,3 +22,11 @@ Esta versión tiene arreglado, mejorado y más elaborado el árbol de ataque/def
     * 5: Waiting.
     * 6: Exploring 
 * Cambios menores en el uso de la influencia para la selección de objetivos
+
+# V3
+
+Esta versión tiene:
+
+* Árbol de construcción arreglado, mejorado, permitiendo construir los añadidos a edificios, como pueden ser el de la fábrica o laboratorio científico.
+* Árbol para gestionar la recolección de recursos de cada base (incluyendo expansiones), aunque muy básico.
+* Pequeños cambios en la influencia para mejorar el ataque

@@ -19,11 +19,14 @@ public class Troop {
 	 *	5: Waiting.
 	 *	6: Exploring
 	*/
+	//To avoid a troop only form by vessels
+	boolean hasDetector;
 
 	public Troop (){
 		units = new ArrayList<Unit>(0);
 		status = 0;
 		destination = null;
+		hasDetector = false;
 	}
 	
 	/**
@@ -40,7 +43,7 @@ public class Troop {
 			}
 		}
 		dist /= units.size();
-		if (dist < 50) {
+		if (dist < 40) {
 			status = 5;
 			return true;
 		}
@@ -58,7 +61,7 @@ public class Troop {
 			dist += u.getPosition().getApproxWDistance(dest);
 		}
 		dist /= units.size();
-		if (dist > 50) {
+		if (dist > 20) {
 			return true;
 		}
 		return false;

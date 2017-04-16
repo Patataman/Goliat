@@ -21,29 +21,44 @@ public class TrainUnit extends Action {
 	@Override
 	public State execute() {
 		try{
-			byte marines=0, fire_bat=0, medic = 0, vessel=0;
+			byte marines=0, fire_bat=0, medic = 0, vessel=0, tank = 0;
 			for (Unit u : ((JohnDoe)this.handler).militaryUnits){
 				if (u.getType() == UnitTypes.Terran_Marine) marines++;
 				if (u.getType() == UnitTypes.Terran_Firebat) fire_bat++;
 				if (u.getType() == UnitTypes.Terran_Medic) medic++;
 				if (u.getType() == UnitTypes.Terran_Science_Vessel) vessel++;
+				if (u.getType() == UnitTypes.Terran_Siege_Tank_Tank_Mode) tank++;
 			}
 			if (unit == UnitTypes.Terran_SCV){
 				//Se mira a ver si es posible entrenar algún VCE
-				if (((JohnDoe)this.handler).VCEs.get(0).size() >= ((JohnDoe)this.handler).max_vce) {
+				if (((JohnDoe)this.handler).VCEs.get(
+						((JohnDoe)this.handler).CCs.indexOf(
+								((JohnDoe)this.handler).cc_select.getID())
+													).size() >= ((JohnDoe)this.handler).max_vce) {
 					return State.FAILURE; 					
 				}
-			}
-			//Por cada 5 marines+fire_bat debe entrenarse un médico
-			if (unit == UnitTypes.Terran_Medic && ((marines+fire_bat+medic)%4 != 0 || marines+fire_bat == 0)) {
+			} else if ( (!((JohnDoe)this.handler).expanded) && 
+					((JohnDoe)this.handler).supplies > ((JohnDoe)this.handler).totalSupplies*0.7) {
 				return State.FAILURE;
+			} else {
+				//Por cada 5 marines+fire_bat debe entrenarse un médico
+				if (unit == UnitTypes.Terran_Medic && (marines+fire_bat < medic*4 || marines+fire_bat == 0)) {
+					return State.FAILURE;
+				}
+				//Por cada 3 marines 1 murcielago debe entrenarse
+				if (unit == UnitTypes.Terran_Firebat && ((marines+fire_bat)%3 != 0 || marines+fire_bat == 0)) {
+					return State.FAILURE;
+				}
+				//Se construirá una nave científica por tropa.
+				if (unit == UnitTypes.Terran_Science_Vessel && vessel>=((JohnDoe)this.handler).assaultTroop.size()) {
+					return State.FAILURE;
+				}
+				//Tankes por cada 10 soldados en general.
+				if (unit == UnitTypes.Terran_Siege_Tank_Tank_Mode && tank > (marines+fire_bat+medic)/8) {
+					return State.FAILURE;
+				}
 			}
-			//Por cada 3 marines 1 murcielago debe entrenarse
-			if (unit == UnitTypes.Terran_Firebat && ((marines+fire_bat)%3 != 0 || marines+fire_bat == 0)) {
-				return State.FAILURE;
-			}
-			//Se construirá una nave científica para ver invisibles.
-			if (unit == UnitTypes.Terran_Science_Vessel && vessel>=1) {
+			if (unit == UnitTypes.Terran_Science_Vessel && vessel>=((JohnDoe)this.handler).assaultTroop.size()) {
 				return State.FAILURE;
 			}
 			//Los goliats, mientras mas mejor
