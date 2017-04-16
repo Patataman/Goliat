@@ -168,8 +168,6 @@ public class InfluenceMap {
 	 * @param y: coordenada y para el im
 	 */
 	public void newUnit(Unit unit, int influencia, int x, int y) {
-		//int x = unit.getPosition().getBX();
-		//int y = unit.getPosition().getBY();
 		ArrayList<Integer> tupla = new ArrayList<Integer>();
 		tupla.add(unit.getID());
 		tupla.add(x);
@@ -194,15 +192,15 @@ public class InfluenceMap {
 				unidades.add(tupla);
 				
 			}
-		} else if (unit.getType().isAttackCapable()) {
+		} else if (unit.getType().isAttackCapable() && !unit.getType().isWorker()) {
 		// Las unidades ofensivas hacen cosas de unidades, no de edificios
 			if (unit.getType().isMechanical()) {
 				updateCellInfluence(new Point(x,y), 3*influencia);
-				tupla.add(3*influencia);
+				tupla.add(2*influencia);
 				unidades.add(tupla);
 			} else if (unit.getType().isFlyer()) {
 				updateCellInfluence(new Point(x,y), 6*influencia);
-				tupla.add(6*influencia);
+				tupla.add(3*influencia);
 				unidades.add(tupla);
 			} else {
 				//Si no es mecánica ni voladora, es normal

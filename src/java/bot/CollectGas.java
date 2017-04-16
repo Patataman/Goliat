@@ -13,7 +13,7 @@ public class CollectGas extends Action {
 	@Override
 	public State execute() {
 		try{
-			if (((JohnDoe)this.handler).aCurrarGas()) {
+			if (((JohnDoe)this.handler).gatherGas()) {
 				return State.SUCCESS;
 			} else {
 				return State.FAILURE;

@@ -12,7 +12,8 @@ public class ChosseUnits extends Action {
 
 	@Override
 	public State execute() {
-		try{
+		return State.ERROR;
+		/*try{
 			if (((JohnDoe)this.handler).chosseUnits()) {
 				return State.SUCCESS;
 			} else {
@@ -21,7 +22,7 @@ public class ChosseUnits extends Action {
 		} catch (Exception e) {
 			e.printStackTrace();
 			return State.ERROR;
-		}
+		}*/
 	}
 
 }

@@ -13,7 +13,7 @@ public class CollectMineral extends Action {
 	@Override
 	public State execute() {
 		try{
-			if (((JohnDoe)this.handler).aCurrarMina()) {
+			if (((JohnDoe)this.handler).gatherMinerals()) {
 				return State.SUCCESS;
 			} else {
 				return State.FAILURE;

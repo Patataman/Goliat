@@ -1,19 +1,20 @@
 package bot;
 
 import org.iaie.btree.state.State;
-import org.iaie.btree.task.leaf.Conditional;
+import org.iaie.btree.task.leaf.Action;
 import org.iaie.btree.util.GameHandler;
 
-public class CheckPositionUnits extends Conditional {
+public class SendRegroup extends Action {
 
-	public CheckPositionUnits(String name, GameHandler gh) {
+	public SendRegroup(String name, GameHandler gh) {
 		super(name, gh);
+		// TODO Auto-generated constructor stub
 	}
-
+	
 	@Override
 	public State execute() {
 		try{
-			if (((JohnDoe)this.handler).checkPositionUnits()) {
+			if (((JohnDoe)this.handler).sendRegroup()) {
 				return State.SUCCESS;
 			} else {
 				return State.FAILURE;
