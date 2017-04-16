@@ -27,47 +27,43 @@ import jnibwapi.types.UpgradeType.UpgradeTypes;
 
 public class Goliat extends Agent implements BWAPIEventListener {
 
-	BehavioralTree CollectTree;
+	BehavioralTree CollectTree, BuildTree, TrainTree, AttackTree;
 	Unit buildingTree;
-	//InfluenceMap dah_mapa;
 	JohnDoe gh;
 	int frames;
 	
 	public Goliat() {            
 
-        // Generaci�n del objeto de tipo agente
+        // Generación del objeto de tipo agente
 
-        // Creaci�n de la superclase Agent de la que extiende el agente, en este m�todo se cargan            
-        // ciertas variables de de control referentes a los par�metros que han sido introducidos 
+        // Creación de la superclase Agent de la que extiende el agente, en este método se cargan            
+        // ciertas variables de de control referentes a los parámetros que han sido introducidos 
         // por teclado. 
         super();
-        // Creaci�n de una instancia del connector JNIBWAPI. Esta instancia s�lo puede ser creada
-        // una vez ya que ha sido desarrollada mediante la utilizaci�n del patr�n de dise�o singlenton.
+        // Creación de una instancia del connector JNIBWAPI. Esta instancia sólo puede ser creada
+        // una vez ya que ha sido desarrollada mediante la utilización del patrón de diseño singlenton.
         this.bwapi = new JNIBWAPI(this, true);
-        // Inicia la conexi�n en modo cliente con el servidor BWAPI que est� conectado directamente al videojuego.
-        // Este proceso crea una conexi�n mediante el uso de socket TCP con el servidor. 
+        // Inicia la conexión en modo cliente con el servidor BWAPI que está conectado directamente al videojuego.
+        // Este proceso crea una conexión mediante el uso de socket TCP con el servidor. 
         this.bwapi.start();
     }
 	
-	@Override
-	public void connected() {
-	}
+	public void connected() {}
 
-	@Override
 	public void matchStart() {
 		 
-        // Mediante est� metodo se puede obtener informaci�n del usuario. 
+        // Mediante este metodo se puede obtener información del usuario. 
         if (Options.getInstance().getUserInput()) this.bwapi.enableUserInput();
 
         if (Options.getInstance().getInformation()) this.bwapi.enablePerfectInformation();
-        // Mediante este m�todo se define la velocidad de ejecuci�n del videojuego. 
-        // Los valores posibles van desde 0 (velocidad est�ndar) a 10 (velocidad m�xima).
+        // Mediante este método se define la velocidad de ejecución del videojuego. 
+        // Los valores posibles van desde 0 (velocidad estándar) a 10 (velocidad máxima).
         this.bwapi.setGameSpeed(Options.getInstance().getSpeed());
 		
 		gh = new JohnDoe(bwapi);
 		
 		//Se establece la variable del centro de mando,
-		//ya que se va a usar bastante y as� evitamos recorrer
+		//ya que se va a usar bastante y así evitamos recorrer
 		//la lista de myUnits
 		for (Unit cc : bwapi.getMyUnits()){
 			if (cc.getType() == UnitTypes.Terran_Command_Center){
@@ -81,10 +77,8 @@ public class Goliat extends Agent implements BWAPIEventListener {
 
 		gh.supplies = bwapi.getSelf().getSupplyUsed();
 		gh.totalSupplies = bwapi.getSelf().getSupplyTotal();
-		//gh.addCC(gh.CCs.indexOf(gh.cc_select.getID()));
 		
 		gh.createMap();
-		//dah_mapa = new InfluenceMap(bwapi.getMap().getSize().getBY(), bwapi.getMap().getSize().getBX());
 		
 		frames = 0;
 		
@@ -129,80 +123,91 @@ public class Goliat extends Agent implements BWAPIEventListener {
 //		TrainVessel.addChild(new ChooseBuilding("Comprobar entrenamiento nave cientifica", gh, UnitTypes.Terran_Science_Vessel));
 //		TrainVessel.addChild(new TrainUnit("Entrenar nave cientifica", gh, UnitTypes.Terran_Science_Vessel, UnitTypes.Terran_Starport));
 		//Selector con todos los posibles entrenamientos
-		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainGoliat, TrainMedic, TrainFirebat, TrainMarine, TrainVCE);
+		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVCE, TrainGoliat, TrainMedic, TrainFirebat, TrainMarine);
 		// ----------- FIN TRAIN ---------
 
 		
 		// -------- Secuencias de construcción ---------
-		//Construir dep�sito de suministros
+		//Construir depósito de suministros
 		Sequence buildSupply = new Sequence("Construir suministros");
 		buildSupply.addChild(new CheckResources("Comprobar recursos suministros", gh, UnitTypes.Terran_Supply_Depot));
 		buildSupply.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Supply_Depot));
 		buildSupply.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildSupply.addChild(new MoveTo("Mover el constructor", gh));
 		buildSupply.addChild(new Build("Construir suministros", gh, UnitTypes.Terran_Supply_Depot));
 		//Construir barracones
 		Sequence buildBarracks = new Sequence("Construir barracones");
 		buildBarracks.addChild(new CheckResources("Comprobar recursos barracones", gh, UnitTypes.Terran_Barracks));
 		buildBarracks.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Barracks));
 		buildBarracks.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildBarracks.addChild(new MoveTo("Mover el constructor", gh));
 		buildBarracks.addChild(new Build("Construir barracones", gh, UnitTypes.Terran_Barracks));
 		//Construir refineria
 		Sequence buildRefinery = new Sequence("Construir refineria");
 		buildRefinery.addChild(new CheckResources("Comprobar recursos refineria", gh, UnitTypes.Terran_Refinery));
 		buildRefinery.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Refinery));
 		buildRefinery.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildRefinery.addChild(new MoveTo("Mover el constructor", gh));
 		buildRefinery.addChild(new Build("Construir refineria", gh, UnitTypes.Terran_Refinery));
-		//Construir bah�a de ingenieria
+		//Construir bahía de ingenieria
 		Sequence buildBay = new Sequence("Construir bahia");
 		buildBay.addChild(new CheckResources("Comprobar recursos bahia", gh, UnitTypes.Terran_Engineering_Bay));
 		buildBay.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Engineering_Bay));
 		buildBay.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildBay.addChild(new MoveTo("Mover el constructor", gh));
 		buildBay.addChild(new Build("Construir bahia", gh, UnitTypes.Terran_Engineering_Bay));
 		//Construir academia
 		Sequence buildAcademy = new Sequence("Construir academia");
 		buildAcademy.addChild(new CheckResources("Comprobar recursos academia", gh, UnitTypes.Terran_Academy));
 		buildAcademy.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Academy));
 		buildAcademy.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildAcademy.addChild(new MoveTo("Mover el constructor", gh));
 		buildAcademy.addChild(new Build("Construir academia", gh, UnitTypes.Terran_Academy));
 		//Construir fabrica
 		Sequence buildFactory = new Sequence("Construir fabrica");
 		buildFactory.addChild(new CheckResources("Comprobar recursos fabrica", gh, UnitTypes.Terran_Factory));
 		buildFactory.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Factory));
 		buildFactory.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildFactory.addChild(new MoveTo("Mover el constructor", gh));
 		buildFactory.addChild(new Build("Construir fabrica", gh, UnitTypes.Terran_Factory));
 		//Construir arsenal
 		Sequence buildArmory = new Sequence("Construir arsenal");
 		buildArmory.addChild(new CheckResources("Comprobar recursos arsenal", gh, UnitTypes.Terran_Armory));
 		buildArmory.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Armory));
 		buildArmory.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildArmory.addChild(new MoveTo("Mover el constructor", gh));
 		buildArmory.addChild(new Build("Construir arsenal", gh, UnitTypes.Terran_Armory));
 		//Construir misiles
 		Sequence buildTurret = new Sequence("Construir torreta de misiles");
 		buildTurret.addChild(new CheckResources("Comprobar recursos torreta", gh, UnitTypes.Terran_Missile_Turret));
 		buildTurret.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Missile_Turret));
 		buildTurret.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildTurret.addChild(new MoveTo("Mover el constructor", gh));
 		buildTurret.addChild(new Build("Construir torreta", gh, UnitTypes.Terran_Missile_Turret));
 		//Construir CC
 		Sequence buildCC = new Sequence("Construir centro de mando");
 		buildCC.addChild(new CheckResources("Comprobar recursos CC", gh, UnitTypes.Terran_Command_Center));
 		buildCC.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Command_Center));
 		buildCC.addChild(new FreeBuilder("Encontrar un constructor", gh));
+		buildCC.addChild(new MoveTo("Mover el constructor", gh));
 		buildCC.addChild(new Build("Construir CC", gh, UnitTypes.Terran_Command_Center));
 //		//Construir puerto estelar
 //		Sequence buildStarport = new Sequence("Construir puerto estelar");
 //		buildStarport.addChild(new CheckResources("Comprobar recursos puerto", gh, UnitTypes.Terran_Starport));
 //		buildStarport.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Starport));
 //		buildStarport.addChild(new FreeBuilder("Encontrar un constructor", gh));
+//		buildStarport.addChild(new MoveTo("Mover el constructor", gh));
 //		buildStarport.addChild(new Build("Construir puerto", gh, UnitTypes.Terran_Starport));
 //		//Construir laboratorio científico
 //		Sequence buildLab = new Sequence("Construir laboratorio cientifico");
 //		buildLab.addChild(new CheckResources("Comprobar recursos laboratorio", gh, UnitTypes.Terran_Science_Facility));
 //		buildLab.addChild(new FindPosition("Encontrar posicion", gh, UnitTypes.Terran_Science_Facility));
 //		buildLab.addChild(new FreeBuilder("Encontrar un constructor", gh));
+//		buildLab.addChild(new MoveTo("Mover el constructor", gh));
 //		buildLab.addChild(new Build("Construir laboratorio", gh, UnitTypes.Terran_Science_Facility));
 		
 		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks, 
-																buildAcademy, buildRefinery, buildBay, buildTurret, buildCC, buildFactory, buildArmory);
+													buildRefinery, buildAcademy, buildFactory, buildBay, buildArmory, buildTurret, buildCC);
 		// ---------- FIN BUILD -----------
 		
 		// -------- Secuencias de movimiento ---------
@@ -250,8 +255,14 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		repair.addChild(new RepairBuilding("Reparar el edificio", gh));
 		// ------------- FIN REPAIR --------------------
 		
-		CollectTree = new BehavioralTree("Arbol maravilloso");
-		CollectTree.addChild(new Selector<>("MAIN SELECTOR", collect, selectorBuild, repair, selectorTrain, selectorResearch, adventure, attack));
+		CollectTree = new BehavioralTree("Arbol recolección/reparación");
+		CollectTree.addChild(new Selector<>("MAIN SELECTOR", collect, repair));
+		BuildTree  = new BehavioralTree("Arbol construcción/investigación");
+		BuildTree.addChild(new Selector<>("MAIN SELECTOR", selectorBuild, selectorResearch));
+		TrainTree  = new BehavioralTree("Arbol entrenamiento");
+		TrainTree.addChild(new Selector<>("MAIN SELECTOR", selectorTrain));
+		AttackTree  = new BehavioralTree("Arbol ataque/defensa");
+		AttackTree.addChild(new Selector<>("MAIN SELECTOR", adventure, attack));
 		
 		
 	}
@@ -259,6 +270,28 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	@Override
 	public void matchFrame() {
 		CollectTree.run();
+		BuildTree.run();
+		TrainTree.run();
+		AttackTree.run();
+		
+		if (frames % 60 == 0){
+			if (gh.current_worker != null && gh.current_worker.isIdle()) { gh.current_worker = null; }
+			if (gh.workers.size() > 0) {
+				//System.out.println("--------------------");
+				ArrayList <Unit> vces_aux = new ArrayList<Unit>(3);
+				for(Unit vce : gh.workers) {
+					if ((vce.isConstructing() || vce.isRepairing()) || vce.isMoving()) {
+						vces_aux.add(vce);
+					}
+				}
+				gh.workers = vces_aux;
+				//System.out.println(gh.workers.size());
+				//Comprobación de los VCEs una vez se limpia la lista
+//				for(Unit vce : gh.workers) {
+//					System.out.println(vce.getOrder());
+//				}
+			}
+		}
 		if(frames < 300){ // Cada 300 frames se recalculan las influencias.
 			frames++;
 		}else{
@@ -282,7 +315,6 @@ public class Goliat extends Agent implements BWAPIEventListener {
 
 	@Override
 	public void unitDestroy(int unitID) {
-//		System.out.println("muere " + unitID);
 		gh.dah_mapa.removeUnitDead(unitID);
 		Predicate<Unit> predicado = new Predicate<Unit>() {
 			public boolean test(Unit u) {
@@ -295,7 +327,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			//Casting a array de unidades (?)
 			for(Object u : gh.edificiosConstruidos.stream().filter(predicado).toArray()) {
 				//No es necesario comprobar el ID ya que la sublista que se recorre es la que cumple lo del ID
-				//Aunque s�lo deber�a haber 1 elemento
+				//Aunque sólo debería haber 1 elemento
 				gh.edificiosConstruidos.remove(u);
 				if (((Unit) u).getType() == UnitTypes.Terran_Academy) gh.academia--;
 				if (((Unit) u).getType() == UnitTypes.Terran_Barracks) gh.barracones--;
@@ -339,6 +371,12 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				}
 			}
 		}
+		
+		if (control == 0) {
+			for(Object u : gh.workers.stream().filter(predicado).toArray()) {
+				gh.workers.remove((Unit) u);
+			}
+		}
 
 		if (control == 0) {
 			for(ArrayList<Integer> minerales : gh.trabajadoresMineral) {
@@ -366,7 +404,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				this.bwapi.getUnit(unitID).getPosition().getBX(), this.bwapi.getUnit(unitID).getPosition().getBY());
 		/////////////////////////////////////
 		
-		//Secci�n de c�digo para escribir en un fichero el mapa y verificar que se crea bien.
+//		Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
 //		String workingDirectory = System.getProperty("user.dir");
 //		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
 //		createANDwriteInfluencia(path);
@@ -377,11 +415,12 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_SCV){
 				gh.VCEs.get(gh.CCs.indexOf(gh.cc_select.getID())).add(bwapi.getUnit(unitID));
 			}
+			
 			//Cuando se cree una unidad de las pendientes, se elimina de la lista.
 			if (gh.unidadesPendientes.contains(bwapi.getUnit(unitID).getType())){
 				gh.unidadesPendientes.remove(bwapi.getUnit(unitID).getType());
 				gh.supplies += bwapi.getUnit(unitID).getType().getSupplyRequired();
-				//Los terran s�lo poseen 1 unidad no militar, los VCEs.
+				//Los terran sólo poseen 1 unidad no militar, los VCEs.
 				if (bwapi.getUnit(unitID).getType() != UnitTypes.Terran_SCV) {
 					gh.soldadosAburridos.add(bwapi.getUnit(unitID));
 				}
@@ -404,78 +443,48 @@ public class Goliat extends Agent implements BWAPIEventListener {
 						gh.addCC(gh.CCs.indexOf(unitID));
 					}
 				}
-				gh.worker = null;
+				
+				//Se elimina el trabajador que construía de la lista
+//				gh.workers.remove(gh.current_worker);
 				
 				//Se actualiza el mapa.
 				gh.updateMap(bwapi.getUnit(unitID).getTopLeft(),
 						new Position(bwapi.getUnit(unitID).getTopLeft().getBX()+bwapi.getUnit(unitID).getType().getTileWidth(),
 									bwapi.getUnit(unitID).getTopLeft().getBY()+bwapi.getUnit(unitID).getType().getTileHeight(),
 									PosType.BUILD));
-				//Secci�n de c�digo para escribir en un fichero el mapa y verificar que se crea bien.
-//				String workingDirectory = System.getProperty("user.dir");
-//				String path = workingDirectory + File.separator + "mapa.txt";
-//				createANDwrite(path);
+				
+				//Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
+				String workingDirectory = System.getProperty("user.dir");
+				String path = workingDirectory + File.separator + "mapa.txt";
+				createANDwrite(path);
 			}
 		}
 	}
 
-	@Override
 	public void unitMorph(int unitID) {
-		//Se actualiza el mapa de ingluencias
-//		int influencia = (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) ? 1 : -1;
-//		gh.dah_mapa.newUnit(this.bwapi.getUnit(unitID), influencia, 
-//				this.bwapi.getUnit(unitID).getPosition().getBX(), this.bwapi.getUnit(unitID).getPosition().getBY());
-		/////////////////////////////////////
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
 			if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Refinery) gh.refineria++;
 		}
 	}
 	
-	@Override
 	public void playerDropped(int playerID) { }
-	
-	@Override
 	public void matchEnd(boolean winner) { }
-	
-	@Override
 	public void keyPressed(int keyCode) { }
-	
-	@Override
 	public void sendText(String text) { }
-	
-	@Override
 	public void receiveText(String text) { }
-	
-	@Override
 	public void playerLeft(int playerID) { }
-	
-	@Override
 	public void nukeDetect(Position p) { }
-	
-	@Override
 	public void nukeDetect() { }
-	
-	@Override
 	public void unitDiscover(int unitID) { }
-	
-	@Override
 	public void unitEvade(int unitID) { }
-	
-	@Override
 	public void unitShow(int unitID) { }
-	
-	@Override
 	public void unitHide(int unitID) { }
-	
-	@Override
 	public void unitRenegade(int unitID) { }
-
-	@Override
 	public void saveGame(String gameName) {	}
 	
 	/**
-	 * M�todo que crea un archivo nuevo,
-	 * si ya exist�a lo resetea y escribe en �l
+	 * Método que crea un archivo nuevo,
+	 * si ya existía lo resetea y escribe en él
 	 * @param path: ruta donde se localiza el archivo
 	 * @param texto: texto a escribir
 	 * @return 0 -> Correcto; 1 -> Error

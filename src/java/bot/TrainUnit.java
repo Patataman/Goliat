@@ -28,17 +28,17 @@ public class TrainUnit extends Action {
 				if (u.getType() == UnitTypes.Terran_Science_Vessel) nave_cientifica++;
 			}
 			if (unit == UnitTypes.Terran_SCV){
-				//Se mira a ver si es posible entrenar alg�n VCE
+				//Se mira a ver si es posible entrenar algún VCE
 				if (((JohnDoe)this.handler).VCEs.get(0).size() >= ((JohnDoe)this.handler).max_vce) {
 					return State.FAILURE; 					
 				}
 			}
-			//Por cada 5 soldados+murcielagos debe entrenarse un m�dico
-			if (unit == UnitTypes.Terran_Medic && (soldados+murcielagos)%5 != 0) {
+			//Por cada 5 soldados+murcielagos debe entrenarse un médico
+			if (unit == UnitTypes.Terran_Medic && ((soldados+murcielagos)%5 != 0 || soldados+murcielagos == 0)) {
 				return State.FAILURE;
 			}
 			//Por cada 3 soldados 1 murcielago debe entrenarse
-			if (unit == UnitTypes.Terran_Firebat && (soldados+murcielagos)%3 != 0) {
+			if (unit == UnitTypes.Terran_Firebat && ((soldados+murcielagos)%3 != 0 || soldados+murcielagos == 0)) {
 				return State.FAILURE;
 			}
 			//Se construirá una nave científica para ver invisibles.

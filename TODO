@@ -6,18 +6,16 @@ TODO:
 -- Rehacer la actualización del mapa.
 -- Rehacer el obtener espacio libre.
 
-- Construir añadidos a los edificios.
--- Contemplarlo a la hora de construir el edificio y contemplarlo en el mapa.
-
-- Contruir expansiones.
--- Hacer un árbol para controlar la gestión de expansiones (??)
-
-- Defender correctamente los choke points y la base.
+- Revisar la construcción (donde construir cada edificio). 
+  Por ejemplo: Barracones o fábricas lejos del choke point de entrada
+  
+- Si lo anterior lleva poco:
+	-  Construir añadidos a los edificios.
+	-- Contemplarlo a la hora de construir el edificio y contemplarlo en el mapa.
 
 - Refactorizar y reducir al máximo todo lo posible los bucles y variables.
 
-- Crear correctamente el mapa de influencia.
--- Actualizarlo correctamente.
--- Utilizarlo para atacar, defender y construir edificios defensivos.
-
 - Separar árboles de ataque, construcción y entrenamiento.
+## Habiendo separado lo árboles ya se construye, entrena y hacen cosas a la vez. Además, por culpa de como
+## funciona la API puede haber varios VCEs construyendo, lo cual no está del todo mal. Lo malo es que no hay
+## una gestión "específica" para ello.
