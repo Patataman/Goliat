@@ -891,7 +891,6 @@ public class JohnDoe extends GameHandler {
 											new Point((cp_position.getBX()+pruebas[j][0]*building.getTileWidth()*i),
 													(cp_position.getBY()+pruebas[j][1]*building.getTileHeight()*i) ),
 											building);
-					
 					boolean pass = false;
 					//The bunkers/turrets have to be spread.
 					for (Unit u : finishedBuildings) { 
