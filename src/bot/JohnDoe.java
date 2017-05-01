@@ -575,15 +575,14 @@ public class JohnDoe extends GameHandler {
 		}
 		Position ret = new Position(positions.get(0)[1], positions.get(0)[0], PosType.BUILD); //Default position
 		double infl = dah_map.mapa[positions.get(0)[0]][positions.get(0)[1]]; //Default influence
-		int dist = cc.getPosition().getApproxWDistance(ret); //Initial distance
+		int dist = cc_select.getPosition().getApproxWDistance(ret); //Initial distance
 		
 		for (int[] i : positions) {
 			Position aux = new Position(i[1], i[0], PosType.BUILD);
-			if (dah_map.mapa[i[0]][i[1]] <= -0.4 && 
-					dah_map.mapa[i[0]][i[1]] < infl && 
-					cc.getPosition().getApproxWDistance(aux) < dist) {
+			if (dah_map.mapa[i[0]][i[1]] < infl*1.5 && 
+					cc_select.getPosition().getApproxWDistance(aux) < dist) {
 				//updates values
-				dist = cc.getPosition().getApproxBDistance(aux);
+				dist = cc_select.getPosition().getApproxWDistance(aux);
 				ret = aux;
 				infl = dah_map.mapa[i[0]][i[1]];
 			}
