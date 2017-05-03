@@ -188,19 +188,18 @@ public class InfluenceMap {
 		tupla.add(y);
 		// Los edificios hacen cosas de edificios
 		if (unit.getType().isBuilding() && !unit.getType().isResourceContainer()){
-			if (unit.getType().isAttackCapable()) {
-				updateCellInfluence_building(new Point(x,y), 4*influencia);
-				tupla.add(4*influencia);
-				unidades.add(tupla);
-			} else if (unit.getType() == UnitTypes.Terran_Bunker ||
-					unit.getType() == UnitTypes.Terran_Missile_Turret ||
-					unit.getType() == UnitTypes.Zerg_Spore_Colony) {
-				//Estas son los únicos edificios que se 
-				//pueden considerar verdaderamente defensivas en el juego
+			if (unit.getType() == UnitTypes.Protoss_Pylon ||
+					unit.getType() == UnitTypes.Terran_Bunker ||
+					unit.getType() == UnitTypes.Zerg_Spore_Colony || 
+					unit.getType() == UnitTypes.Zerg_Sunken_Colony) {
 				updateCellInfluence_building(new Point(x,y), 5*influencia);
 				tupla.add(5*influencia);
 				unidades.add(tupla);
-			} else if (unit.getType() == UnitTypes.Terran_Command_Center ||
+			} else if (unit.getType().isAttackCapable()) {
+				updateCellInfluence_building(new Point(x,y), 4*influencia);
+				tupla.add(4*influencia);
+				unidades.add(tupla);
+			}  else if (unit.getType() == UnitTypes.Terran_Command_Center ||
 					unit.getType() == UnitTypes.Zerg_Hatchery ||
 					unit.getType() == UnitTypes.Protoss_Nexus) {
 				updateCellInfluence_building(new Point(x,y), 7*influencia);
@@ -215,16 +214,16 @@ public class InfluenceMap {
 		} else if (unit.getType().isAttackCapable() && !unit.getType().isWorker()) {
 		// Las unidades ofensivas hacen cosas de unidades, no de edificios
 			if (unit.getType().isMechanical()) {
-				updateCellInfluence_unit(new Point(x,y), 3*influencia);
+				updateCellInfluence_unit(new Point(x,y), 2*influencia);
 				tupla.add(2*influencia);
 				unidades.add(tupla);
 			} else if (unit.getType().isFlyer()) {
-				updateCellInfluence_unit(new Point(x,y), 6*influencia);
+				updateCellInfluence_unit(new Point(x,y), 3*influencia);
 				tupla.add(3*influencia);
 				unidades.add(tupla);
 			} else {
 				//Si no es mecánica ni voladora, es normal
-				updateCellInfluence_unit(new Point(x,y), 2*influencia);
+				updateCellInfluence_unit(new Point(x,y), 1*influencia);
 				tupla.add(1*influencia);
 				unidades.add(tupla);
 			}

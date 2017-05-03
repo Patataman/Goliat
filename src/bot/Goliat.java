@@ -22,7 +22,6 @@ import jnibwapi.ChokePoint;
 import jnibwapi.JNIBWAPI;
 import jnibwapi.Position;
 import jnibwapi.Unit;
-import jnibwapi.types.RaceType;
 import jnibwapi.types.RaceType.RaceTypes;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.types.UpgradeType.UpgradeTypes;
@@ -89,7 +88,6 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		}
 		
 		gh.supplies = bwapi.getSelf().getSupplyUsed();
-		gh.enemyRace = RaceTypes.getRaceType(bwapi.getEnemyUnits().get(0).getType().getRaceID());
 		
 		gh.createMap();
 		
@@ -571,9 +569,11 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		//Enemy player
 		if (bwapi.getUnit(unitID).getPlayer().getID() != bwapi.getSelf().getID() && 
 				( bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Protoss || 
-						bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Zerg ) &&
-				gh.vessels == 0) {
-			gh.detector_first = true;			
+						bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Zerg )) {
+			gh.enemyRace = bwapi.getUnit(unitID).getPlayer().getRace();
+			if (gh.vessels == 0) {
+				gh.detector_first = true;	
+			}						
 		}
 	}
 	public void unitHide(int unitID) { }
