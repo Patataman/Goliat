@@ -13,6 +13,7 @@ import jnibwapi.JNIBWAPI;
 import jnibwapi.Position;
 import jnibwapi.Unit;
 import jnibwapi.Position.PosType;
+import jnibwapi.types.RaceType;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.types.UpgradeType;
@@ -47,6 +48,7 @@ public class JohnDoe extends GameHandler {
 	
 	boolean detector_first = false;
 	boolean expanded = false;
+	RaceType enemyRace;
 	
 	List<ChokePoint>[][] chokePoints;
 	
@@ -68,6 +70,7 @@ public class JohnDoe extends GameHandler {
 		cc 						= null;
 		cc_select 				= null;
 		addonBuilding			= null;
+		enemyRace 				= null;
 		workers 				= new ArrayList<Unit>(3);
 		militaryUnits			= new ArrayList<Unit>(0);
 		boredSoldiers			= new ArrayList<Unit>(0);

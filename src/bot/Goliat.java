@@ -22,6 +22,7 @@ import jnibwapi.ChokePoint;
 import jnibwapi.JNIBWAPI;
 import jnibwapi.Position;
 import jnibwapi.Unit;
+import jnibwapi.types.RaceType;
 import jnibwapi.types.RaceType.RaceTypes;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.types.UpgradeType.UpgradeTypes;
@@ -88,7 +89,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		}
 		
 		gh.supplies = bwapi.getSelf().getSupplyUsed();
-//		gh.totalSupplies = UnitTypes.Terran_Command_Center.getSup;
+		gh.enemyRace = RaceTypes.getRaceType(bwapi.getEnemyUnits().get(0).getType().getRaceID());
 		
 		gh.createMap();
 		
