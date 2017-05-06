@@ -39,7 +39,9 @@ public class JohnDoe extends GameHandler {
 	Unit current_worker;						//Variable to know which SCV is currently selected.
 	List<Unit> bunkers;							//List to know the bunkers I have
 	Unit addonBuilding;							//Variable to get (without searching again) the building which addon we're going to build
-		
+	
+	List<UnitType> unitsToTrain;				//This list contains all military units that can be trained 
+	
 	int supplies, totalSupplies;
 	byte barracks, refinery, factory, 
 		academy, armory, bay, max_vce, 
@@ -84,6 +86,7 @@ public class JohnDoe extends GameHandler {
 		researching				= new ArrayList<UpgradeType>(0);
 		remainingUnits 			= new ArrayList<UnitType>(0);
 		remainingBuildings 		= new ArrayList<UnitType>(0);
+		unitsToTrain			= new ArrayList<UnitType>(0);
 		assaultTroop			= new ArrayList<Troop>(0);
 		attackGroup				= new Troop();
 		defendGroup				= new Troop();
@@ -801,7 +804,7 @@ public class JohnDoe extends GameHandler {
 			if (!aux.isStartLocation() &&
 					cc.getPosition().getApproxWDistance(aux.getCenter()) < dist &&
 					this.connector.canBuildHere(aux.getPosition(), UnitTypes.Terran_Command_Center, false) &&
-					(!aux.isIsland() && (!expanded || !aux.isMineralOnly()))) {
+					!aux.isIsland()) {
 				//If closer, updates "dist" and "pos".
 				dist = cc.getPosition().getApproxWDistance(aux.getCenter());
 				pos = aux;
@@ -851,8 +854,7 @@ public class JohnDoe extends GameHandler {
 					}				
 				}
 			}
-//			limit++;
-			//If there's more than 1 CP, builds closer to the CC.
+		//If there's more than 1 CP, builds closer to the CC.
 		} else {
 			byte [][] tests = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
 			//Looks for a place to build, testing all the directions and increasing the range up to x4

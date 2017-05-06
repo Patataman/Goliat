@@ -30,7 +30,7 @@ public class TrainUnit extends Action {
 				if (u.getType() == UnitTypes.Terran_Siege_Tank_Tank_Mode) tank++;
 			}
 			if (unit == UnitTypes.Terran_SCV){
-				//Se mira a ver si es posible entrenar algún VCE
+				//Checks if it's possible train new SCVs
 				if (((JohnDoe)this.handler).VCEs.get(
 						((JohnDoe)this.handler).CCs.indexOf(
 								((JohnDoe)this.handler).cc_select.getID())
@@ -41,27 +41,34 @@ public class TrainUnit extends Action {
 					((JohnDoe)this.handler).supplies > ((JohnDoe)this.handler).totalSupplies*0.7) {
 				return State.FAILURE;
 			} else {
-				//Por cada 5 marines+fire_bat debe entrenarse un médico
+				//If unit to train it's contained in the unitsToTrain, then check other stuff
+				if (!((JohnDoe)this.handler).unitsToTrain.contains(this.unit)){
+					return State.FAILURE;
+				}
+				//1 Medic for each 5 marine+fire_bat
 				if (unit == UnitTypes.Terran_Medic && (marines+fire_bat < medic*4 || marines+fire_bat == 0)) {
 					return State.FAILURE;
 				}
-				//Por cada 3 marines 1 murcielago debe entrenarse
+				//1 firebat for each 3 marines
 				if (unit == UnitTypes.Terran_Firebat && ((marines+fire_bat)%3 != 0 || marines+fire_bat == 0)) {
 					return State.FAILURE;
 				}
-				//Se construirá una nave científica por tropa.
-				if (unit == UnitTypes.Terran_Science_Vessel && vessel>=((JohnDoe)this.handler).assaultTroop.size()) {
+				//1 science vessel for each troop
+				if (unit == UnitTypes.Terran_Science_Vessel && vessel >= ((JohnDoe)this.handler).assaultTroop.size()) {
 					return State.FAILURE;
 				}
-				//Tankes por cada 10 soldados en general.
+				//1 siege tank for each 8 marines+fire_bat
 				if (unit == UnitTypes.Terran_Siege_Tank_Tank_Mode && tank > (marines+fire_bat+medic)/8) {
 					return State.FAILURE;
 				}
+				//Same as tanks
+				if (unit == UnitTypes.Terran_Vulture && tank > (marines+fire_bat+medic)/8) {
+					return State.FAILURE;
+				}
 			}
-			if (unit == UnitTypes.Terran_Science_Vessel && vessel>=((JohnDoe)this.handler).assaultTroop.size()) {
-				return State.FAILURE;
-			}
-			//Los goliats, mientras mas mejor
+//			if (unit == UnitTypes.Terran_Science_Vessel && vessel>=((JohnDoe)this.handler).assaultTroop.size()) {
+//				return State.FAILURE;
+//			}
 			if (((JohnDoe)this.handler).trainUnit(building, unit)) {
 				return State.SUCCESS;
 			} else {

@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.function.Predicate;
 
 import org.iaie.Agent;
@@ -23,6 +24,7 @@ import jnibwapi.JNIBWAPI;
 import jnibwapi.Position;
 import jnibwapi.Unit;
 import jnibwapi.types.RaceType.RaceTypes;
+import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.types.UpgradeType.UpgradeTypes;
 
@@ -32,6 +34,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	Unit buildingTree;
 	JohnDoe gh;
 	int frames;
+	ArrayList<UnitType> TvsT, TvsP, TvsZ;
 	
 	public Goliat() {            
 
@@ -52,7 +55,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	public void connected() {}
 
 	public void matchStart() {
-		 
+		
         // Mediante este metodo se puede obtener información del usuario. 
         if (Options.getInstance().getUserInput()) this.bwapi.enableUserInput();
 
@@ -65,10 +68,36 @@ public class Goliat extends Agent implements BWAPIEventListener {
         this.bwapi.drawHealth(true);
 		
 		gh = new JohnDoe(bwapi);
+			
+		TvsT = new ArrayList<UnitType>(5) {{
+			add(UnitTypes.Terran_Marine);
+			add(UnitTypes.Terran_Medic);
+			add(UnitTypes.Terran_Siege_Tank_Tank_Mode);
+			add(UnitTypes.Terran_Goliath);
+			add(UnitTypes.Terran_Science_Vessel);
+		}};
+        TvsP = new ArrayList<UnitType>(6) {{
+        	add(UnitTypes.Terran_Marine);
+			add(UnitTypes.Terran_Medic);
+			add(UnitTypes.Terran_Firebat);
+			add(UnitTypes.Terran_Siege_Tank_Tank_Mode);
+			add(UnitTypes.Terran_Goliath);
+			add(UnitTypes.Terran_Science_Vessel);
+        }};
+        TvsZ = new ArrayList<UnitType>(7) {{
+        	add(UnitTypes.Terran_Marine);
+			add(UnitTypes.Terran_Medic);
+			add(UnitTypes.Terran_Firebat);
+			add(UnitTypes.Terran_Vulture);
+			add(UnitTypes.Terran_Siege_Tank_Tank_Mode);
+			add(UnitTypes.Terran_Goliath);
+			add(UnitTypes.Terran_Science_Vessel);
+        }};
+        
+        //Default
+        gh.unitsToTrain = TvsT;
 		
-		//Se establece la variable del centro de mando,
-		//ya que se va a usar bastante y así evitamos recorrer
-		//la lista de myUnits
+        //Initialize CC variables.
 		for (Unit cc : bwapi.getMyUnits()){
 			if (cc.getType() == UnitTypes.Terran_Command_Center){
 				gh.cc = cc;
@@ -79,6 +108,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			}
 		}
 
+		//Get the number of choke points to determinate strategy
 		if (gh.number_chokePoints == 1) {
 			for (ChokePoint cp : bwapi.getMap().getRegion(gh.cc_select.getPosition()).getChokePoints()){
 				gh.defendGroup.destination = cp.getCenter();				
@@ -87,13 +117,14 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			gh.defendGroup.destination = gh.cc.getPosition().makeValid();
 		}
 		
+		//Number of supplies
 		gh.supplies = bwapi.getSelf().getSupplyUsed();
-		
+		//Influence map
 		gh.createMap();
 		
 		frames = 0;
-		
-		
+
+		// --------- Resources sequence ---------
 		Selector<GameHandler> CollectResources = new Selector<>("Minerals or Vespin gas");
 		CollectResources.addChild(new CollectGas("Vespin gas", gh));
 		CollectResources.addChild(new CollectMineral("Minerals", gh));
@@ -101,6 +132,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		Sequence collect = new Sequence("Gather");
 		collect.addChild(new FreeWorker("Free Worker", gh));
 		collect.addChild(CollectResources);
+		// --------- END resources -------------
 		
 		// -------- Training sequences ---------
 		//Train SCVs
@@ -332,7 +364,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		// ----------- END CC managment
 		
 		CollectTree = new BehavioralTree("Gather/Repair tree");
-		CollectTree.addChild(new Selector<>("MAIN SELECTOR", ccManage, collect, repair));
+		CollectTree.addChild(new Selector<>("MAIN SELECTOR", repair, ccManage, collect));
 		BuildTree  = new BehavioralTree("Build/Research tree");
 		BuildTree.addChild(new Selector<>("MAIN SELECTOR", selectorBuild, selectorResearch));
 		AddonTree = new BehavioralTree("Addons tree");
@@ -360,7 +392,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		UpdateTroopsTree.run();
 		AttackTree.run();
 		
-		if(frames < 300){ //Cada 300 frames se recalculan las influencias de las unidades no edificios.
+		if(frames < 300){ //Each 300 frames, recalculate influences
 			frames++;
 		}else{
 			frames = 0;
@@ -371,7 +403,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 
 
 	public void unitCreate(int unitID) {
-		//Cuando se comienza a construir un edificio se pone como pendiente.
+		//When start to build a building, add to remainingBuildings.
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
 			if (bwapi.getUnit(unitID).getType().isBuilding()){
 				gh.remainingBuildings.add(bwapi.getUnit(unitID).getType());
@@ -390,11 +422,10 @@ public class Goliat extends Agent implements BWAPIEventListener {
 			}
 		};
 		int control = 0;
+		//List control (Buildings)
 		if (control == 0) {
-			//Casting a array de unidades (?)
 			for(Object u : gh.finishedBuildings.stream().filter(predicado).toArray()) {
-				//No es necesario comprobar el ID ya que la sublista que se recorre es la que cumple lo del ID
-				//Aunque sólo debería haber 1 elemento
+				//Remove unit from lists and update variables
 				gh.finishedBuildings.remove((Unit) u);
 				if (gh.bunkers.contains((Unit ) u)) { gh.bunkers.remove((Unit) u);}
 				
@@ -416,6 +447,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				control++;
 			}
 		}
+		//More list update (Units)
 		if (control == 0) {
 			for(Object u : gh.militaryUnits.stream().filter(predicado).toArray()) {
 				gh.supplies -= ((Unit) u).getType().getSupplyRequired();
@@ -441,6 +473,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				control++;
 			}
 		}
+		//IF it's a SCV
 		if (control == 0) {
 			for(ArrayList<Unit> vces_cc : gh.VCEs){
 				for(Object u : vces_cc.stream().filter(predicado).toArray()) {
@@ -476,29 +509,30 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	}
 	
 	public void unitComplete(int unitID) {
-		//Se actualiza el mapa de ingluencias
+		//Updates influence map
 		int influencia = (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) ? 1 : -1;
 		gh.dah_map.newUnit(this.bwapi.getUnit(unitID), influencia, 
 				this.bwapi.getUnit(unitID).getPosition().getBX(), this.bwapi.getUnit(unitID).getPosition().getBY());
 		/////////////////////////////////////
 		
-//		Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
+		//This 3 lines write in a file the influence map -- FOR DEBUGGING
 		String workingDirectory = System.getProperty("user.dir");
 		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
 		createANDwriteInfluencia(path);
 		
-		//Se actualizan la cosa nostra
+		//Update list, variables, etc...
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
-			//Cuando se finaliza la unidad correspondiente, se agrega a su lista.
+			//Add the unit to its list.
 			if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_SCV){
 				gh.VCEs.get(gh.CCs.indexOf(gh.cc_select.getID())).add(bwapi.getUnit(unitID));
 			}
 			
-			//Cuando se cree una unidad de las pendientes, se elimina de la lista.
+			//Remove the unit from the remaining list.
 			if (gh.remainingUnits.contains(bwapi.getUnit(unitID).getType())){
+				
 				gh.remainingUnits.remove(bwapi.getUnit(unitID).getType());
 				gh.supplies += bwapi.getUnit(unitID).getType().getSupplyRequired();
-				//Los terran sólo poseen 1 unidad no militar, los VCEs.
+				
 				if (bwapi.getUnit(unitID).getType() != UnitTypes.Terran_SCV) {
 					gh.militaryUnits.add(bwapi.getUnit(unitID));
 					gh.boredSoldiers.add(bwapi.getUnit(unitID));
@@ -508,10 +542,13 @@ public class Goliat extends Agent implements BWAPIEventListener {
 					}
 				}
 			}
-			//Cuando se cree un edificio pendiente, se elimina de la lista y se pone como construido
+			
+			//Case: Building
 			if (gh.remainingBuildings.contains(bwapi.getUnit(unitID).getType())) {
+				
 				gh.remainingBuildings.remove(bwapi.getUnit(unitID).getType());
 				gh.finishedBuildings.add(bwapi.getUnit(unitID));
+				//Updates variables.
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Supply_Depot)
 					gh.totalSupplies += UnitTypes.Terran_Supply_Depot.getSupplyProvided();
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Barracks) gh.barracks++;
@@ -523,6 +560,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Science_Facility) gh.lab_cient++;
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Starport) gh.starport++;
 				if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Command_Center) {
+					//If it's a CC, need to add control lists.
 					gh.totalSupplies += UnitTypes.Terran_Command_Center.getSupplyProvided();
 					if (gh.CCs.indexOf((Integer) unitID) == -1){
 						gh.expanded = true;
@@ -531,10 +569,10 @@ public class Goliat extends Agent implements BWAPIEventListener {
 					}
 				}
 				
-				//Se actualiza el mapa.
+				//Updates influence map.
 				gh.updateMap(bwapi.getUnit(unitID).getTopLeft(), bwapi.getUnit(unitID).getBottomRight(), bwapi.getUnit(unitID).getType());
 
-				//Sección de código para escribir en un fichero el mapa y verificar que se crea bien.
+				//This 3 lines write in a file the construction map -- FOR DEBUGGING
 				workingDirectory = System.getProperty("user.dir");
 				path = workingDirectory + File.separator + "mapa.txt";
 				createANDwrite(path);
@@ -543,6 +581,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	}
 
 	public void unitMorph(int unitID) {
+		//Refinery it's an especial case.
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
 			if (bwapi.getUnit(unitID).getType() == UnitTypes.Terran_Refinery) gh.refinery++;
 		}
@@ -551,6 +590,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	public void playerDropped(int playerID) { }
 	
 	public void matchEnd(boolean winner) {
+		// :P
 		if (winner) {
 			bwapi.sendText("GG EZ");
 		} else {
@@ -570,6 +610,16 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		if (bwapi.getUnit(unitID).getPlayer().getID() != bwapi.getSelf().getID() && 
 				( bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Protoss || 
 						bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Zerg )) {
+			//Updates unitsToTrain
+			if (bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Protoss &&
+					gh.enemyRace != RaceTypes.Protoss) {
+				gh.unitsToTrain = TvsP;
+			} else if (bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Zerg &&
+					gh.enemyRace != RaceTypes.Zerg) {
+				gh.unitsToTrain = TvsZ;
+			} else {
+				gh.unitsToTrain = TvsT;
+			}
 			gh.enemyRace = bwapi.getUnit(unitID).getPlayer().getRace();
 			if (gh.vessels == 0) {
 				gh.detector_first = true;	
