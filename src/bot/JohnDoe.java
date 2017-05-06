@@ -13,6 +13,7 @@ import jnibwapi.JNIBWAPI;
 import jnibwapi.Position;
 import jnibwapi.Unit;
 import jnibwapi.Position.PosType;
+import jnibwapi.types.RaceType;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.types.UpgradeType;
@@ -38,7 +39,9 @@ public class JohnDoe extends GameHandler {
 	Unit current_worker;						//Variable to know which SCV is currently selected.
 	List<Unit> bunkers;							//List to know the bunkers I have
 	Unit addonBuilding;							//Variable to get (without searching again) the building which addon we're going to build
-		
+	
+	List<UnitType> unitsToTrain;				//This list contains all military units that can be trained 
+	
 	int supplies, totalSupplies;
 	byte barracks, refinery, factory, 
 		academy, armory, bay, max_vce, 
@@ -47,6 +50,7 @@ public class JohnDoe extends GameHandler {
 	
 	boolean detector_first = false;
 	boolean expanded = false;
+	RaceType enemyRace;
 	
 	List<ChokePoint>[][] chokePoints;
 	
@@ -68,6 +72,7 @@ public class JohnDoe extends GameHandler {
 		cc 						= null;
 		cc_select 				= null;
 		addonBuilding			= null;
+		enemyRace 				= null;
 		workers 				= new ArrayList<Unit>(3);
 		militaryUnits			= new ArrayList<Unit>(0);
 		boredSoldiers			= new ArrayList<Unit>(0);
@@ -81,6 +86,7 @@ public class JohnDoe extends GameHandler {
 		researching				= new ArrayList<UpgradeType>(0);
 		remainingUnits 			= new ArrayList<UnitType>(0);
 		remainingBuildings 		= new ArrayList<UnitType>(0);
+		unitsToTrain			= new ArrayList<UnitType>(0);
 		assaultTroop			= new ArrayList<Troop>(0);
 		attackGroup				= new Troop();
 		defendGroup				= new Troop();
@@ -575,15 +581,14 @@ public class JohnDoe extends GameHandler {
 		}
 		Position ret = new Position(positions.get(0)[1], positions.get(0)[0], PosType.BUILD); //Default position
 		double infl = dah_map.mapa[positions.get(0)[0]][positions.get(0)[1]]; //Default influence
-		int dist = cc.getPosition().getApproxWDistance(ret); //Initial distance
+		int dist = cc_select.getPosition().getApproxWDistance(ret); //Initial distance
 		
 		for (int[] i : positions) {
 			Position aux = new Position(i[1], i[0], PosType.BUILD);
-			if (dah_map.mapa[i[0]][i[1]] <= -0.4 && 
-					dah_map.mapa[i[0]][i[1]] < infl && 
-					cc.getPosition().getApproxWDistance(aux) < dist) {
+			if (dah_map.mapa[i[0]][i[1]] < infl*1.5 && 
+					cc_select.getPosition().getApproxWDistance(aux) < dist) {
 				//updates values
-				dist = cc.getPosition().getApproxBDistance(aux);
+				dist = cc_select.getPosition().getApproxWDistance(aux);
 				ret = aux;
 				infl = dah_map.mapa[i[0]][i[1]];
 			}
@@ -799,7 +804,7 @@ public class JohnDoe extends GameHandler {
 			if (!aux.isStartLocation() &&
 					cc.getPosition().getApproxWDistance(aux.getCenter()) < dist &&
 					this.connector.canBuildHere(aux.getPosition(), UnitTypes.Terran_Command_Center, false) &&
-					(!aux.isIsland() && (!expanded || !aux.isMineralOnly()))) {
+					!aux.isIsland()) {
 				//If closer, updates "dist" and "pos".
 				dist = cc.getPosition().getApproxWDistance(aux.getCenter());
 				pos = aux;
@@ -849,8 +854,7 @@ public class JohnDoe extends GameHandler {
 					}				
 				}
 			}
-//			limit++;
-			//If there's more than 1 CP, builds closer to the CC.
+		//If there's more than 1 CP, builds closer to the CC.
 		} else {
 			byte [][] tests = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
 			//Looks for a place to build, testing all the directions and increasing the range up to x4
