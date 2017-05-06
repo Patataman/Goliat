@@ -2,7 +2,7 @@
 
 # V1 
 
-StarCraft Terran Bot developed with [BWAPI](https://github.com/bwapi/bwapi) using ([JBWAPI](https://github.com/JNIBWAPI/JNIBWAPI))
+StarCraft Terran Bot developed with [BWAPI](https://github.com/bwapi/bwapi) using ([JNIBWAPI](https://github.com/JNIBWAPI/JNIBWAPI))
 
 This version has the building tree fixed. Including distinction of zones with 1 or more ChokePoints.
 * If the zone has 1 CP: Barracks and factory are built in the opposite direction to the CP. Other building are built between the CP and the CC.
