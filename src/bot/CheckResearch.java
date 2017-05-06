@@ -18,7 +18,8 @@ public class CheckResearch extends Conditional {
 	@Override
 	public State execute() {
 		try{
-			if (((JohnDoe)this.handler).detector_first) {
+			if (((JohnDoe)this.handler).detector_first && 
+					((JohnDoe)this.handler).militaryUnits.size() < 15) {
 				return State.FAILURE;
 			}
 			if (((JohnDoe)this.handler).checkResearch(research)) {

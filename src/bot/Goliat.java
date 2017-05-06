@@ -602,13 +602,14 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	public void playerLeft(int playerID) { }
 	public void nukeDetect(Position p) { }
 	public void nukeDetect() { }
-	public void unitDiscover(int unitID) { }
+	public void unitDiscover(int unitID) {
+	}
 	public void unitEvade(int unitID) {	}
 	public void unitShow(int unitID) {
 		//Enemy player
 		if (bwapi.getUnit(unitID).getPlayer().getID() != bwapi.getSelf().getID() && 
 				( bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Protoss || 
-						bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Zerg )) {
+						bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Zerg ) && frames > 0) {
 			//Updates unitsToTrain
 			if (bwapi.getUnit(unitID).getPlayer().getRace() == RaceTypes.Protoss &&
 					gh.enemyRace != RaceTypes.Protoss) {
