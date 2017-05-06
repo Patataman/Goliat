@@ -1,8 +1,40 @@
-# _"Goliat online v3"_
+# _"Goliat online"_
 
-Bot Terran de Starcraft desarrollado con [BWAPI](https://github.com/bwapi/bwapi) mediante la API de Java ([JNIBWAPI](https://github.com/JNIBWAPI/JNIBWAPI)
+# V1 
 
-Esta versión tiene arreglado, mejorado y más elaborado el árbol de construcción, permitiendo construir los añadidos a edificios, como pueden ser el de la fábrica o laboratorio científico.
-También posee un árbol para gestionar la recolección de recursos de cada base (incluyendo expansiones).
+StarCraft Terran Bot developed with [BWAPI](https://github.com/bwapi/bwapi) using ([JBWAPI](https://github.com/JNIBWAPI/JNIBWAPI))
 
-WIP
+This version has the building tree fixed. Including distinction of zones with 1 or more ChokePoints.
+* If the zone has 1 CP: Barracks and factory are built in the opposite direction to the CP. Other building are built between the CP and the CC.
+* If the zone has 2 or more CP: Barracks and factory are built closer to the CC. Other building are built farther to closer.
+
+# V2
+
+This version has fixed, upgraded and more fabulous attack/defense tree. Now Goliat can manage different groups of unit to attack/defense. Specifically:
+
+* Creation and management of groups of at least 10 units.
+  * This groups can have 6 different status:
+    * 0: Doing nothing.
+    * 1: Attacking.
+    * 2: Defending.
+    * 3: Regroup.
+    * 4: Retreat.
+    * 5: Waiting.
+    * 6: Exploring. (Never used for now)
+* Small changes in the use of the influence for selecting targets.
+
+# V3
+
+This version contains:
+
+* Building tree fixed, upgraded and more fabulous allowing to build add-ons.
+* A brand new tree which have a basic management of expansions (Gather resources and train more SCVs).
+* Small fixes in the influence.
+
+# V4
+
+This version contains:
+
+* More small fixes in the influence.
+* Can train different units according the enemy race.
+* Small fixes in building expansions.
