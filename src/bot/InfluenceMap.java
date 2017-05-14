@@ -241,15 +241,17 @@ public class InfluenceMap {
 		int x;
 		int y;
 		for(ArrayList<Integer> unitTupla : unidades){
-			currentUnit = connector.getUnit(unitTupla.get(0));						
-			x = currentUnit.getPosition().getBX();
-			y = currentUnit.getPosition().getBY();
-//			if(x != unitTupla.get(1) || y != unitTupla.get(2)){ // Y se ha desplazado, se actualiza la influencia
+			currentUnit = connector.getUnit(unitTupla.get(0));
+			if (currentUnit != null) {
+				x = currentUnit.getPosition().getBX();
+				y = currentUnit.getPosition().getBY();
+//				if(x != unitTupla.get(1) || y != unitTupla.get(2)){ // Y se ha desplazado, se actualiza la influencia
 				updateCellInfluence_unit(new Point(unitTupla.get(1),unitTupla.get(2)), 0);// Retiramos la influencia anterior
 				updateCellInfluence_unit(new Point(x,y), unitTupla.get(3));// Actualizamos la nueva influencia
 				unitTupla.set(1, x); // actualizamos la nueva posición de la unidad.
 				unitTupla.set(2, y);
-//			}
+//				}	
+			}
 		}
 	}
 	

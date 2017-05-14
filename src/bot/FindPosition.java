@@ -55,7 +55,9 @@ public class FindPosition extends Conditional {
 			}
 			//Decorator for expansions.
 			//Only after have built the barracks.
-			if (building == UnitTypes.Terran_Command_Center && ((JohnDoe)this.handler).barracks == 0) {
+			if (building == UnitTypes.Terran_Command_Center &&
+					(((JohnDoe)this.handler).barracks == 0 ||
+					((JohnDoe)this.handler).militaryUnits.size() < 15)) {
 				return State.FAILURE;
 			}
 			//Decorator for bunkers
