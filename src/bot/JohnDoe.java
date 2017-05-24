@@ -269,7 +269,7 @@ public class JohnDoe extends GameHandler {
 		for (Unit u : finishedBuildings){
 			if (u.getType() == building &&
 					!u.isTraining() &&
-					!u.isConstructing()){
+					!u.isBeingConstructed()){
 				u.train(unit);
 				remainingUnits.add(unit);
 				return true;

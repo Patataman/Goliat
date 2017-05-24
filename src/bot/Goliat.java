@@ -159,6 +159,11 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		TrainSiegeTank.addChild(new CheckResources("Check resources siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode));
 		TrainSiegeTank.addChild(new ChooseBuilding("Check training siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode));
 		TrainSiegeTank.addChild(new TrainUnit("Train siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode, UnitTypes.Terran_Factory));
+		//Train vultures
+		Sequence TrainVulture = new Sequence("Train Vulture");
+		TrainVulture.addChild(new CheckResources("Check resources vulture", gh, UnitTypes.Terran_Vulture));
+		TrainVulture.addChild(new ChooseBuilding("Check training vulture", gh, UnitTypes.Terran_Vulture));
+		TrainVulture.addChild(new TrainUnit("Train vulture", gh, UnitTypes.Terran_Vulture, UnitTypes.Terran_Factory));
 		//Train goliats
 		Sequence TrainGoliat = new Sequence("Train Goliat");
 		TrainGoliat.addChild(new CheckResources("Check resources goliat", gh, UnitTypes.Terran_Goliath));
@@ -171,7 +176,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		TrainVessel.addChild(new TrainUnit("Train Science vessel", gh, UnitTypes.Terran_Science_Vessel, UnitTypes.Terran_Starport));
 
 		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVessel, TrainGoliat, TrainVCE, TrainSiegeTank, 
-																				TrainMedic, TrainFirebat, TrainMarine);
+															TrainVulture, TrainMedic, TrainFirebat, TrainMarine);
 //		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVCE);
 		// ----------- END TRAIN ---------
 
