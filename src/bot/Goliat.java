@@ -386,7 +386,6 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		
 	}
 
-	@Override
 	public void matchFrame() {
 		CollectTree.run();
 		BuildTree.run();
