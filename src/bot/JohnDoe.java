@@ -374,11 +374,9 @@ public class JohnDoe extends GameHandler {
 				if (!((Troop ) t).equals((Troop) t2) &&
 						((Troop) t2).status == ((Troop) t).status &&
 						((Troop) t).units.size() + ((Troop) t2).units.size() < 20) {
-					System.out.println("Antes t1: "+((Troop) t).units.size()+", t2: "+((Troop) t2).units.size());
 					((Troop) t).units.addAll(((Troop) t2).units);
 					((Troop) t).status = 4;
 					((Troop) t).destination = defendGroup.destination;
-					System.out.println("Despues t1: "+((Troop) t).units.size());
 					assaultTroop.remove((Troop)t2);
 				}
 			}
@@ -423,20 +421,19 @@ public class JohnDoe extends GameHandler {
 	 * @return True if can,  False otherwise.
 	 */
 	public boolean selectGroup() {
-		if (assaultTroop.size() > 0){
-			System.out.println("-------------------");
-			for (Troop t : assaultTroop){
-				System.out.println("Estado:"+t.status+", Tropas: "+t.units.size()+", Bored: "+boredSoldiers.size());
-			}
-			System.out.println("+++++++++++++++++++");			
-		}
+//		if (assaultTroop.size() > 0){
+//			System.out.println("-------------------");
+//			for (Troop t : assaultTroop){
+//				System.out.println("Estado:"+t.status+", Tropas: "+t.units.size()+", Bored: "+boredSoldiers.size());
+//			}
+//			System.out.println("+++++++++++++++++++");			
+//		}
 		
 		//Troops with status == 0
 		for (Troop t : assaultTroop){
 			if (t.status == 0) {
 				if (t.units.size() >= 10) {
 					attackGroup = t;
-					System.out.println("Selected Estado:"+t.status+", Tropas: "+t.units.size());
 					return true;
 				}				
 			}
@@ -446,7 +443,6 @@ public class JohnDoe extends GameHandler {
 		for (Troop t : assaultTroop) {
 			if (t.status >= 5 && t.units.size() >= 10) {
 				attackGroup = t;
-				System.out.println("Selected Estado:"+t.status+", Tropas: "+t.units.size());
 				return true;
 			}			
 		}
@@ -455,7 +451,6 @@ public class JohnDoe extends GameHandler {
 		for (Troop t : assaultTroop) {
 			if (t.status == 1 && t.units.size() >= 10) {
 				attackGroup = t;
-				System.out.println("Selected Estado:"+t.status+", Tropas: "+t.units.size());
 				return true;
 			}			
 		}
