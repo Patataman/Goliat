@@ -96,11 +96,11 @@ public class JNIBWAPI {
 		try {
 			// Using the Korean character set for decoding byte[]s into Strings will allow Korean
 			// characters to be parsed correctly.
-			charset = Charset.forName("utf-8");
+			charset = Charset.forName("Cp949");
 		} catch (UnsupportedCharsetException e) {
 			System.out.println(
 					"Korean character set not available. Some characters may not be read properly");
-			charset = StandardCharsets.UTF_8;
+			charset = StandardCharsets.ISO_8859_1;
 		}
 	}
 	

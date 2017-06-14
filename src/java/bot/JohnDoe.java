@@ -269,7 +269,7 @@ public class JohnDoe extends GameHandler {
 		for (Unit u : finishedBuildings){
 			if (u.getType() == building &&
 					!u.isTraining() &&
-					!u.isConstructing()){
+					!u.isBeingConstructed()){
 				u.train(unit);
 				remainingUnits.add(unit);
 				return true;
@@ -658,7 +658,8 @@ public class JohnDoe extends GameHandler {
 			attackGroup.destination = objective;
 			for (Unit u : attackGroup.units) {
 				if (!u.isAttacking() && !u.isMoving()) {
-					if (u.getType() == UnitTypes.Terran_Science_Vessel) {
+					if (u.getType() == UnitTypes.Terran_Science_Vessel ||
+							u.getType() == UnitTypes.Terran_Medic) {
 						u.follow(attackGroup.units.get((int) Math.random()*attackGroup.units.size()), true);
 					} else {
 						u.attack(objective, true);						

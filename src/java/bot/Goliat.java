@@ -1,21 +1,19 @@
 package bot;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+//import java.io.BufferedWriter;
+//import java.io.File;
+//import java.io.IOException;
+//import java.nio.charset.Charset;
+//import java.nio.file.Files;
+//import java.nio.file.Path;
+//import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.function.Predicate;
 
-import org.iaie.Agent;
 import org.iaie.btree.BehavioralTree;
 import org.iaie.btree.task.composite.Selector;
 import org.iaie.btree.task.composite.Sequence;
 import org.iaie.btree.util.GameHandler;
-import org.iaie.tools.Options;
 
 import jnibwapi.BWAPIEventListener;
 import jnibwapi.ChokePoint;
@@ -27,44 +25,45 @@ import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.types.UpgradeType.UpgradeTypes;
 
-public class Goliat extends Agent implements BWAPIEventListener {
+public class Goliat implements BWAPIEventListener {
 
+	/** reference to JNI-BWAPI */
+	private final JNIBWAPI bwapi;
+	
 	BehavioralTree CollectTree, BuildTree, TrainTree, AttackTree, DefenseTree, UpdateTroopsTree, AddonTree;
 	Unit buildingTree;
 	JohnDoe gh;
 	int frames;
 	ArrayList<UnitType> TvsT, TvsP, TvsZ;
 	
+	/**
+	 * Create a Java AI.
+	 */
+	public static void main(String[] args) {
+		new Goliat();
+	}
+	
+	
 	public Goliat() {            
 
-        // Generación del objeto de tipo agente
-
-        // Creación de la superclase Agent de la que extiende el agente, en este método se cargan            
-        // ciertas variables de de control referentes a los parámetros que han sido introducidos 
-        // por teclado. 
-        super();
         // Creación de una instancia del connector JNIBWAPI. Esta instancia sólo puede ser creada
         // una vez ya que ha sido desarrollada mediante la utilización del patrón de diseño singlenton.
-        this.bwapi = new JNIBWAPI(this, true);
+        bwapi = new JNIBWAPI(this, true);
         // Inicia la conexión en modo cliente con el servidor BWAPI que está conectado directamente al videojuego.
         // Este proceso crea una conexión mediante el uso de socket TCP con el servidor. 
-        this.bwapi.start();
+        bwapi.start();
     }
 	
 	public void connected() {}
 
 	public void matchStart() {
-		
-        // Mediante este metodo se puede obtener información del usuario. 
-        if (Options.getInstance().getUserInput()) this.bwapi.enableUserInput();
-
-        if (Options.getInstance().getInformation()) this.bwapi.enablePerfectInformation();
-        // Mediante este método se define la velocidad de ejecución del videojuego. 
-        // Los valores posibles van desde 0 (velocidad estándar) a 10 (velocidad máxima).
-        this.bwapi.setGameSpeed(Options.getInstance().getSpeed());
         
-        this.bwapi.drawTargets(true);
-        this.bwapi.drawHealth(true);
+        bwapi.drawTargets(true);
+        bwapi.drawHealth(true);
+        
+//      bwapi.enableUserInput();
+		bwapi.enablePerfectInformation();
+//		bwapi.setGameSpeed(0);
 		
 		gh = new JohnDoe(bwapi);
 			
@@ -123,6 +122,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		
 		frames = 0;
 
+		bwapi.sendText("Secuencia recoleccion");
 		// --------- Resources sequence ---------
 		Selector<GameHandler> CollectResources = new Selector<>("Minerals or Vespin gas");
 		CollectResources.addChild(new CollectGas("Vespin gas", gh));
@@ -133,6 +133,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		collect.addChild(CollectResources);
 		// --------- END resources -------------
 		
+		bwapi.sendText("Secuencia entrenamiento");
 		// -------- Training sequences ---------
 		//Train SCVs
 		Sequence TrainVCE = new Sequence("Train SCV");
@@ -159,6 +160,11 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		TrainSiegeTank.addChild(new CheckResources("Check resources siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode));
 		TrainSiegeTank.addChild(new ChooseBuilding("Check training siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode));
 		TrainSiegeTank.addChild(new TrainUnit("Train siege tank", gh, UnitTypes.Terran_Siege_Tank_Tank_Mode, UnitTypes.Terran_Factory));
+		//Train vultures
+		Sequence TrainVulture = new Sequence("Train Vulture");
+		TrainVulture.addChild(new CheckResources("Check resources vulture", gh, UnitTypes.Terran_Vulture));
+		TrainVulture.addChild(new ChooseBuilding("Check training vulture", gh, UnitTypes.Terran_Vulture));
+		TrainVulture.addChild(new TrainUnit("Train vulture", gh, UnitTypes.Terran_Vulture, UnitTypes.Terran_Factory));
 		//Train goliats
 		Sequence TrainGoliat = new Sequence("Train Goliat");
 		TrainGoliat.addChild(new CheckResources("Check resources goliat", gh, UnitTypes.Terran_Goliath));
@@ -171,11 +177,11 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		TrainVessel.addChild(new TrainUnit("Train Science vessel", gh, UnitTypes.Terran_Science_Vessel, UnitTypes.Terran_Starport));
 
 		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVessel, TrainGoliat, TrainVCE, TrainSiegeTank, 
-																				TrainMedic, TrainFirebat, TrainMarine);
+															TrainVulture, TrainMedic, TrainFirebat, TrainMarine);
 //		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVCE);
 		// ----------- END TRAIN ---------
 
-		
+		bwapi.sendText("Secuencia edificios");
 		// -------- Building sequences ---------
 		//Build supplies
 		Sequence buildSupply = new Sequence("Build supplies");
@@ -267,6 +273,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 															buildFactory, buildCC, buildStarport, buildLab, buildArmory);
 		// ---------- END BUILD -----------
 		
+		bwapi.sendText("Secuencia addons");
 		// ---------- Build addons ----------
 		//Factory's addon
 		Sequence addonFactory = new Sequence("Factory's addon");
@@ -287,6 +294,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		Selector<Sequence> selectorAddons = new Selector<>("Selector addon", addonFactory, addonFacility, addonStarport);
 		// ---------- END addons ----------
 		
+		bwapi.sendText("Secuencia tropas");
 		// ---------- Compact troops
 		Sequence compactTroops = new Sequence("Redistribuite units in troops");
 		compactTroops.addChild(new RedistribuiteTroops("Redistribuite units in troops", gh));
@@ -299,6 +307,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		createTroop.addChild(new CreateTroop("Make troop", gh));
 		// -------- END createGroup ---------------
 		
+		bwapi.sendText("Secuencia ataque");
 		// -------- Attack sequence ---------
 		Sequence attack = new Sequence("Send to attack the troops");
 		attack.addChild(new CheckStateTroops("Check troops status", gh));
@@ -310,6 +319,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		attack.addChild(attackSelector);
 		// ---------- END ATTACK -----------
 		
+		bwapi.sendText("Secuencia defensa");
 		// --------- Defend sequence ---------
 		Sequence defendBase = new Sequence("Defend base");
 		defendBase.addChild(new SendDefend("Send to defend", gh));
@@ -320,6 +330,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		fillBunker.addChild(new FillBunker("Send to bunker", gh));
 		// --------- END BUNKER ---------
 		
+		bwapi.sendText("Secuencia investigar");
 		// ---------- Research sequence --------
 		//Research U238 (Academy)
 		Sequence u238 = new Sequence("Research U238");
@@ -350,6 +361,7 @@ public class Goliat extends Agent implements BWAPIEventListener {
 																infantryWeapons, vehicleArmor, vehicleWeapons); 
 		// --------------- END RESEARCH ---------------
 		
+		bwapi.sendText("Secuencia reparar");
 		// ----------- Repair sequence ---------		
 		Sequence repair = new Sequence("Repair");
 		repair.addChild(new FindDamageBuildings("Find damaged buildings", gh));
@@ -357,10 +369,13 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		repair.addChild(new RepairBuilding("Repair building", gh));
 		// ------------- END REPAIR --------------------
 		
+		bwapi.sendText("Secuencia CC");
 		// ----------- CC managment -----------
 		Sequence ccManage = new Sequence("CC managment");
 		ccManage.addChild(new SelectCC("Select a CC", gh));
 		// ----------- END CC managment
+		
+		bwapi.sendText("Creando arboles");
 		
 		CollectTree = new BehavioralTree("Gather/Repair tree");
 		CollectTree.addChild(new Selector<>("MAIN SELECTOR", repair, ccManage, collect));
@@ -377,11 +392,12 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		AttackTree  = new BehavioralTree("Attack tree");
 		AttackTree.addChild(new Selector<>("MAIN SELECTOR", attack));
 		
-		bwapi.sendText("gl hf");
+		bwapi.sendText("Arboles creados");
+		
+		bwapi.sendText("gl hf bro :>");
 		
 	}
 
-	@Override
 	public void matchFrame() {
 		CollectTree.run();
 		BuildTree.run();
@@ -515,9 +531,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 		/////////////////////////////////////
 		
 		//This 3 lines write in a file the influence map -- FOR DEBUGGING
-		String workingDirectory = System.getProperty("user.dir");
-		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
-		createANDwriteInfluencia(path);
+//		String workingDirectory = System.getProperty("user.dir");
+//		String path = workingDirectory + File.separator + "mapaInfluencia.txt";
+//		createANDwriteInfluencia(path);
 		
 		//Update list, variables, etc...
 		if (bwapi.getUnit(unitID).getPlayer().getID() == bwapi.getSelf().getID()) {
@@ -572,9 +588,9 @@ public class Goliat extends Agent implements BWAPIEventListener {
 				gh.updateMap(bwapi.getUnit(unitID).getTopLeft(), bwapi.getUnit(unitID).getBottomRight(), bwapi.getUnit(unitID).getType());
 
 				//This 3 lines write in a file the construction map -- FOR DEBUGGING
-				workingDirectory = System.getProperty("user.dir");
-				path = workingDirectory + File.separator + "mapa.txt";
-				createANDwrite(path);
+//				workingDirectory = System.getProperty("user.dir");
+//				path = workingDirectory + File.separator + "mapa.txt";
+//				createANDwrite(path);
 			}
 		}
 	}
@@ -638,58 +654,58 @@ public class Goliat extends Agent implements BWAPIEventListener {
 	 * @return 0 -> Correcto; 1 -> Error
 	 * @throws IOException
 	 */
-	public int createANDwriteInfluencia(String path) {
-		double mydah_map[][] = gh.dah_map.getmap();
-		try {
-			Path p = Paths.get(path);
-			Charset charset = Charset.forName("UTF-8");
-			//Por defecto trae CREATE y TRUNCATE
-			BufferedWriter writer = Files.newBufferedWriter(p, charset);
-			for(int f = 0; f < mydah_map.length; f++){
-				for (int c=0; c < mydah_map[f].length; c++){			
-					writer.write(mydah_map[f][c]+";");
-				}
-				writer.write("\n");
-			}
-			//Importante cerrar el escritor, ya que si no, no escribe
-			writer.close();
-			return 0;
-		} catch (IOException e) {
-			System.out.println(e);
-			return 1;
-		}
-	}
+//	public int createANDwriteInfluencia(String path) {
+//		double mydah_map[][] = gh.dah_map.getmap();
+//		try {
+//			Path p = Paths.get(path);
+//			Charset charset = Charset.forName("UTF-8");
+//			//Por defecto trae CREATE y TRUNCATE
+//			BufferedWriter writer = Files.newBufferedWriter(p, charset);
+//			for(int f = 0; f < mydah_map.length; f++){
+//				for (int c=0; c < mydah_map[f].length; c++){			
+//					writer.write(mydah_map[f][c]+";");
+//				}
+//				writer.write("\n");
+//			}
+//			//Importante cerrar el escritor, ya que si no, no escribe
+//			writer.close();
+//			return 0;
+//		} catch (IOException e) {
+//			System.out.println(e);
+//			return 1;
+//		}
+//	}
 	
-	public int createANDwrite(String path) {
-		try {
-			Path p = Paths.get(path);
-			Charset charset = Charset.forName("UTF-8");
-			//Por defecto trae CREATE y TRUNCATE
-			BufferedWriter writer = Files.newBufferedWriter(p, charset);
-			for(int f = 0; f < gh.map.length; f++){
-				for (int c=0; c < gh.map[f].length; c++){
-					if (gh.map[f][c] == -1){
-						writer.write("M;");
-					}
-					else if (gh.map[f][c] == -2){
-						writer.write("V;");
-					}
-					else if (gh.map[f][c] < 10){
-						writer.write("0"+gh.map[f][c]+";");
-					} 
-					else {						
-						writer.write(gh.map[f][c]+";");
-					}
-				}
-				writer.write("\n");
-			}
-			//Importante cerrar el escritor, ya que si no, no escribe
-			writer.close();
-			return 0;
-		} catch (IOException e) {
-			System.out.println(e);
-			return 1;
-		}
-	}
+//	public int createANDwrite(String path) {
+//		try {
+//			Path p = Paths.get(path);
+//			Charset charset = Charset.forName("UTF-8");
+//			//Por defecto trae CREATE y TRUNCATE
+//			BufferedWriter writer = Files.newBufferedWriter(p, charset);
+//			for(int f = 0; f < gh.map.length; f++){
+//				for (int c=0; c < gh.map[f].length; c++){
+//					if (gh.map[f][c] == -1){
+//						writer.write("M;");
+//					}
+//					else if (gh.map[f][c] == -2){
+//						writer.write("V;");
+//					}
+//					else if (gh.map[f][c] < 10){
+//						writer.write("0"+gh.map[f][c]+";");
+//					} 
+//					else {						
+//						writer.write(gh.map[f][c]+";");
+//					}
+//				}
+//				writer.write("\n");
+//			}
+//			//Importante cerrar el escritor, ya que si no, no escribe
+//			writer.close();
+//			return 0;
+//		} catch (IOException e) {
+//			System.out.println(e);
+//			return 1;
+//		}
+//	}
 
 }
