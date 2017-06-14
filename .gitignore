@@ -1,9 +1,7 @@
-/.classpath
-/.project
-dependencies/*
-mapData/*
-bin/*
+.classpath
+.project
 release/*
-client-bridge*
-export*
-/bin/
+mapData/*
+bin
+.settings/*
+dependencies/*
