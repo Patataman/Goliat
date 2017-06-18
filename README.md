@@ -1,7 +1,7 @@
 # _"Goliat online"_
 
 StarCraft Terran Bot developed with [BWAPI](https://github.com/bwapi/bwapi) using [JNIBWAPI](https://github.com/JNIBWAPI/JNIBWAPI)
-
+If you want see the bot playing against the AI go to this [Youtube list](https://www.youtube.com/playlist?list=PL9JgBzni37CJBxh18jNsubarZSZKtdO2Y).
 # V1 
 
 This version has the building tree fixed. Including distinction of zones with 1 or more ChokePoints.
