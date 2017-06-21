@@ -12,5 +12,6 @@
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
         <javaElement handleIdentifier="=Goliat/src\/java"/>
+        <folder path="/Goliat/lib"/>
     </selectedElements>
 </jardesc>
