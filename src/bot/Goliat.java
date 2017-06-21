@@ -563,9 +563,9 @@ public class Goliat implements BWEventListener {
 			/////////////////////////////////////
 			
 			//This 3 lines write in a file the influence map -- FOR DEBUGGING
-			String workingDirectory = System.getProperty("user.dir");
-			String path = workingDirectory + File.separator + "mapaInfluencia.txt";
-			createANDwriteInfluencia(path);
+//			String workingDirectory = System.getProperty("user.dir");
+//			String path = workingDirectory + File.separator + "mapaInfluencia.txt";
+//			createANDwriteInfluencia(path);
 			//Add the unit to its list.
 			if (unit.getType() == UnitType.Terran_SCV){
 				gh.VCEs.get(gh.CCs.indexOf(gh.cc_select.getID())).add(unit);
@@ -617,8 +617,8 @@ public class Goliat implements BWEventListener {
 				
 				//This 3 lines write in a file the construction map -- FOR DEBUGGING
 //				String workingDirectory = System.getProperty("user.dir");
-				path = workingDirectory + File.separator + "mapa.txt";
-				createANDwrite(path);
+//				String path = workingDirectory + File.separator + "mapa.txt";
+//				createANDwrite(path);
 			}
 		}
 	}
@@ -653,9 +653,9 @@ public class Goliat implements BWEventListener {
 			
 			if (gh.scouter != null) {
 				gh.scouter = null;
-				String workingDirectory = System.getProperty("user.dir");
-				String path = workingDirectory + File.separator + "mapaInfluencia.txt";
-				createANDwriteInfluencia(path);
+//				String workingDirectory = System.getProperty("user.dir");
+//				String path = workingDirectory + File.separator + "mapaInfluencia.txt";
+//				createANDwriteInfluencia(path);
 			}
 			
 
