@@ -113,12 +113,13 @@ public class Goliat implements BWEventListener {
 		
         //Initialize CC variables.
 		for (Unit cc : self.getUnits()){
-			if (cc.getType() == UnitType.Terran_Command_Center && !gh.finishedBuildings.contains(cc)){
+			if (cc.getType() == UnitType.Terran_Command_Center){
 				gh.cc = cc;
 				gh.cc_select = cc;
 				gh.CCs.add(cc);
 				gh.addCC(cc);
 				gh.finishedBuildings.add(cc);
+				break;
 			}
 		}
 
@@ -434,7 +435,7 @@ public class Goliat implements BWEventListener {
     			game.drawCircleMap(cp.getCenter(), 70, Color.Blue);
     		}
     		
-    		if(game.getFrameCount() % 200 == 0) { //Each 200 frames, recalculate influences
+    		if (game.getFrameCount() % 200 == 0) { //Each 200 frames, recalculate influences
     			gh.updateInfluences();
     		}
     		if (game.getFrameCount() % 5 == 0) {
@@ -465,7 +466,7 @@ public class Goliat implements BWEventListener {
 		if (unit.getType().isBuilding()) {
 			for(Unit u : gh.finishedBuildings) {
 				//Remove unit from lists and update variables
-				gh.finishedBuildings.remove((Unit) u);
+				gh.finishedBuildings.remove(u);
 				
 				if (gh.bunkers.contains(u)) { gh.bunkers.remove(u);}
 				else if (u.getType() == UnitType.Terran_Academy) gh.academy--;
@@ -583,7 +584,7 @@ public class Goliat implements BWEventListener {
 				if (unit.getType() == UnitType.Terran_Command_Center) {
 					//If it's a CC, need to add control lists.
 					gh.totalSupplies += UnitType.Terran_Command_Center.supplyProvided();
-					if (!gh.CCs.contains(unit)){
+					if (!gh.CCs.contains(unit) && game.elapsedTime() > 0){
 						gh.expanded = true;
 						gh.CCs.add(unit);
 						gh.addCC(unit);

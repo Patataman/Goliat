@@ -174,7 +174,7 @@ public class JohnDoe extends GameHandler {
 				//If it isn't in the "workers" list...
 				if (!workers.contains(vce)) {
 					//Adds the SCV to the "workers" list
-					workersMineral.remove(vce);
+					workersMineral.get(0).remove(vce);
 					workers.add(vce);
 					return true;					
 				}
@@ -252,7 +252,8 @@ public class JohnDoe extends GameHandler {
 	public boolean gatherMinerals(){
 		//Verifies that the number of SCVs is less than the 3 per mineral node.
 		//The scv must be completed
-		if ((workersMineral.get(CCs.indexOf(cc_select)).size() < max_vce) && 
+		if (!workersMineral.get(CCs.indexOf(cc_select)).contains(current_worker) &&
+				(workersMineral.get(CCs.indexOf(cc_select)).size() < max_vce-workers.size()) && 
 				current_worker.isCompleted()){
 			//Gets mineral nodes
 			for (Unit mineralNode : mineralNodes.get(CCs.indexOf(cc_select))) {
@@ -271,7 +272,9 @@ public class JohnDoe extends GameHandler {
 	 * @return
 	 */
 	public boolean gatherGas(){
-		if (workersVespin.get(CCs.indexOf(cc_select)).size() < 3 && current_worker.isCompleted()) {
+		if (!workersVespin.get(CCs.indexOf(cc_select)).contains(current_worker) &&
+				workersVespin.get(CCs.indexOf(cc_select)).size() < 3 && 
+				current_worker.isCompleted()) {
 			for (Unit refinery : this.finishedBuildings) {
 				if (refinery.getType() == UnitType.Terran_Refinery &&
 						BWTA.getRegion(refinery.getPosition()) == 
@@ -370,6 +373,7 @@ public class JohnDoe extends GameHandler {
 				if (vce.build(building, posBuild)) {
 					mineral -= building.mineralPrice();
 					vespin_gas -= building.gasPrice();
+					workers.remove(vce);
 					return true;
 				}
 			}
