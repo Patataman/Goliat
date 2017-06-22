@@ -20,7 +20,8 @@ public class FindPosition extends Conditional {
 		try{
 			//Check if the total supplies are not 200 or used supplies are less than the 70% of the total. 
 			if (building == UnitType.Terran_Supply_Depot &&
-					( ((JohnDoe)this.handler).supplies < ((JohnDoe)this.handler).totalSupplies*0.7 || 
+					( (((JohnDoe)this.handler).supplies > 0 && ((JohnDoe)this.handler).barracks == 0) ||
+					((JohnDoe)this.handler).supplies < ((JohnDoe)this.handler).totalSupplies*0.7 || 
 					((JohnDoe)this.handler).totalSupplies >= 400) ){
 				return State.FAILURE;
 			}
@@ -43,7 +44,7 @@ public class FindPosition extends Conditional {
 			}
 			//Decorator for engineering bay. Only after have built the barracks and only 1
 			if (building == UnitType.Terran_Engineering_Bay && (((JohnDoe)this.handler).bay > 0 
-					|| ((JohnDoe)this.handler).barracks == 0)) {
+					|| ((JohnDoe)this.handler).factory == 0)) {
 				return State.FAILURE;
 			}
 			//Decorator for factory. Only after have built the barracks, 1 per CC and only after have at least 15 units.

@@ -30,10 +30,11 @@ public class TrainUnit extends Action {
 			}
 			if (unit == UnitType.Terran_SCV){
 				//Checks if it's possible train new SCVs
-				if (((JohnDoe)this.handler).VCEs.get(
-						((JohnDoe)this.handler).CCs.indexOf(
-								((JohnDoe)this.handler).cc_select.getID())
-													).size() >= ((JohnDoe)this.handler).max_vce) {
+				if (((JohnDoe)this.handler).CCs.size() > 2 || 
+					(((JohnDoe)this.handler).VCEs.get(
+							((JohnDoe)this.handler).CCs.indexOf(
+									((JohnDoe)this.handler).cc_select)
+														).size() >= ((JohnDoe)this.handler).max_vce)) {
 					return State.FAILURE; 					
 				}
 			} else if ( (!((JohnDoe)this.handler).expanded) && 

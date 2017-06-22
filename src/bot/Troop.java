@@ -10,21 +10,24 @@ public class Troop {
 	ArrayList<Unit> units;
 	TilePosition destination;
 	byte status;
-	/*State's list:
-	 *	0: Doing nothing.
-	 *	1: Attacking.
-	 *	2: Defending.
-	 *	3: Regroup.
-	 *	4: Retreat.
-	 *	5: Waiting.
-	 *	6: Exploring
-	*/
+		/*State's list:
+		 *	0: Doing nothing.
+		 *	1: Attacking.
+		 *	2: Defending.
+		 *	3: Regroup.
+		 *	4: Retreat.
+		 *	5: Waiting.
+		 *	6: Exploring
+		*/
 	//To avoid a troop only form by vessels
 	boolean hasDetector;
+	//To avoid blockage of movement
+	int lastChange;
 
 	public Troop (){
 		units = new ArrayList<Unit>(0);
 		status = 0;
+		lastChange = 0;
 		destination = null;
 		hasDetector = false;
 	}

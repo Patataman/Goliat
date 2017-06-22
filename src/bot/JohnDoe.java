@@ -3,6 +3,7 @@ package bot;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.function.Predicate;
 
 import org.iaie.btree.util.GameHandler;
@@ -14,6 +15,7 @@ import bwapi.Game;
 import bwapi.Player;
 import bwapi.Position;
 import bwapi.Unit;
+import bwapi.UnitSizeType;
 import bwapi.Race;
 import bwapi.TilePosition;
 import bwapi.UnitType;
@@ -22,10 +24,11 @@ import bwapi.UpgradeType;
 public class JohnDoe extends GameHandler {
 	
 	//Inner control lists
-	List<Integer> CCs;							//List for counting number of CCs
+	List<Unit> CCs;								//List for counting number of CCs
 	List<ArrayList<Unit>> VCEs;					//List for counting number of SCVs from each CC.
-	List<ArrayList<Integer>> workersMineral; 	//List for counting number of SVCs gathering minerals.
-	List<ArrayList<Integer>> workersVespin; 	//List for counting number of SCVs gathering vespin gas.
+	List<ArrayList<Unit>> mineralNodes;	 		//List for control the number of mineral nodes next to the CC
+	List<ArrayList<Unit>> workersMineral; 		//List for counting number of SVCs gathering minerals.
+	List<ArrayList<Unit>> workersVespin; 		//List for counting number of SCVs gathering vespin gas.
 	List<UnitType> remainingUnits; 				//List to know which units are being trained.
 	List<Unit> militaryUnits;					//List to know all military unit trained (alive).
 	List<Unit> boredSoldiers;					//List of unit which are defending base.
@@ -81,10 +84,11 @@ public class JohnDoe extends GameHandler {
 		finishedBuildings 		= new ArrayList<Unit>(0);
 		damageBuildings			= new ArrayList<Unit>(0);
 		bunkers 				= new ArrayList<Unit>(0);
-		CCs 					= new ArrayList<Integer>(0);
+		CCs 					= new ArrayList<Unit>(0);
 		VCEs 					= new ArrayList<ArrayList<Unit>>(0);
-		workersMineral 			= new ArrayList<ArrayList<Integer>>(0);
-		workersVespin 			= new ArrayList<ArrayList<Integer>>(0);
+		mineralNodes			= new ArrayList<ArrayList<Unit>>(0);
+		workersMineral 			= new ArrayList<ArrayList<Unit>>(0);
+		workersVespin 			= new ArrayList<ArrayList<Unit>>(0);
 		researching				= new ArrayList<UpgradeType>(0);
 		remainingUnits 			= new ArrayList<UnitType>(0);
 		remainingBuildings 		= new ArrayList<UnitType>(0);
@@ -99,7 +103,6 @@ public class JohnDoe extends GameHandler {
 		vespin_gas 				= this.self.gas();
 		number_chokePoints 		= (byte) BWTA.getRegion(BWTA.getStartLocation(this.self).getTilePosition()).getChokepoints().size();
 		limit 					= 4;
-		max_vce 				= 20;
 		dah_map 				= new InfluenceMap(this.connector.mapHeight(), this.connector.mapWidth());
 	}
 	
@@ -107,10 +110,11 @@ public class JohnDoe extends GameHandler {
 	 * Adds the corresponding lists to the new CC
 	 * @param cc_pos
 	 */
-	public void addCC() {
+	public void addCC(Unit cc) {
 		VCEs.add(new ArrayList<Unit>());
-		workersMineral.add(new ArrayList<Integer>());
-		workersVespin.add(new ArrayList<Integer>());
+		mineralNodes.add((ArrayList<Unit>) BWTA.getNearestBaseLocation(cc.getTilePosition()).getMinerals());
+		workersMineral.add(new ArrayList<Unit>(0));
+		workersVespin.add(new ArrayList<Unit>(0));
 	}
 	
 	/**
@@ -120,11 +124,13 @@ public class JohnDoe extends GameHandler {
 	public boolean selectCC() {
 		if (CCs.size() > 0) {
 			//Default, cc_select is randomly select
-			cc_select = this.connector.getUnit(CCs.get((int)Math.random()*CCs.size()));
-			for (Integer cc : CCs) {
-				if (VCEs.get(CCs.indexOf(cc)).size() < max_vce || 
-						workersVespin.get(CCs.indexOf(cc)).size() < 2) {
-					cc_select = this.connector.getUnit(cc);				
+			cc_select = CCs.get((int)Math.random()*CCs.size());
+			max_vce = (byte)(mineralNodes.get(CCs.indexOf(cc_select)).size()*3);
+			for (Unit cc : CCs) {
+				if (mineralNodes.get(CCs.indexOf(cc)).size() > 0 &&
+						(VCEs.get(CCs.indexOf(cc)).size() < max_vce || 
+						workersVespin.get(CCs.indexOf(cc)).size() < 2)) {
+					cc_select = cc;				
 				}
 			}			
 		}
@@ -140,9 +146,7 @@ public class JohnDoe extends GameHandler {
 		for (ArrayList<Unit> vces_cc : VCEs) {
 			for (Unit vce : vces_cc) {
 				//Checks if the unit type equals SCV and is idle.
-				if ((!workersMineral.get(VCEs.indexOf(vces_cc)).contains(vce.getID()) &&
-					 !workersVespin.get(VCEs.indexOf(vces_cc)).contains(vce.getID())) &&
-					 !vce.equals(scouter) && vce.isIdle() && vce.isCompleted() && CCs.size() > 0) {
+				if (!vce.equals(scouter) && vce.isIdle() && vce.isCompleted() && CCs.size() > 0) {
 					current_worker = vce;
 					return true;
 				}
@@ -157,7 +161,7 @@ public class JohnDoe extends GameHandler {
 	 * @return
 	 */
 	public boolean getMasterBuilder() {
-		if (workers.size() < 3){
+		if (workers.size() < 2){
 			//If there's a free SCV from the list "workers", return true
 			for (Unit vce : workers) {
 				if (!vce.isConstructing() || vce.isMoving()){
@@ -166,12 +170,12 @@ public class JohnDoe extends GameHandler {
 				}
 			}
 			//Chooses 1 SCV from the "workersMineral" list (from the original CC).
-			for (int vce : workersMineral.get(0)) {
+			for (Unit vce : workersMineral.get(0)) {
 				//If it isn't in the "workers" list...
-				if (!workers.contains(this.connector.getUnit(vce))) {
+				if (!workers.contains(vce)) {
 					//Adds the SCV to the "workers" list
-					workersMineral.remove((Integer) vce);
-					workers.add(this.connector.getUnit(vce));
+					workersMineral.remove(vce);
+					workers.add(vce);
 					return true;					
 				}
 			}
@@ -179,7 +183,7 @@ public class JohnDoe extends GameHandler {
 			return false;
 		}
 		//If "workers" is full, check if there's any free SCV
-		else if (workers.size() <= 3){
+		else if (workers.size() <= 2){
 			for (Unit vce : workers) {
 				if (!vce.isConstructing() || vce.isMoving()){
 					return true;
@@ -187,7 +191,7 @@ public class JohnDoe extends GameHandler {
 			}
 			return false;
 		}
-		//"workers" is full and the 3 SCV are busy.
+		//"workers" is full and the 2 SCV are busy.
 		else {return false;}
 	}
 	
@@ -196,9 +200,8 @@ public class JohnDoe extends GameHandler {
 	 * @return
 	 */
 	public boolean checkTime() {
-		System.out.println(this.connector.elapsedTime());
 		if (this.connector.elapsedTime() < 10 ||
-				this.connector.elapsedTime() % 300 == 0) {
+				this.connector.elapsedTime()/60 % 5 == 0) {
 			return true;
 		}
 		else
@@ -224,7 +227,7 @@ public class JohnDoe extends GameHandler {
 	public boolean sendToScout() {
 		if (scouter.isMoving()) return false;
 		
-		if (this.connector.elapsedTime() % 300 == 0 && this.connector.elapsedTime() > 10) {			
+		if (this.connector.elapsedTime() % 200 == 0 && this.connector.elapsedTime() > 10) {			
 			for (BaseLocation bl : BWTA.getBaseLocations()) {
 				if (!bl.isStartLocation() && BWTA.isConnected(bl.getTilePosition(), scouter.getTilePosition())) {
 					scouter.move(bl.getPosition().makeValid(), true);
@@ -247,21 +250,17 @@ public class JohnDoe extends GameHandler {
 	 * @return true if can, false otherwise
 	 */
 	public boolean gatherMinerals(){
-		//Verifies that the number of SCVs is less than the max_vce value.
+		//Verifies that the number of SCVs is less than the 3 per mineral node.
 		//The scv must be completed
-		if ((workersMineral.get(CCs.indexOf(cc_select.getID())).size() < max_vce-3) && current_worker.isCompleted()){
-			//Se buscan los minerales cercanos a la base.
-			for (Unit recurso : this.connector.getNeutralUnits()) {
-				if (recurso.getType().isMineralField() &&
-					BWTA.getRegion(recurso.getPosition()) == 
-					BWTA.getRegion(cc_select.getPosition()) ) {
-					//&&	recurso.getTilePosition().getDistance(cc_select.getTilePosition()) < 10) {
-					//Se manda al VCE a recolectar
-					this.connector.getUnit(current_worker.getID()).rightClick(recurso, false);
-					workersMineral.get(CCs.indexOf(cc_select.getID())).add(current_worker.getID());
-					current_worker = null;
-					return true;
-				}
+		if ((workersMineral.get(CCs.indexOf(cc_select)).size() < max_vce) && 
+				current_worker.isCompleted()){
+			//Gets mineral nodes
+			for (Unit mineralNode : mineralNodes.get(CCs.indexOf(cc_select))) {
+				//Send the SCV to gather it
+				current_worker.gather(mineralNode);
+				workersMineral.get(CCs.indexOf(cc_select)).add(current_worker);
+				current_worker = null;
+				return true;
 			}	
 		}
 		return false;
@@ -272,14 +271,14 @@ public class JohnDoe extends GameHandler {
 	 * @return
 	 */
 	public boolean gatherGas(){
-		if (workersVespin.get(CCs.indexOf(cc_select.getID())).size() < 3 && current_worker.isCompleted()) {
+		if (workersVespin.get(CCs.indexOf(cc_select)).size() < 3 && current_worker.isCompleted()) {
 			for (Unit refinery : this.finishedBuildings) {
 				if (refinery.getType() == UnitType.Terran_Refinery &&
 						BWTA.getRegion(refinery.getPosition()) == 
 						BWTA.getRegion(cc_select.getPosition()) &&
 						refinery.isCompleted()) {
-					this.connector.getUnit(current_worker.getID()).rightClick(refinery, false);
-					workersVespin.get(CCs.indexOf(cc_select.getID())).add(current_worker.getID());
+					current_worker.rightClick(refinery, false);
+					workersVespin.get(CCs.indexOf(cc_select)).add(current_worker);
 					current_worker = null;
 					return true;	
 				}
@@ -585,13 +584,13 @@ public class JohnDoe extends GameHandler {
 	 * @return True if can,  False otherwise.
 	 */
 	public boolean selectGroup() {
-		if (assaultTroop.size() > 0){
-			System.out.println("-------------------");
-			for (Troop t : assaultTroop){
-				System.out.println("Estado:"+t.status+", Tropas: "+t.units.size());
-			}
-			System.out.println("+++++++++++++++++++");			
-		}
+//		if (assaultTroop.size() > 0){
+//			System.out.println("-------------------");
+//			for (Troop t : assaultTroop){
+//				System.out.println("Estado:"+t.status+", Tropas: "+t.units.size());
+//			}
+//			System.out.println("+++++++++++++++++++");			
+//		}
 		
 		if (!expanded && militaryUnits.size() < 15) {
 			return false;
@@ -677,8 +676,14 @@ public class JohnDoe extends GameHandler {
 				if (defendGroup.units.size() < 8) {
 					defendGroup.units.add(u);
 				}
-				if (u.getTilePosition().getDistance(defendGroup.destination) > 10) {
-					u.attack(defendGroup.destination.makeValid().toPosition(), true);					
+				if (u.getType().size() != UnitSizeType.Large &&
+						u.getTilePosition().getDistance(defendGroup.destination) > 5) {
+					if (number_chokePoints == 1) {
+						defendGroup.destination = (Math.random() < 0.5) ? 
+													BWTA.getNearestChokepoint(cc.getPosition()).getSides().first.toTilePosition().makeValid():
+													BWTA.getNearestChokepoint(cc.getPosition()).getSides().second.toTilePosition().makeValid(); 
+					}
+					u.attack(defendGroup.destination.makeValid().toPosition());					
 				}
 			}
 		}
@@ -748,7 +753,7 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean sendRegroup(){
 		attackGroup.status = 3;
-		attackGroup.destination = attackGroup.units.get((int)attackGroup.units.size()/2).getTilePosition();
+		attackGroup.destination = attackGroup.units.get(0).getTilePosition();
 		//if too far, group units
 		for (Unit u : attackGroup.units) {
 			u.attack(attackGroup.destination.toPosition().makeValid(), false);
@@ -789,8 +794,8 @@ public class JohnDoe extends GameHandler {
 		//No special case: others.
 		if (number_chokePoints == 1) {
 			//Gets the CP
-			Chokepoint cp = (Chokepoint) BWTA.getRegion(cc_select.getPosition()).getChokepoints().toArray()[0];
-			Position cp_position = cp.getCenter();
+			Chokepoint cp = BWTA.getNearestChokepoint(cc_select.getPosition());
+			Position cp_position = cp.getCenter().makeValid();
 			//Variables to control the direction of the building
 			byte x, y;
 			//If CP is on the left/right side of the CC
@@ -898,8 +903,8 @@ public class JohnDoe extends GameHandler {
 		//If number_chokePoints == 1, build away from the CP
 		if (number_chokePoints == 1) {
 			//Gets the CP
-			Chokepoint cp = (Chokepoint) BWTA.getRegion(cc_select.getPosition()).getChokepoints().toArray()[0];
-			Position cp_position = cp.getCenter();
+			Chokepoint cp = BWTA.getNearestChokepoint(cc_select.getPosition());
+			Position cp_position = cp.getCenter().makeValid();
 			//Variables to control the direction of the building
 			byte x, y;
 			//If CP is on the left/right side of the CC
@@ -954,8 +959,8 @@ public class JohnDoe extends GameHandler {
 	public boolean findPositionBunkerTurret(UnitType building) {
 		byte [][] pruebas = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
 		if (number_chokePoints == 1) {
-			Chokepoint cp = (Chokepoint) BWTA.getRegion(cc_select.getPosition()).getChokepoints().toArray()[0];
-			Position cp_position = cp.getCenter();
+			Chokepoint cp = BWTA.getNearestChokepoint(cc_select.getPosition());
+			Position cp_position = cp.getCenter().makeValid();
 			for (int i=1; i<3; i++){
 				for (int j=0; j<pruebas.length; j++) {
 					//Point origen, Point maximo, UnitType building
@@ -964,20 +969,22 @@ public class JohnDoe extends GameHandler {
 													(cp_position.getY()+pruebas[j][1]*building.tileHeight()*i) ),
 											building);
 					boolean pass = false;
-					//The bunkers/turrets have to be spread.
-					for (Unit u : finishedBuildings) { 
-						if (u.getType() == building && 
-								u.getDistance(pos.toPosition()) < 300) {
-							pass = true;
-						}	
+					if (pos.getX() != -1) {
+						//The bunkers/turrets have to be spread.
+						for (Unit u : finishedBuildings) { 
+							if (u.getType() == building && 
+									u.getDistance(pos.toPosition()) < 300) {
+								pass = true;
+							}	
+						}
+						//If the position is valid...
+						if (!pass && this.connector.canBuildHere(pos, building) && 
+								this.connector.isBuildable(pos, true) &&
+								dah_map.mapa[pos.getY()][pos.getX()] < 1){
+							posBuild = pos;
+							return true;
+						}				
 					}
-					//If the position is valid...
-					if (!pass && this.connector.canBuildHere(pos, building) && 
-							this.connector.isBuildable(pos, true) &&
-							dah_map.mapa[pos.getY()][pos.getX()] < 1){
-						posBuild = pos;
-						return true;
-					}				
 				}
 			}
 		} else {
