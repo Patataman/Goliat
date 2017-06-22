@@ -38,3 +38,13 @@ This version contains:
 * More small fixes in the influence.
 * Can train different units according the enemy race.
 * Small fixes in building expansions.
+
+# V4.1
+
+This version contains:
+
+* **Change from JNI-BWAPI to BWMirror.**
+* **Change to BWAPI 4.1.2**
+* Scout behavior.
+* Real mineral nodes management. As consequence Stop training endless SCV.
+

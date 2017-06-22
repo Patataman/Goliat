@@ -113,7 +113,7 @@ public class Goliat implements BWEventListener {
 		
         //Initialize CC variables.
 		for (Unit cc : self.getUnits()){
-			if (cc.getType() == UnitType.Terran_Command_Center){
+			if (cc.getType() == UnitType.Terran_Command_Center && !gh.finishedBuildings.contains(cc)){
 				gh.cc = cc;
 				gh.cc_select = cc;
 				gh.CCs.add(cc);
@@ -583,7 +583,7 @@ public class Goliat implements BWEventListener {
 				if (unit.getType() == UnitType.Terran_Command_Center) {
 					//If it's a CC, need to add control lists.
 					gh.totalSupplies += UnitType.Terran_Command_Center.supplyProvided();
-					if (gh.CCs.indexOf(unit) == -1){
+					if (!gh.CCs.contains(unit)){
 						gh.expanded = true;
 						gh.CCs.add(unit);
 						gh.addCC(unit);

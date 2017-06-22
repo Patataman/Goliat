@@ -113,8 +113,8 @@ public class JohnDoe extends GameHandler {
 	public void addCC(Unit cc) {
 		VCEs.add(new ArrayList<Unit>());
 		mineralNodes.add((ArrayList<Unit>) BWTA.getNearestBaseLocation(cc.getTilePosition()).getMinerals());
-		workersMineral.add(new ArrayList<Unit>(0));
-		workersVespin.add(new ArrayList<Unit>(0));
+		workersMineral.add(new ArrayList<Unit>());
+		workersVespin.add(new ArrayList<Unit>());
 	}
 	
 	/**
