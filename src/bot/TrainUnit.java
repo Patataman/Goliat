@@ -19,7 +19,7 @@ public class TrainUnit extends Action {
 
 	@Override
 	public State execute() {
-		try{
+		try{			
 			byte marines=0, fire_bat=0, medic = 0, vessel=0, tank = 0;
 			for (Unit u : ((JohnDoe)this.handler).militaryUnits){
 				if (u.getType() == UnitType.Terran_Marine) marines++;
@@ -38,7 +38,7 @@ public class TrainUnit extends Action {
 					return State.FAILURE; 					
 				}
 			} else if ( (!((JohnDoe)this.handler).expanded) && 
-					((JohnDoe)this.handler).supplies > ((JohnDoe)this.handler).totalSupplies*0.7) {
+					((JohnDoe)this.handler).supplies > ((JohnDoe)this.handler).totalSupplies*0.9) {
 				return State.FAILURE;
 			} else {
 				//If unit to train it's contained in the unitsToTrain, then check other stuff

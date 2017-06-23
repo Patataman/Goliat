@@ -13,7 +13,7 @@ public class CheckTime extends Conditional {
 	public State execute() {
 		try{
 			if (((JohnDoe)this.handler).scouter != null) {
-				return State.RUNNING;
+				return State.FAILURE;
 			}
 			if (((JohnDoe)this.handler).checkTime()) {
 				return State.SUCCESS;

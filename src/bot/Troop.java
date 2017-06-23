@@ -64,7 +64,7 @@ public class Troop {
 			dist += u.getTilePosition().getDistance(dest);
 		}
 		dist /= units.size();
-		if (dist > 20) {
+		if (dist > 6) {
 			return true;
 		}
 		return false;

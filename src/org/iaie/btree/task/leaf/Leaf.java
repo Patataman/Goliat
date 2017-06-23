@@ -64,6 +64,9 @@ public abstract class Leaf extends Task {
                     return State.FAILURE;
                 case ERROR:
                     return State.ERROR;
+                case RUNNING:
+                	this.running();
+                	return State.RUNNING;
             }
         }
         else return State.ERROR;

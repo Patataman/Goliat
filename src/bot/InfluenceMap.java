@@ -211,8 +211,8 @@ public class InfluenceMap {
 				if (ally) unidades.add(tupla);
 				
 			}
-		} else if (unit.canAttack() && !unit.getType().isWorker()) {
-		// Las unidades ofensivas hacen cosas de unidades, no de edificios
+		} else if (!unit.getType().isWorker()) {
+			//Las unidades ofensivas hacen cosas de unidades, no de edificios
 			if (unit.getType().isMechanical()) {
 				updateCellInfluence_unit(new Point(x,y), 2*influencia);
 				tupla.add(2*influencia);
