@@ -41,12 +41,12 @@ public class Troop {
 		int dist = 0;
 		for (Unit u : units) {
 			dist += u.getTilePosition().getDistance(destination);
-			if (u.isIdle() && u.getTilePosition().getDistance(destination) > 30) {
+			if (u.isIdle() && u.getTilePosition().getDistance(destination) > 6) {
 				u.attack(destination.toPosition(), false);
 			}
 		}
 		dist /= units.size();
-		if (dist < 40) {
+		if (dist < 6) {
 			status = 5;
 			return true;
 		}
@@ -64,7 +64,7 @@ public class Troop {
 			dist += u.getTilePosition().getDistance(dest);
 		}
 		dist /= units.size();
-		if (dist > 6) {
+		if (dist > 4) {
 			return true;
 		}
 		return false;

@@ -1,7 +1,7 @@
 package bot;
 
 import java.io.BufferedWriter;
-import java.io.File;
+//import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -15,7 +15,7 @@ import java.nio.file.Paths;
 //import java.nio.file.Path;
 //import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.function.Predicate;
+//import java.util.function.Predicate;
 
 import org.iaie.btree.BehavioralTree;
 import org.iaie.btree.task.composite.Selector;
@@ -29,7 +29,6 @@ import bwapi.Mirror;
 import bwapi.Player;
 import bwapi.Position;
 import bwapi.Race;
-import bwapi.TechType;
 import bwapi.Unit;
 import bwapi.UnitType;
 import bwapi.UpgradeType;
@@ -486,41 +485,55 @@ public class Goliat implements BWEventListener {
 					}
 				}
 			} else {
-				if (gh.militaryUnits.contains(unit)) {
-					gh.supplies -= unit.getType().supplyRequired();
-					gh.militaryUnits.remove(unit);
-				} else if (gh.boredSoldiers.contains(unit)) {
-					gh.boredSoldiers.remove(unit);
-				} else if (gh.attackGroup.units.contains(unit)){
-					gh.attackGroup.units.remove(unit);
-				} else if (gh.defendGroup.units.contains(unit)) {
-					gh.defendGroup.units.remove(unit);
-				} else if (gh.workers.contains(unit)){
-					gh.workers.remove(unit);
-				} else {
-					for (Troop tropa: gh.assaultTroop){
-						if (tropa.units.contains(unit))
-							tropa.units.remove(unit);
+				if (unit.getType().isWorker()) {
+					if (gh.workers.contains(unit)){
+						gh.workers.remove(unit);
 					}
 					for(ArrayList<Unit> vces_cc : gh.VCEs){
 						if (vces_cc.contains(unit)) {
 							gh.VCEs.get(gh.VCEs.indexOf(vces_cc)).remove(unit);
 							gh.supplies -= unit.getType().supplyRequired();
+							break;
 						}
 					}
 					for(ArrayList<Unit> minerals : gh.workersMineral) {
 						if (minerals.contains(unit)) {
 							minerals.remove(unit);
+							break;
 						}
 					}
 					for(ArrayList<Unit> vespin : gh.workersVespin) {
 						if (vespin.contains(unit)) {
 							vespin.remove(unit);
+							break;
 						}
 					}
+					
+				} else if (unit.getType().isNeutral()) {
 					for(ArrayList<Unit> mineralNode : gh.mineralNodes) {
 						if (mineralNode.contains(unit)) {
 							mineralNode.remove(unit);
+							break;
+						}
+					}
+				} else {
+					if (gh.militaryUnits.contains(unit)) {
+						gh.supplies -= unit.getType().supplyRequired();
+						gh.militaryUnits.remove(unit);
+					}
+					if (gh.boredSoldiers.contains(unit)) {
+						gh.boredSoldiers.remove(unit);
+					}
+					if (gh.attackGroup.units.contains(unit)){
+						gh.attackGroup.units.remove(unit);
+					}
+					if (gh.defendGroup.units.contains(unit)) {
+						gh.defendGroup.units.remove(unit);
+					}
+					for (Troop tropa: gh.assaultTroop){
+						if (tropa.units.contains(unit)) {
+							tropa.units.remove(unit);
+							break;
 						}
 					}
 				}
@@ -540,9 +553,9 @@ public class Goliat implements BWEventListener {
 			/////////////////////////////////////
 			
 			//This 3 lines write in a file the influence map -- FOR DEBUGGING
-			String workingDirectory = System.getProperty("user.dir");
-			String path = workingDirectory + File.separator + "mapaInfluencia.txt";
-			createANDwriteInfluencia(path);
+//			String workingDirectory = System.getProperty("user.dir");
+//			String path = workingDirectory + File.separator + "mapaInfluencia.txt";
+//			createANDwriteInfluencia(path);
 			//Add the unit to its list.
 			if (unit.getType() == UnitType.Terran_SCV){
 				gh.VCEs.get(gh.CCs.indexOf(gh.cc_select)).add(unit);

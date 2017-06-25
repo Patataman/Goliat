@@ -14,7 +14,6 @@ import bwapi.Game;
 import bwapi.Player;
 import bwapi.Position;
 import bwapi.Unit;
-import bwapi.UnitSizeType;
 import bwapi.Race;
 import bwapi.TilePosition;
 import bwapi.UnitType;
@@ -500,6 +499,7 @@ public class JohnDoe extends GameHandler {
 						u.move(t.destination.toPosition().makeValid(),false);
 					}
 					t.status = 4;
+					t.lastChange = this.connector.elapsedTime();
 				}
 			}
 			
@@ -541,6 +541,7 @@ public class JohnDoe extends GameHandler {
 						((Troop) t).hasDetector = true;
 					}
 					assaultTroop.remove((Troop)t2);
+					((Troop) t).lastChange = this.connector.elapsedTime();
 				}
 			}
 		}
@@ -580,7 +581,9 @@ public class JohnDoe extends GameHandler {
 		}
 		//All troops are full, so it's needed a new troop.
 		if (i == assaultTroop.size()) {
-			assaultTroop.add(new Troop());
+			Troop t = new Troop();
+			t.lastChange = this.connector.elapsedTime();
+			assaultTroop.add(t);
 		}
 		return true;
 	}
@@ -590,14 +593,6 @@ public class JohnDoe extends GameHandler {
 	 * @return True if can,  False otherwise.
 	 */
 	public boolean selectGroup() {
-//		if (assaultTroop.size() > 0){
-//			System.out.println("-------------------");
-//			for (Troop t : assaultTroop){
-//				System.out.println("Estado:"+t.status+", Tropas: "+t.units.size());
-//			}
-//			System.out.println("+++++++++++++++++++");			
-//		}
-		
 		int time = connector.elapsedTime();
 		
 		if (!expanded && militaryUnits.size() < 15) {
@@ -681,14 +676,14 @@ public class JohnDoe extends GameHandler {
 				if (defendGroup.units.size() < 8) {
 					defendGroup.units.add(u);
 				}
-				if (u.getType().size() != UnitSizeType.Large &&
+				if (!u.getType().isMechanical() &&
 						u.getTilePosition().getDistance(defendGroup.destination) > 5) {
 					if (number_chokePoints == 1) {
 						defendGroup.destination = (Math.random() < 0.5) ? 
 													BWTA.getNearestChokepoint(cc.getPosition()).getSides().first.toTilePosition().makeValid():
 													BWTA.getNearestChokepoint(cc.getPosition()).getSides().second.toTilePosition().makeValid(); 
 					}
-					u.attack(defendGroup.destination.makeValid().toPosition());					
+					u.attack(defendGroup.destination.makeValid().toPosition(), true);					
 				}
 			}
 		}
@@ -735,7 +730,8 @@ public class JohnDoe extends GameHandler {
 			return false;
 		}
 		if (attackGroup.status != 2 && attackGroup.status != 4) {
-			attackGroup.status = (cc_select.getTilePosition().getDistance(objective) < 100) ? (byte) 2 : (byte) 1;
+			attackGroup.status = 1;
+			attackGroup.lastChange = this.connector.elapsedTime();
 			attackGroup.destination = objective;
 			for (Unit u : attackGroup.units) {
 				if (!u.isAttacking() && !u.isMoving()) {
@@ -764,6 +760,7 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean sendRegroup(){
 		attackGroup.status = 3;
+		attackGroup.lastChange = this.connector.elapsedTime();
 		attackGroup.destination = attackGroup.units.get(0).getTilePosition();
 		//if too far, group units
 		for (Unit u : attackGroup.units) {
@@ -784,7 +781,7 @@ public class JohnDoe extends GameHandler {
 			return false;
 		}
 		//Seven minutes of game and not expanded yet, focus on expand.
-		if (connector.elapsedTime() > 420 && 
+		if (connector.elapsedTime() > 700 &&
 				(!expanded && !remainingBuildings.contains(UnitType.Terran_Command_Center)) && 
 				building != UnitType.Terran_Command_Center) {
 			return false;
@@ -945,6 +942,7 @@ public class JohnDoe extends GameHandler {
 					}				
 				}
 			}
+			limit++;
 		//If there's more than 1 CP, builds closer to the CC.
 		} else {
 			byte [][] tests = {{1,0},{1,1},{0,1},{-1,0},{-1,-1},{0,-1}};
@@ -964,7 +962,7 @@ public class JohnDoe extends GameHandler {
 					}				
 				}
 			}
-//			limit++;
+			limit++;
 		}
 		return false;
 	}
@@ -1058,7 +1056,7 @@ public class JohnDoe extends GameHandler {
 			return true;
 		}
 		//If the list it's empty, look for damaged building
-		for (Object u : this.self.getUnits().stream().filter(predicate).toArray()) {
+		for (Object u : self.getUnits().stream().filter(predicate).toArray()) {
 			//If the building it's damaged, not being repaired and isn't in the damageBuildings list
 			if ((((Unit) u).getHitPoints() - ((Unit) u).getType().maxHitPoints() != 0) &&
 					(!((Unit) u).isCompleted() && !((Unit) u).isBeingConstructed()) && !damageBuildings.contains(u)) {
@@ -1376,8 +1374,18 @@ public class JohnDoe extends GameHandler {
     	for (Unit u : finishedBuildings) {
     		if (!txtList.contains(u.getType())) txtList.add(u.getType());
     	}
+    	
+    	connector.drawTextScreen(10, 40, "MilitaryUnits size: " + militaryUnits.size());
+    	connector.drawTextScreen(10, 50, "Number of troops: " + assaultTroop.size());
     	byte i = 0;
-    	connector.drawTextScreen(10, 40, "FinishedBuildings: ");
+		if (assaultTroop.size() > 0){
+			for (Troop t : assaultTroop){
+				connector.drawTextScreen(20, 60+i*10, "Status:"+t.status+", Units: "+t.units.size());
+				i++;
+			}		
+		}
+		i = 0;
+    	connector.drawTextScreen(450, 20+i*10, "FinishedBuildings: ");
     	for (UnitType ut : txtList) {
     		byte repet = 1;
     		if (ut == UnitType.Terran_Barracks) repet =  barracks;
@@ -1389,7 +1397,7 @@ public class JohnDoe extends GameHandler {
 			if (ut == UnitType.Terran_Science_Facility) repet = lab_cient;
 			if (ut == UnitType.Terran_Starport) repet = starport;
 			if (ut == UnitType.Terran_Command_Center) repet = (byte) CCs.size();
-    		connector.drawTextScreen(15, 50+i*10, ut+" - x"+repet);
+    		connector.drawTextScreen(460, 30+i*10, ut+" - x"+repet);
     		i++;
     	}
     }
