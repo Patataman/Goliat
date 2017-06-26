@@ -23,7 +23,6 @@ import org.iaie.btree.task.composite.Sequence;
 import org.iaie.btree.util.GameHandler;
 
 import bwapi.BWEventListener;
-import bwapi.Color;
 import bwapi.Game;
 import bwapi.Mirror;
 import bwapi.Player;
@@ -33,7 +32,6 @@ import bwapi.Unit;
 import bwapi.UnitType;
 import bwapi.UpgradeType;
 import bwta.BWTA;
-import bwta.Chokepoint;
 
 public class Goliat implements BWEventListener {
 	
@@ -428,10 +426,6 @@ public class Goliat implements BWEventListener {
     			DefenseTree.run();
     			UpdateTroopsTree.run();
     			AttackTree.run();
-    		}
-    		
-    		for (Chokepoint cp : BWTA.getChokepoints()) {
-    			game.drawCircleMap(cp.getCenter(), 70, Color.Blue);
     		}
     		
     		if (game.getFrameCount() % 200 == 0) { //Each 200 frames, recalculate influences

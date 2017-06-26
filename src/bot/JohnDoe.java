@@ -10,6 +10,7 @@ import org.iaie.btree.util.GameHandler;
 import bwta.BWTA;
 import bwta.BaseLocation;
 import bwta.Chokepoint;
+import bwapi.Color;
 import bwapi.Game;
 import bwapi.Player;
 import bwapi.Position;
@@ -1052,14 +1053,18 @@ public class JohnDoe extends GameHandler {
 		};
 		
 		//To save time, if the list isn't empty, return true
-		if (!damageBuildings.isEmpty()) {
-			return true;
+		ArrayList<Unit> remove = new ArrayList<Unit>();
+		for (Unit u : damageBuildings) {
+			if (u.getHitPoints() - u.getType().maxHitPoints() == 0) {
+				remove.add(u);
+			}
 		}
+		damageBuildings.removeAll(remove);
 		//If the list it's empty, look for damaged building
 		for (Object u : self.getUnits().stream().filter(predicate).toArray()) {
 			//If the building it's damaged, not being repaired and isn't in the damageBuildings list
-			if ((((Unit) u).getHitPoints() - ((Unit) u).getType().maxHitPoints() != 0) &&
-					(!((Unit) u).isCompleted() && !((Unit) u).isBeingConstructed()) && !damageBuildings.contains(u)) {
+			if (((((Unit) u).getHitPoints() - ((Unit) u).getType().maxHitPoints() != 0) ||
+					(!((Unit) u).isCompleted() && !((Unit) u).isBeingConstructed())) && !damageBuildings.contains(u)) {
 				damageBuildings.add(((Unit) u));
 			}
 		}
@@ -1076,13 +1081,13 @@ public class JohnDoe extends GameHandler {
 	 * @return true if can, false otherwise
 	 */
 	public boolean repair() {
-		for (Unit vce : workers){
+		for (Unit vce : VCEs.get(0)){
 			if (vce.isIdle()) {
-				boolean ret = vce.repair(damageBuildings.get(0), false);
-				//If it's going to be repaired, removes it from the list
-				if (ret)
+				if (vce.repair(damageBuildings.get(0), false)) {
+					//If it's going to be repaired, removes it from the list
 					damageBuildings.remove(0);
-				return ret;
+					return true;
+				}
 			}
 		}
 		return false;
@@ -1351,6 +1356,17 @@ public class JohnDoe extends GameHandler {
     }
     
     public void debug() {
+    	if (scouter != null) {
+    		connector.drawTextMap(scouter.getPosition(), "Mr. Stalker");
+    	}
+    	for (Unit db : damageBuildings) {
+    		connector.drawTextMap(db.getPosition(), "FIRE FIRE!");
+    	}
+    	
+		for (Chokepoint cp : BWTA.getChokepoints()) {
+			connector.drawCircleMap(cp.getCenter(), 80, Color.Blue);
+		}
+    	
     	connector.drawTextScreen(10, 10, "Enemy Race = "+enemyRace);
     	ArrayList <UnitType> txtList = new ArrayList<UnitType>();
     	for (UnitType ut : remainingBuildings) {
@@ -1398,6 +1414,11 @@ public class JohnDoe extends GameHandler {
 			if (ut == UnitType.Terran_Starport) repet = starport;
 			if (ut == UnitType.Terran_Command_Center) repet = (byte) CCs.size();
     		connector.drawTextScreen(460, 30+i*10, ut+" - x"+repet);
+    		i++;
+    	}
+    	connector.drawTextScreen(450, 40+i*10, "DamageBuildings: ");
+    	for (Unit u : damageBuildings) {
+    		connector.drawTextScreen(460, 50+i*10, ""+u.getType());
     		i++;
     	}
     }
