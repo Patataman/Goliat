@@ -5,3 +5,5 @@ mapData/*
 bin
 .settings/*
 dependencies/*
+bwapi-data/*
+*.log
