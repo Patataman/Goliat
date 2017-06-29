@@ -344,6 +344,12 @@ public class Goliat implements BWEventListener {
 		fillBunker.addChild(new FillBunker("Send to bunker", gh));
 		// --------- END BUNKER ---------
 		
+		//---------- Attack closer enemies -------
+		Sequence attackCloserEnemies = new Sequence("Attack closer enemies");
+		attackCloserEnemies.addChild(new CheckPerimeter("Checks if there is enemies in the perimeter", gh));
+		attackCloserEnemies.addChild(new AttackIntruders("Attack enemies inside the perimeter", gh));;
+		// ------------ END Closer enemies -------
+		
 		game.sendText("Secuencia investigar");
 		// ---------- Research sequence --------
 		//Research U238 (Academy)
@@ -406,7 +412,7 @@ public class Goliat implements BWEventListener {
 		UpdateTroopsTree = new BehavioralTree("Update/Check troops status");
 		UpdateTroopsTree.addChild(new Selector<>("MAIN SELECTOR", compactTroops, createTroop));
 		DefenseTree  = new BehavioralTree("Defense tree");
-		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", fillBunker, defendBase));
+		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", attackCloserEnemies, fillBunker, defendBase));
 		AttackTree  = new BehavioralTree("Attack tree");
 		AttackTree.addChild(attack);
 		
@@ -422,8 +428,8 @@ public class Goliat implements BWEventListener {
     		BuildTree.run();
     		AddonTree.run();
     		TrainTree.run();
+    		DefenseTree.run();
     		if (gh.militaryUnits.size() > 0) {
-    			DefenseTree.run();
     			UpdateTroopsTree.run();
     			AttackTree.run();
     		}
@@ -453,7 +459,9 @@ public class Goliat implements BWEventListener {
 	public void onUnitDestroy(Unit unit) {
 		gh.dah_map.removeUnitDead(unit.getID());
 		
-		if (unit.getPlayer().getID() == self.getID() && game.elapsedTime() > 0) {
+		if (gh.intruders.contains(unit)) {
+			gh.intruders.remove(unit);
+		} else if (unit.getPlayer().getID() == self.getID() && game.elapsedTime() > 0) {
 			
 			//List control (Buildings)
 			if (unit.getType().isBuilding()) {
@@ -523,6 +531,9 @@ public class Goliat implements BWEventListener {
 					}
 					if (gh.defendGroup.units.contains(unit)) {
 						gh.defendGroup.units.remove(unit);
+					}
+					if (gh.militia.contains(unit)) {
+						gh.militia.remove(unit);
 					}
 					for (Troop tropa: gh.assaultTroop){
 						if (tropa.units.contains(unit)) {

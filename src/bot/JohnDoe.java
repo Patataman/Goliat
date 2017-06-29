@@ -31,6 +31,8 @@ public class JohnDoe extends GameHandler {
 	List<UnitType> remainingUnits; 				//List to know which units are being trained.
 	List<Unit> militaryUnits;					//List to know all military unit trained (alive).
 	List<Unit> boredSoldiers;					//List of unit which are defending base.
+	List<Unit> intruders;						//List with enemies inside the perimeter
+	List<Unit> militia;							//List of units chasing the intruders.
 	List<Troop> assaultTroop;					//List of groups of troops created.
 	Troop attackGroup;							//Group of attacking units currently selected.
 	Troop defendGroup;							//Group of defending units.
@@ -77,13 +79,15 @@ public class JohnDoe extends GameHandler {
 		scouter					= null;
 		addonBuilding			= null;
 		enemyRace 				= null;
-		workers 				= new ArrayList<Unit>(3);
+		workers 				= new ArrayList<Unit>(2);
 		militaryUnits			= new ArrayList<Unit>(0);
 		boredSoldiers			= new ArrayList<Unit>(0);
 		finishedBuildings 		= new ArrayList<Unit>(0);
 		damageBuildings			= new ArrayList<Unit>(0);
 		bunkers 				= new ArrayList<Unit>(0);
 		CCs 					= new ArrayList<Unit>(0);
+		intruders				= new ArrayList<Unit>(0);
+		militia					= new ArrayList<Unit>(0);
 		VCEs 					= new ArrayList<ArrayList<Unit>>(0);
 		mineralNodes			= new ArrayList<ArrayList<Unit>>(0);
 		workersMineral 			= new ArrayList<ArrayList<Unit>>(0);
@@ -144,8 +148,8 @@ public class JohnDoe extends GameHandler {
 	public boolean getWorker() {
 		for (ArrayList<Unit> vces_cc : VCEs) {
 			for (Unit vce : vces_cc) {
-				//Checks if the unit type equals SCV and is idle.
-				if (!vce.equals(scouter) && vce.isIdle() && vce.isCompleted() && CCs.size() > 0) {
+				//Checks if the unit type equals SCV and is idle
+				if (!vce.equals(scouter) && vce.isIdle() && vce.isCompleted() && CCs.size() > 0 && !militia.contains(vce)) {
 					current_worker = vce;
 					return true;
 				}
@@ -164,7 +168,6 @@ public class JohnDoe extends GameHandler {
 			//If there's a free SCV from the list "workers", return true
 			for (Unit vce : workers) {
 				if (!vce.isConstructing() || vce.isMoving()){
-//					workers.add(0, vce);
 					return true;
 				}
 			}
@@ -228,7 +231,7 @@ public class JohnDoe extends GameHandler {
 	public boolean sendToScout() {
 		if (scouter.isMoving()) return false;
 		
-		if (this.connector.elapsedTime() % 200 == 0 && this.connector.elapsedTime() > 10) {			
+		if (this.connector.elapsedTime()/60 % 5 == 0 && this.connector.elapsedTime() > 10) {			
 			for (BaseLocation bl : BWTA.getBaseLocations()) {
 				if (!bl.isStartLocation() && BWTA.isConnected(bl.getTilePosition(), scouter.getTilePosition())) {
 					scouter.move(bl.getPosition().makeValid(), true);
@@ -562,7 +565,7 @@ public class JohnDoe extends GameHandler {
 				
 				for (Unit u : boredSoldiers) {
 					//Unit is idle, complete and not in a bunker
-					if(u.isIdle() && u.isCompleted() && !u.isLoaded()) {
+					if(u.isCompleted() && !u.isLoaded()) {
 						if (u.getType() == UnitType.Terran_Science_Vessel) {
 							if (!assaultTroop.get(i).hasDetector){
 								assaultTroop.get(i).units.add(u);
@@ -665,6 +668,73 @@ public class JohnDoe extends GameHandler {
 			}
 		}
 		return ret;
+	}
+	
+	/**
+	 * Checks if there's enemies inside the CC perimeter
+	 * @return true if there is, false in other case
+	 */
+	public boolean checkPerimeter() {
+		ArrayList<Unit> remove = new ArrayList<Unit>();
+		for (Unit u : intruders) {
+			for (Unit cc : CCs) {
+				if (!connector.getUnitsInRadius(cc.getPosition(), 800).contains(u))
+					remove.add(u);
+			}
+		}
+		intruders.removeAll(remove);
+		if (intruders.isEmpty() && !militia.isEmpty()){
+			for (Unit u : militia) {
+				u.move(cc_select.getPosition(), false);
+				if (!u.getType().isWorker()) {
+					boredSoldiers.add(u);
+				}
+			}
+			militia.clear();
+		}
+		for (Unit cc : CCs) {
+			for (Unit u : connector.getUnitsInRadius(cc.getPosition(), 800)) {
+				if (u.getPlayer().getID() != self.getID() && 
+						!u.getType().isNeutral() && 
+						!intruders.contains(u) &&
+						BWTA.getRegion(cc.getPosition()).equals(BWTA.getRegion(u.getPosition()))) {
+					intruders.add(u);
+				}
+			}
+		}
+		if (!intruders.isEmpty()){
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Send all military units to attack the enemies.
+	 * If there's no military units, send 2 SCV.
+	 * @return true if can attack, false otherwise
+	 */
+	public boolean attackIntruders() {
+		for (Troop t : assaultTroop) {
+			if (t.status == 0) {
+				t.status = 2;
+				for (Unit u : t.units) {
+					militia.add(u);
+					u.attack(intruders.get(0),false);
+				}
+				t.units.clear();
+			}
+		}
+		if (!militia.isEmpty()){
+			return true;			
+		} else if (militia.size() < 2*intruders.size()) {
+			for (int i = 0; i<2 && workersMineral.get(0).size() > 2; i++) {
+				militia.add(workersMineral.get(0).get(0));
+				workersMineral.get(0).get(0).attack(intruders.get(0),false);
+				workersMineral.get(0).remove(0);				
+			}
+			return true;
+		}
+		return false;
 	}
 	
 	/**
@@ -1358,6 +1428,7 @@ public class JohnDoe extends GameHandler {
     public void debug() {
     	if (scouter != null) {
     		connector.drawTextMap(scouter.getPosition(), "Mr. Stalker");
+    		connector.drawTextScreen(250, 10, "Mr. Stalker on the way");
     	}
     	for (Unit db : damageBuildings) {
     		connector.drawTextMap(db.getPosition(), "FIRE FIRE!");
@@ -1365,6 +1436,10 @@ public class JohnDoe extends GameHandler {
     	
 		for (Chokepoint cp : BWTA.getChokepoints()) {
 			connector.drawCircleMap(cp.getCenter(), 80, Color.Blue);
+		}
+		
+		for (Unit cc : CCs) {
+			connector.drawCircleMap(cc.getPosition(), 800, Color.Blue);
 		}
     	
     	connector.drawTextScreen(10, 10, "Enemy Race = "+enemyRace);
@@ -1390,15 +1465,27 @@ public class JohnDoe extends GameHandler {
     	for (Unit u : finishedBuildings) {
     		if (!txtList.contains(u.getType())) txtList.add(u.getType());
     	}
-    	
-    	connector.drawTextScreen(10, 40, "MilitaryUnits size: " + militaryUnits.size());
-    	connector.drawTextScreen(10, 50, "Number of troops: " + assaultTroop.size());
+    	connector.drawTextScreen(10, 40, "BoredUnits size: " + boredSoldiers.size());
+    	connector.drawTextScreen(10, 50, "MilitaryUnits size: " + militaryUnits.size());
+    	connector.drawTextScreen(10, 60, "Number of troops: " + assaultTroop.size());
     	byte i = 0;
 		if (assaultTroop.size() > 0){
 			for (Troop t : assaultTroop){
-				connector.drawTextScreen(20, 60+i*10, "Status:"+t.status+", Units: "+t.units.size());
+				connector.drawTextScreen(20, 70+i*10, "Status:"+t.status+", Units: "+t.units.size());
 				i++;
 			}		
+		}
+		connector.drawTextScreen(10, 80+i*10, "Intruders: " + intruders.size());
+		if (intruders.size() > 0){
+			for (Unit intr : intruders){
+				connector.drawCircleMap(intr.getPosition(), 4, Color.Red, true);
+			}
+		}
+		connector.drawTextScreen(10, 90+i*10, "Militia: " + militia.size());
+		if (militia.size() > 0){
+			for (Unit milt : militia){
+				connector.drawCircleMap(milt.getPosition(), 4, Color.Blue, true);
+			}
 		}
 		i = 0;
     	connector.drawTextScreen(450, 20+i*10, "FinishedBuildings: ");
