@@ -21,7 +21,8 @@ public class FindPosition extends Conditional {
 			//Check if the total supplies are not 200 or used supplies are less than the 70% of the total. 
 			if (building == UnitType.Terran_Supply_Depot &&
 				( ((JohnDoe)this.handler).supplies < ((JohnDoe)this.handler).totalSupplies*0.7 || 
-					((JohnDoe)this.handler).totalSupplies >= 400) ){
+					((JohnDoe)this.handler).totalSupplies >= 400 || 
+					(((JohnDoe)this.handler).barracks == 0 && ((JohnDoe)this.handler).supplies > 20)) ){
 				return State.FAILURE;
 			}
 			//Decorator for barracks. 2 per CC
