@@ -22,7 +22,7 @@ public class FindPosition extends Conditional {
 			if (building == UnitType.Terran_Supply_Depot &&
 				( ((JohnDoe)this.handler).supplies < ((JohnDoe)this.handler).totalSupplies*0.7 || 
 					((JohnDoe)this.handler).totalSupplies >= 400 || 
-					(((JohnDoe)this.handler).barracks == 0 && ((JohnDoe)this.handler).supplies > 20)) ){
+					(((JohnDoe)this.handler).barracks == 0 && ((JohnDoe)this.handler).supplies > 10)) ){
 				return State.FAILURE;
 			}
 			//Decorator for barracks. 2 per CC

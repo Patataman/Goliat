@@ -565,7 +565,7 @@ public class JohnDoe extends GameHandler {
 				
 				for (Unit u : boredSoldiers) {
 					//Unit is idle, complete and not in a bunker
-					if(u.isIdle() && u.isCompleted() && !u.isLoaded()) {
+					if(u.isCompleted() && !u.isLoaded()) {
 						if (u.getType() == UnitType.Terran_Science_Vessel) {
 							if (!assaultTroop.get(i).hasDetector){
 								assaultTroop.get(i).units.add(u);
@@ -686,6 +686,9 @@ public class JohnDoe extends GameHandler {
 		if (intruders.isEmpty() && !militia.isEmpty()){
 			for (Unit u : militia) {
 				u.move(cc_select.getPosition(), false);
+				if (!u.getType().isWorker()) {
+					boredSoldiers.add(u);
+				}
 			}
 			militia.clear();
 		}
@@ -711,16 +714,22 @@ public class JohnDoe extends GameHandler {
 	 * @return true if can attack, false otherwise
 	 */
 	public boolean attackIntruders() {
-		if (!boredSoldiers.isEmpty()) {
-			for (Unit u : boredSoldiers) {
-				militia.add(u);
-				u.attack(intruders.get(0).getPosition());
+		for (Troop t : assaultTroop) {
+			if (t.status == 0) {
+				t.status = 2;
+				for (Unit u : t.units) {
+					militia.add(u);
+					u.attack(intruders.get(0),false);
+				}
+				t.units.clear();
 			}
-			return true;
+		}
+		if (!militia.isEmpty()){
+			return true;			
 		} else if (militia.size() < 2*intruders.size()) {
 			for (int i = 0; i<2 && workersMineral.get(0).size() > 2; i++) {
 				militia.add(workersMineral.get(0).get(0));
-				workersMineral.get(0).get(0).attack(intruders.get(0).getPosition());
+				workersMineral.get(0).get(0).attack(intruders.get(0),false);
 				workersMineral.get(0).remove(0);				
 			}
 			return true;
@@ -1456,23 +1465,27 @@ public class JohnDoe extends GameHandler {
     	for (Unit u : finishedBuildings) {
     		if (!txtList.contains(u.getType())) txtList.add(u.getType());
     	}
-    	
-    	connector.drawTextScreen(10, 40, "MilitaryUnits size: " + militaryUnits.size());
-    	connector.drawTextScreen(10, 50, "Number of troops: " + assaultTroop.size());
+    	connector.drawTextScreen(10, 40, "BoredUnits size: " + boredSoldiers.size());
+    	connector.drawTextScreen(10, 50, "MilitaryUnits size: " + militaryUnits.size());
+    	connector.drawTextScreen(10, 60, "Number of troops: " + assaultTroop.size());
     	byte i = 0;
 		if (assaultTroop.size() > 0){
 			for (Troop t : assaultTroop){
-				connector.drawTextScreen(20, 60+i*10, "Status:"+t.status+", Units: "+t.units.size());
+				connector.drawTextScreen(20, 70+i*10, "Status:"+t.status+", Units: "+t.units.size());
 				i++;
 			}		
 		}
-		connector.drawTextScreen(10, 70+i*10, "Intruders: " + intruders.size());
-		if (assaultTroop.size() > 0){
+		connector.drawTextScreen(10, 80+i*10, "Intruders: " + intruders.size());
+		if (intruders.size() > 0){
 			for (Unit intr : intruders){
-				connector.drawTextScreen(20, 80+i*10, ""+intr.getType());
-				connector.drawCircleMap(intr.getPosition(), 40, Color.Red);
-				i++;
-			}		
+				connector.drawCircleMap(intr.getPosition(), 4, Color.Red, true);
+			}
+		}
+		connector.drawTextScreen(10, 90+i*10, "Militia: " + militia.size());
+		if (militia.size() > 0){
+			for (Unit milt : militia){
+				connector.drawCircleMap(milt.getPosition(), 4, Color.Blue, true);
+			}
 		}
 		i = 0;
     	connector.drawTextScreen(450, 20+i*10, "FinishedBuildings: ");

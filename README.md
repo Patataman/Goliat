@@ -43,6 +43,8 @@ This version contains:
 * Can train different units according the enemy race.
 * Small fixes in building expansions.
 
+Special thanks to: Krasi0, Dan and Jaj22 for trying to make it works on the SSCAIT server
+
 # V4.1
 
 This version contains:

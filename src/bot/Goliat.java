@@ -64,7 +64,7 @@ public class Goliat implements BWEventListener {
 	public void onStart() {
 		
         game = mirror.getGame();
-        game.setLocalSpeed(20);
+        game.setLocalSpeed(10);
         self = game.self();
         
 //        System.out.println("Analyzing map...");
@@ -412,7 +412,6 @@ public class Goliat implements BWEventListener {
 		UpdateTroopsTree = new BehavioralTree("Update/Check troops status");
 		UpdateTroopsTree.addChild(new Selector<>("MAIN SELECTOR", compactTroops, createTroop));
 		DefenseTree  = new BehavioralTree("Defense tree");
-//		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", fillBunker, defendBase));
 		DefenseTree.addChild(new Selector<>("MAIN SELECTOR", attackCloserEnemies, fillBunker, defendBase));
 		AttackTree  = new BehavioralTree("Attack tree");
 		AttackTree.addChild(attack);
