@@ -37,10 +37,8 @@ public class TrainUnit extends Action {
 														).size() >= ((JohnDoe)this.handler).max_vce)) {
 					return State.FAILURE; 					
 				}
-			} else if ( (!((JohnDoe)this.handler).expanded) && 
-					((JohnDoe)this.handler).supplies > ((JohnDoe)this.handler).totalSupplies*0.9) {
-				return State.FAILURE;
-			} else {
+			}
+			else {
 				//If unit to train it's contained in the unitsToTrain, then check other stuff
 				if (!((JohnDoe)this.handler).unitsToTrain.contains(this.unit)){
 					return State.FAILURE;
@@ -57,6 +55,11 @@ public class TrainUnit extends Action {
 				if (unit == UnitType.Terran_Science_Vessel && vessel >= ((JohnDoe)this.handler).assaultTroop.size()) {
 					return State.FAILURE;
 				}
+				if (unit != UnitType.Terran_Science_Vessel && 
+						((JohnDoe)this.handler).canTrain(UnitType.Terran_Science_Vessel) &&
+						((JohnDoe)this.handler).militaryUnits.size() > 20) {
+					return State.FAILURE;
+				}
 				//1 siege tank for each 8 marines+fire_bat
 				if (unit == UnitType.Terran_Siege_Tank_Tank_Mode && tank > (marines+fire_bat+medic)/8) {
 					return State.FAILURE;
@@ -66,9 +69,6 @@ public class TrainUnit extends Action {
 					return State.FAILURE;
 				}
 			}
-//			if (unit == UnitType.Terran_Science_Vessel && vessel>=((JohnDoe)this.handler).assaultTroop.size()) {
-//				return State.FAILURE;
-//			}
 			if (((JohnDoe)this.handler).trainUnit(building, unit)) {
 				return State.SUCCESS;
 			} else {

@@ -64,7 +64,7 @@ public class Goliat implements BWEventListener {
 	public void onStart() {
 		
         game = mirror.getGame();
-        game.setLocalSpeed(10);
+        game.setLocalSpeed(5);
         self = game.self();
         
 //        System.out.println("Analyzing map...");
@@ -192,7 +192,6 @@ public class Goliat implements BWEventListener {
 
 		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVessel, TrainGoliat, TrainSiegeTank, 
 															TrainVulture, TrainMedic, TrainFirebat, TrainMarine, TrainVCE);
-//		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVCE);
 		// ----------- END TRAIN ---------
 
 		game.sendText("Secuencia edificios");
@@ -282,9 +281,9 @@ public class Goliat implements BWEventListener {
 		buildLab.addChild(new MoveTo("Move builder", gh));
 		buildLab.addChild(new Build("Build facility", gh, UnitType.Terran_Science_Facility));
 		
-		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks, buildBay,
-															buildRefinery, buildTurret, buildBunker, buildAcademy, 
-															buildFactory, buildCC, buildStarport, buildLab, buildArmory);
+		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks, buildRefinery,
+															buildBay, buildTurret, buildBunker, buildAcademy,
+															buildFactory, buildStarport, buildLab, buildCC, buildArmory);
 		// ---------- END BUILD -----------
 		
 		game.sendText("Secuencia addons");
@@ -304,8 +303,13 @@ public class Goliat implements BWEventListener {
 		addonStarport.addChild(new CheckResources("Check resources addon", gh, UnitType.Terran_Control_Tower));
 		addonStarport.addChild(new FindBuilding("Find building", gh, UnitType.Terran_Starport));
 		addonStarport.addChild(new BuildAddon("Build starport's addon", gh, UnitType.Terran_Control_Tower));
+		//Control tower addon
+		Sequence addonComsat = new Sequence("Comsat addon");
+		addonComsat.addChild(new CheckResources("Check resources addon", gh, UnitType.Terran_Comsat_Station));
+		addonComsat.addChild(new FindBuilding("Find building", gh, UnitType.Terran_Command_Center));
+		addonComsat.addChild(new BuildAddon("Build CC's addon", gh, UnitType.Terran_Comsat_Station));
 		
-		Selector<Sequence> selectorAddons = new Selector<>("Selector addon", addonFactory, addonFacility, addonStarport);
+		Selector<Sequence> selectorAddons = new Selector<>("Selector addon", addonFactory, addonFacility, addonStarport, addonComsat);
 		// ---------- END addons ----------
 		
 		game.sendText("Secuencia tropas");
@@ -425,9 +429,9 @@ public class Goliat implements BWEventListener {
     public void onFrame() {
     	if (this.game.elapsedTime() > 0) {
     		CollectTree.run();
+    		TrainTree.run();
     		BuildTree.run();
     		AddonTree.run();
-    		TrainTree.run();
     		DefenseTree.run();
     		if (gh.militaryUnits.size() > 0) {
     			UpdateTroopsTree.run();
@@ -452,6 +456,9 @@ public class Goliat implements BWEventListener {
 			if (unit.getType().isBuilding()){
 				gh.remainingBuildings.add(unit.getType());
 				gh.posBuild = null;
+				if (unit.getType() == UnitType.Terran_Command_Center) {
+					gh.CCs.add(unit);
+				}
 			}
 		}
 	}
@@ -462,7 +469,6 @@ public class Goliat implements BWEventListener {
 		if (gh.intruders.contains(unit)) {
 			gh.intruders.remove(unit);
 		} else if (unit.getPlayer().getID() == self.getID() && game.elapsedTime() > 0) {
-			
 			//List control (Buildings)
 			if (unit.getType().isBuilding()) {
 				for(Unit u : gh.finishedBuildings) {
@@ -487,13 +493,16 @@ public class Goliat implements BWEventListener {
 					}
 				}
 			} else {
+				if (gh.militia.contains(unit)) {
+					gh.militia.remove(unit);
+				}
 				if (unit.getType().isWorker()) {
 					if (gh.workers.contains(unit)){
 						gh.workers.remove(unit);
 					}
 					for(ArrayList<Unit> vces_cc : gh.VCEs){
 						if (vces_cc.contains(unit)) {
-							gh.VCEs.get(gh.VCEs.indexOf(vces_cc)).remove(unit);
+							vces_cc.remove(unit);
 							gh.supplies -= unit.getType().supplyRequired();
 							break;
 						}
@@ -531,9 +540,6 @@ public class Goliat implements BWEventListener {
 					}
 					if (gh.defendGroup.units.contains(unit)) {
 						gh.defendGroup.units.remove(unit);
-					}
-					if (gh.militia.contains(unit)) {
-						gh.militia.remove(unit);
 					}
 					for (Troop tropa: gh.assaultTroop){
 						if (tropa.units.contains(unit)) {
@@ -600,9 +606,8 @@ public class Goliat implements BWEventListener {
 				if (unit.getType() == UnitType.Terran_Command_Center) {
 					//If it's a CC, need to add control lists.
 					gh.totalSupplies += UnitType.Terran_Command_Center.supplyProvided();
-					if (!gh.CCs.contains(unit)){
+					if (gh.CCs.contains(unit)){
 						gh.expanded = true;
-						gh.CCs.add(unit);
 						gh.addCC(unit);
 					}
 				}

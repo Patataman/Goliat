@@ -37,7 +37,7 @@ public class Troop {
 	 * @return true if they are in destination, false otherwise
 	 */
 	public boolean isInPosition() {
-		if (destination == null) return true;
+		if (destination == null || units.size() > 20) return true;
 		int dist = 0;
 		for (Unit u : units) {
 			dist += u.getTilePosition().getDistance(destination);
@@ -58,6 +58,7 @@ public class Troop {
 	 * @return true if > 50, false if not.
 	 */
 	public boolean tooFar() {
+		if (units.size() > 20) return false;
 		int dist = 0;
 		TilePosition dest = units.get((int) units.size()/2).getTilePosition();
 		for (Unit u : units) {
