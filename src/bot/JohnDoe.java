@@ -214,7 +214,7 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean checkTime() {
 		if (this.connector.elapsedTime() < 10 ||
-				this.connector.elapsedTime()/60 % 8 == 0)
+				this.connector.elapsedTime()/60 % 10 == 0)
 			return true;
 		else
 			return false;
@@ -243,7 +243,7 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean sendToScout() {
 		if (scouter.isMoving() && (!scouter.isGatheringMinerals() && !scouter.isGatheringGas()) ) return false;
-		
+		scouter.move(cc_select.getPosition(),false);
 		if (this.connector.elapsedTime() > 10) {			
 			for (BaseLocation bl : BWTA.getBaseLocations()) {
 				if (!bl.isStartLocation() && BWTA.isConnected(bl.getTilePosition(), scouter.getTilePosition())) {
@@ -368,15 +368,7 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean moveTo() {
 		if (workers.get(0) != null){
-			if (workers.get(0).getTilePosition().getDistance(posBuild) < 10) {
-				return true;
-			} else {
-				if (!workers.get(0).isMoving()){
-					return workers.get(0).move(posBuild.toPosition().makeValid(), false);					
-				} else {
-					return true;
-				}
-			}	
+			return workers.get(0).move(posBuild.toPosition().makeValid(), false);
 		}
 		return false;
 	}
@@ -392,7 +384,7 @@ public class JohnDoe extends GameHandler {
 			return false;
 		}
 		for (Unit vce : workers){
-			if ((vce.isMoving() || vce.isIdle()) && vce.getTilePosition().getDistance(posBuild) < 13){
+			if (!vce.isConstructing() && vce.getTilePosition().getDistance(posBuild) < 13){
 				if (vce.build(building, posBuild)) {
 					mineral -= building.mineralPrice();
 					vespin_gas -= building.gasPrice();
@@ -796,7 +788,7 @@ public class JohnDoe extends GameHandler {
 				if (defendGroup.units.size() < 8) {
 					defendGroup.units.add(u);
 				}
-				if (!u.getType().isMechanical() &&
+				if (!u.getType().isMechanical() && !u.isFlying() &&
 						u.getTilePosition().getDistance(defendGroup.destination) > 5) {
 					if (number_chokePoints == 1) {
 						defendGroup.destination = (Math.random() < 0.5) ? 
@@ -854,13 +846,13 @@ public class JohnDoe extends GameHandler {
 			attackGroup.lastChange = this.connector.elapsedTime();
 			attackGroup.destination = objective;
 			for (Unit u : attackGroup.units) {
-				if (!u.isAttacking() && !u.isMoving()) {
+				if (!u.isAttacking()) {
 					if (u.getType() == UnitType.Terran_Science_Vessel ||
 							u.getType() == UnitType.Terran_Medic) {
 						for (Unit unitToFollow : attackGroup.units) {
-							if (unitToFollow.getType() != UnitType.Terran_Science_Vessel ||
+							if (unitToFollow.getType() != UnitType.Terran_Science_Vessel &&
 							unitToFollow.getType() != UnitType.Terran_Medic) {
-								u.follow(u, false);
+								u.follow(unitToFollow, false);
 								break;
 							}
 						}
@@ -1196,7 +1188,11 @@ public class JohnDoe extends GameHandler {
 	 * @return true if can, false otherwise
 	 */
 	public boolean repair() {
-		if (repairer.size() >= 2) return false;
+		byte cont = 0;
+		for (Unit vce : repairer) {
+			if (vce.isRepairing()) cont++;
+		}
+		if (cont == repairer.size()) return false;
 		for (ArrayList<Unit> UL : workersMineral) {
 			for (Unit vce : UL) {
 				if (vce.rightClick(damageBuildings.get(0),false)) {
@@ -1489,11 +1485,11 @@ public class JohnDoe extends GameHandler {
 		for (Unit cc : CCs) {
 			connector.drawCircleMap(cc.getPosition(), 800, Color.Blue);
 		}
-//		for (Troop t : assaultTroop) {
-//			for (Unit u : t.units) {
-//				connector.drawTextMap(u.getPosition(), arg1);
-//			}
-//		}
+		for (Troop t : assaultTroop) {
+			for (Unit u : t.units) {
+				connector.drawTextMap(new Position(u.getPosition().getX(),u.getPosition().getY()+10), ""+assaultTroop.indexOf(t));
+			}
+		}
 		for (Unit u : repairer) {
 			connector.drawCircleMap(u.getPosition(), 4, Color.Purple, true);
 		}
@@ -1532,7 +1528,7 @@ public class JohnDoe extends GameHandler {
     	byte i = 0;
 		if (assaultTroop.size() > 0){
 			for (Troop t : assaultTroop){
-				connector.drawTextScreen(20, 80+i*10, "Status:"+t.status+", Units: "+t.units.size() + ", LastChange: " + t.lastChange + ", Detector: "+t.hasDetector);
+				connector.drawTextScreen(20, 80+i*10, "Status:"+t.status+", Units: "+t.units.size() + ", Change: " + t.lastChange + ", Detector: "+t.hasDetector);
 				i++;
 			}		
 		}

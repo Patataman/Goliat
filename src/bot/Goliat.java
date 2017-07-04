@@ -64,7 +64,7 @@ public class Goliat implements BWEventListener {
 	public void onStart() {
 		
         game = mirror.getGame();
-        game.setLocalSpeed(5);
+        game.setLocalSpeed(10);
         self = game.self();
         
 //        System.out.println("Analyzing map...");

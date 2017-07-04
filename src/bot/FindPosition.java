@@ -85,13 +85,14 @@ public class FindPosition extends Conditional {
 					((JohnDoe)this.handler).starport >= 2)) {
 				return State.FAILURE;
 			}
-			if (((JohnDoe)this.handler).detector_first &&
-					((JohnDoe)this.handler).barracks != 0 &&
+			if (((JohnDoe)this.handler).detector_first && 
+					((((JohnDoe)this.handler).mineral < 500 && ((JohnDoe)this.handler).vespin_gas < 200 )||
+					(((JohnDoe)this.handler).barracks != 0 &&
 					((JohnDoe)this.handler).factory != 0 &&
 					(building != UnitType.Terran_Starport &&
 					   building != UnitType.Terran_Science_Facility &&
 					   building != UnitType.Terran_Command_Center &&
-					   building != UnitType.Terran_Refinery)) {
+					   building != UnitType.Terran_Refinery)))) {
 				return State.FAILURE;
 			}
 			//Decorator for armory. Only 1.

@@ -202,7 +202,7 @@ public class InfluenceMap {
 			}  else if (unit.getType() == UnitType.Terran_Command_Center ||
 					unit.getType() == UnitType.Zerg_Hatchery ||
 					unit.getType() == UnitType.Protoss_Nexus) {
-				updateCellInfluence_building(new Point(x,y), 7*influencia);
+				updateCellInfluence_building(new Point(x,y), 10*influencia);
 				tupla.add(7*influencia);
 				if (ally) unidades.add(tupla);
 			} else {
