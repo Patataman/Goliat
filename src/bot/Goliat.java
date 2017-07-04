@@ -459,6 +459,8 @@ public class Goliat implements BWEventListener {
 				if (unit.getType() == UnitType.Terran_Command_Center) {
 					gh.CCs.add(unit);
 				}
+			} else {
+				gh.remainingUnits.add(unit);
 			}
 		}
 	}
@@ -499,6 +501,9 @@ public class Goliat implements BWEventListener {
 				if (unit.getType().isWorker()) {
 					if (gh.workers.contains(unit)){
 						gh.workers.remove(unit);
+					}
+					if (gh.repairer.contains(unit)) {
+						gh.repairer.remove(unit);
 					}
 					for(ArrayList<Unit> vces_cc : gh.VCEs){
 						if (vces_cc.contains(unit)) {
@@ -573,8 +578,8 @@ public class Goliat implements BWEventListener {
 			}
 			
 			//Remove the unit from the remaining list.
-			if (gh.remainingUnits.contains(unit.getType())){
-				gh.remainingUnits.remove(unit.getType());
+			if (gh.remainingUnits.contains(unit)){
+				gh.remainingUnits.remove(unit);
 				gh.supplies += unit.getType().supplyRequired();
 				
 				if (unit.getType() != UnitType.Terran_SCV) {

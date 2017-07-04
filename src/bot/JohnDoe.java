@@ -24,25 +24,26 @@ public class JohnDoe extends GameHandler {
 	
 	//Inner control lists
 	List<Unit> CCs;								//List for counting number of CCs
-	List<ArrayList<Unit>> VCEs;					//List for counting number of SCVs from each CC.
-	List<ArrayList<Unit>> mineralNodes;	 		//List for control the number of mineral nodes next to the CC
-	List<ArrayList<Unit>> workersMineral; 		//List for counting number of SVCs gathering minerals.
-	List<ArrayList<Unit>> workersVespin; 		//List for counting number of SCVs gathering vespin gas.
-	List<UnitType> remainingUnits; 				//List to know which units are being trained.
+	List<Unit> remainingUnits; 					//List to know which units are being trained.
 	List<Unit> militaryUnits;					//List to know all military unit trained (alive).
 	List<Unit> boredSoldiers;					//List of unit which are defending base.
 	List<Unit> intruders;						//List with enemies inside the perimeter
 	List<Unit> militia;							//List of units chasing the intruders.
+	List<Unit> damageBuildings;					//List to know which buildings are being attacked and being able to fix it later.
+	List<Unit> workers;							//List to control which SCVs are assigned to building.
+	List<Unit> finishedBuildings; 				//List to know all finished (and alive) buildings.
+	List<Unit> bunkers;							//List to know the bunkers I have
+	List<Unit> repairer;						//List of SCVs reparing buildings
+	List<ArrayList<Unit>> VCEs;					//List for counting number of SCVs from each CC.
+	List<ArrayList<Unit>> mineralNodes;	 		//List for control the number of mineral nodes next to the CC
+	List<ArrayList<Unit>> workersMineral; 		//List for counting number of SVCs gathering minerals.
+	List<ArrayList<Unit>> workersVespin; 		//List for counting number of SCVs gathering vespin gas.
 	List<Troop> assaultTroop;					//List of groups of troops created.
 	Troop attackGroup;							//Group of attacking units currently selected.
 	Troop defendGroup;							//Group of defending units.
 	List<UnitType> remainingBuildings;			//List to know which buildings are being builded.
-	List<Unit> finishedBuildings; 				//List to know all finished (and alive) buildings.
 	List<UpgradeType> researching;				//List to know which researches are being researched.
-	List<Unit> damageBuildings;					//List to know which buildings are being attacked and being able to fix it later.
-	List<Unit> workers;							//List to control which SCVs are assigned to building.
 	Unit current_worker;						//Variable to know which SCV is currently selected.
-	List<Unit> bunkers;							//List to know the bunkers I have
 	Unit addonBuilding;							//Variable to get (without searching again) the building which addon we're going to build
 	
 	List<UnitType> unitsToTrain;				//This list contains all military units that can be trained 
@@ -88,12 +89,13 @@ public class JohnDoe extends GameHandler {
 		CCs 					= new ArrayList<Unit>(0);
 		intruders				= new ArrayList<Unit>(0);
 		militia					= new ArrayList<Unit>(0);
+		remainingUnits 			= new ArrayList<Unit>(0);
+		repairer 				= new ArrayList<Unit>(0);
 		VCEs 					= new ArrayList<ArrayList<Unit>>(0);
 		mineralNodes			= new ArrayList<ArrayList<Unit>>(0);
 		workersMineral 			= new ArrayList<ArrayList<Unit>>(0);
 		workersVespin 			= new ArrayList<ArrayList<Unit>>(0);
 		researching				= new ArrayList<UpgradeType>(0);
-		remainingUnits 			= new ArrayList<UnitType>(0);
 		remainingBuildings 		= new ArrayList<UnitType>(0);
 		unitsToTrain			= new ArrayList<UnitType>(0);
 		assaultTroop			= new ArrayList<Troop>(0);
@@ -150,7 +152,8 @@ public class JohnDoe extends GameHandler {
 		for (ArrayList<Unit> vces_cc : VCEs) {
 			for (Unit vce : vces_cc) {
 				//Checks if the unit type equals SCV and is idle
-				if (!vce.equals(scouter) && vce.isIdle() && vce.isCompleted() && CCs.size() > 0 && !militia.contains(vce)) {
+				if (!vce.equals(scouter) && vce.isIdle() && vce.isCompleted() && CCs.size() > 0 && !militia.contains(vce) &&
+						!vce.isConstructing()) {
 					current_worker = vce;
 					return true;
 				}
@@ -191,7 +194,7 @@ public class JohnDoe extends GameHandler {
 			return false;
 		}
 		//If "workers" is full, check if there's any free SCV
-		else if (workers.size() <= 22*CCs.size()){
+		else if (workers.size() <= 2*CCs.size()){
 			for (Unit vce : workers) {
 				if (!vce.isConstructing()){
 					workers.remove(vce);
@@ -224,7 +227,10 @@ public class JohnDoe extends GameHandler {
 	public boolean chooseScouter() {
 		if (scouter == null) {
 			if (VCEs.get(0) != null && !VCEs.get(0).isEmpty()) {
-				scouter = VCEs.get(0).get(0);				
+				for (Unit u : VCEs.get(0)) {
+					if (!workers.contains(u))
+						scouter = VCEs.get(0).get(0);
+				}
 			}			
 		}
 		if (scouter != null && scouter.isCompleted()) return true;
@@ -236,11 +242,16 @@ public class JohnDoe extends GameHandler {
 	 * @return
 	 */
 	public boolean sendToScout() {
-		if (scouter.isMoving()) return false;
+		if (scouter.isMoving() && (!scouter.isGatheringMinerals() && !scouter.isGatheringGas()) ) return false;
 		
 		if (this.connector.elapsedTime() > 10) {			
 			for (BaseLocation bl : BWTA.getBaseLocations()) {
 				if (!bl.isStartLocation() && BWTA.isConnected(bl.getTilePosition(), scouter.getTilePosition())) {
+					scouter.move(bl.getPosition().makeValid(), true);
+				}
+			}
+			for (BaseLocation bl : BWTA.getBaseLocations()) {
+				if (bl.isStartLocation() && !bl.getTilePosition().equals(self.getStartLocation())) {
 					scouter.move(bl.getPosition().makeValid(), true);
 				}
 			}
@@ -344,7 +355,6 @@ public class JohnDoe extends GameHandler {
 				if (u.train(unit)) {
 					mineral -= unit.mineralPrice();
 					vespin_gas -= unit.gasPrice();
-					remainingUnits.add(unit);
 					return false;
 				}
 			}
@@ -585,6 +595,8 @@ public class JohnDoe extends GameHandler {
 							auxList.add(u);
 						}
 					}
+					if (assaultTroop.get(i).units.size() > 15)
+						break;
 				}
 				
 				boredSoldiers.removeAll(auxList);
@@ -707,7 +719,7 @@ public class JohnDoe extends GameHandler {
 		intruders.removeAll(remove);
 		if (intruders.isEmpty() && !militia.isEmpty()){
 			for (Unit u : militia) {
-				u.move(cc_select.getPosition(), false);
+//				u.move(cc_select.getPosition(), false);
 				if (!u.getType().isWorker()) {
 					boredSoldiers.add(u);
 				}
@@ -720,6 +732,7 @@ public class JohnDoe extends GameHandler {
 						!u.getType().isNeutral() && 
 						!intruders.contains(u) &&
 						BWTA.getRegion(cc.getPosition()).equals(BWTA.getRegion(u.getPosition()))) {
+					
 					if (u.getType().isWorker() && (u.isAttacking() || u.isStartingAttack()))
 						intruders.add(u);
 					else if (!u.getType().isWorker())
@@ -759,7 +772,7 @@ public class JohnDoe extends GameHandler {
 		if (!militia.isEmpty()){
 			for (Unit u : militia){
 				if (boredSoldiers.contains(u)) boredSoldiers.remove(u);
-				u.attack(intruders.get(0).getPosition(), true);
+				u.attack(intruders.get(0), true);
 			}
 			return true;			
 		} else if (militia.size() < intruders.size()) {
@@ -847,7 +860,7 @@ public class JohnDoe extends GameHandler {
 						for (Unit unitToFollow : attackGroup.units) {
 							if (unitToFollow.getType() != UnitType.Terran_Science_Vessel ||
 							unitToFollow.getType() != UnitType.Terran_Medic) {
-								u.follow(u);
+								u.follow(u, false);
 								break;
 							}
 						}
@@ -1163,7 +1176,7 @@ public class JohnDoe extends GameHandler {
 		for (Unit u : self.getUnits()) {
 			if (u.getType().isBuilding()) {
 				//If the building it's damaged, not being repaired and isn't in the damageBuildings list
-				if ( ((u.getHitPoints() - u.getType().maxHitPoints() != 0) || (!u.isCompleted() && !u.isBeingConstructed())) &&
+				if ( ((u.getHitPoints() - u.getType().maxHitPoints() != 0) && !u.isBeingConstructed()) &&
 						!damageBuildings.contains(u)) {
 					damageBuildings.add(((Unit) u));
 				}
@@ -1171,6 +1184,7 @@ public class JohnDoe extends GameHandler {
 		}
 		
 		if (damageBuildings.isEmpty()) {
+			repairer.clear();
 			return false;
 		}
 		
@@ -1182,11 +1196,14 @@ public class JohnDoe extends GameHandler {
 	 * @return true if can, false otherwise
 	 */
 	public boolean repair() {
-		for (Unit vce : VCEs.get(0)){
-			if (vce.isIdle()) {
-				if (vce.repair(damageBuildings.get(0), false)) {
+		if (repairer.size() >= 2) return false;
+		for (ArrayList<Unit> UL : workersMineral) {
+			for (Unit vce : UL) {
+				if (vce.rightClick(damageBuildings.get(0),false)) {
 					//If it's going to be repaired, removes it from the list
 					damageBuildings.remove(0);
+					UL.remove(vce);
+					repairer.add(vce);
 					return true;
 				}
 			}
@@ -1472,6 +1489,14 @@ public class JohnDoe extends GameHandler {
 		for (Unit cc : CCs) {
 			connector.drawCircleMap(cc.getPosition(), 800, Color.Blue);
 		}
+//		for (Troop t : assaultTroop) {
+//			for (Unit u : t.units) {
+//				connector.drawTextMap(u.getPosition(), arg1);
+//			}
+//		}
+		for (Unit u : repairer) {
+			connector.drawCircleMap(u.getPosition(), 4, Color.Purple, true);
+		}
 		
 		connector.drawTextScreen(250, 10, ""+this.connector.elapsedTime());
     	
@@ -1489,8 +1514,8 @@ public class JohnDoe extends GameHandler {
     	}
     	connector.drawTextScreen(10, 30, "RemainingBuildingds: " + txt);
     	txtList.clear();
-    	for (UnitType ut : remainingUnits) {
-    		if (!txtList.contains(ut)) txtList.add(ut);
+    	for (Unit u : remainingUnits) {
+    		if (!txtList.contains(u)) txtList.add(u.getType());
     	}
     	txt = "";
     	for (UnitType ut : txtList) {
@@ -1507,7 +1532,7 @@ public class JohnDoe extends GameHandler {
     	byte i = 0;
 		if (assaultTroop.size() > 0){
 			for (Troop t : assaultTroop){
-				connector.drawTextScreen(20, 80+i*10, "Status:"+t.status+", Units: "+t.units.size() + ", LastChange: " + t.lastChange);
+				connector.drawTextScreen(20, 80+i*10, "Status:"+t.status+", Units: "+t.units.size() + ", LastChange: " + t.lastChange + ", Detector: "+t.hasDetector);
 				i++;
 			}		
 		}

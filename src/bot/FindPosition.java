@@ -81,7 +81,8 @@ public class FindPosition extends Conditional {
 			}
 			//Decorator for starport. Only 1.
 			if (building == UnitType.Terran_Starport &&
-					((JohnDoe)this.handler).starport >= 2) {
+					(((JohnDoe)this.handler).starport == 1 && ((JohnDoe)this.handler).lab_cient == 0 ||
+					((JohnDoe)this.handler).starport >= 2)) {
 				return State.FAILURE;
 			}
 			if (((JohnDoe)this.handler).detector_first &&
@@ -89,7 +90,8 @@ public class FindPosition extends Conditional {
 					((JohnDoe)this.handler).factory != 0 &&
 					(building != UnitType.Terran_Starport &&
 					   building != UnitType.Terran_Science_Facility &&
-					   building != UnitType.Terran_Command_Center)) {
+					   building != UnitType.Terran_Command_Center &&
+					   building != UnitType.Terran_Refinery)) {
 				return State.FAILURE;
 			}
 			//Decorator for armory. Only 1.
