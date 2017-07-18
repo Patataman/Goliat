@@ -2,6 +2,7 @@ package bot;
 
 import java.io.BufferedWriter;
 //import java.io.File;
+//import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -16,6 +17,7 @@ import java.nio.file.Paths;
 //import java.nio.file.Paths;
 import java.util.ArrayList;
 //import java.util.function.Predicate;
+import java.util.function.Predicate;
 
 import org.iaie.btree.BehavioralTree;
 import org.iaie.btree.task.composite.Selector;
@@ -64,7 +66,7 @@ public class Goliat implements BWEventListener {
 	public void onStart() {
 		
         game = mirror.getGame();
-        game.setLocalSpeed(10);
+        game.setLocalSpeed(6);
         self = game.self();
         
 //        System.out.println("Analyzing map...");
@@ -468,15 +470,24 @@ public class Goliat implements BWEventListener {
 	public void onUnitDestroy(Unit unit) {
 		gh.dah_map.removeUnitDead(unit.getID());
 		
+		if (unit.getType().isMineralField()) {
+			for(ArrayList<Unit> mineralNode : gh.mineralNodes) {
+				Predicate<Unit> removeNode = mn-> mn.getID() == unit.getID();
+				mineralNode.removeIf(removeNode);
+				if (mineralNode.isEmpty()) {
+					gh.workersMineral.get(gh.mineralNodes.indexOf(mineralNode)).clear();
+				}
+			}
+//			Predicate<ArrayList<Unit>> clearNodes = m-> m.isEmpty();
+//			gh.mineralNodes.removeIf(clearNodes);			
+		}
+		
 		if (gh.intruders.contains(unit)) {
 			gh.intruders.remove(unit);
 		} else if (unit.getPlayer().getID() == self.getID() && game.elapsedTime() > 0) {
 			//List control (Buildings)
 			if (unit.getType().isBuilding()) {
 				for(Unit u : gh.finishedBuildings) {
-					//Remove unit from lists and update variables
-					gh.finishedBuildings.remove(u);
-					
 					if (gh.bunkers.contains(u)) { gh.bunkers.remove(u);}
 					else if (u.getType() == UnitType.Terran_Academy) gh.academy--;
 					else if (u.getType() == UnitType.Terran_Barracks) gh.barracks--;
@@ -494,6 +505,8 @@ public class Goliat implements BWEventListener {
 						gh.CCs.remove(unit);
 					}
 				}
+				//Remove unit from lists and update variables
+				gh.finishedBuildings.remove(unit);
 			} else {
 				if (gh.militia.contains(unit)) {
 					gh.militia.remove(unit);
@@ -525,14 +538,7 @@ public class Goliat implements BWEventListener {
 						}
 					}
 					
-				} else if (unit.getType().isNeutral()) {
-					for(ArrayList<Unit> mineralNode : gh.mineralNodes) {
-						if (mineralNode.contains(unit)) {
-							mineralNode.remove(unit);
-							break;
-						}
-					}
-				} else {
+				} else {					
 					if (gh.militaryUnits.contains(unit)) {
 						gh.supplies -= unit.getType().supplyRequired();
 						gh.militaryUnits.remove(unit);
@@ -630,6 +636,8 @@ public class Goliat implements BWEventListener {
 	
 	public void onUnitShow(Unit unit) {
 		//Enemy player
+		gh.updateMap(unit.getTilePosition(), unit.getType());
+		
 		if (unit.getPlayer().getID() != self.getID() &&
 				!unit.getType().isNeutral() && 
 				!unit.getType().isSpecialBuilding()){
@@ -652,7 +660,7 @@ public class Goliat implements BWEventListener {
 				gh.enemyRace = unit.getType().getRace();
 			}
 			
-			if (gh.scouter != null) {
+			if (gh.scouter != null && gh.scouter.isIdle()) {
 				gh.scouter = null;
 //				String workingDirectory = System.getProperty("user.dir");
 //				String path = workingDirectory + File.separator + "mapaInfluencia.txt";
@@ -701,6 +709,7 @@ public class Goliat implements BWEventListener {
 			if (unit.getType() == UnitType.Terran_Refinery) {
 				gh.remainingBuildings.add(unit.getType());
 				gh.refinery++;
+				gh.posBuild = null;
 			}
 		}
 	}

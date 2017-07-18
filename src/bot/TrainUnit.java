@@ -30,7 +30,8 @@ public class TrainUnit extends Action {
 			}
 			if (unit == UnitType.Terran_SCV){
 				//Checks if it's possible train new SCVs
-				if (((JohnDoe)this.handler).CCs.size() > 2 || 
+				if (((JohnDoe)this.handler).CCs.size() > 3 || 
+					(((JohnDoe)this.handler).barracks == 0 && !((JohnDoe)this.handler).remainingBuildings.contains(UnitType.Terran_Barracks)) ||
 					(((JohnDoe)this.handler).VCEs.get(
 							((JohnDoe)this.handler).CCs.indexOf(
 									((JohnDoe)this.handler).cc_select)
@@ -40,9 +41,9 @@ public class TrainUnit extends Action {
 			}
 			else {
 				//If unit to train it's contained in the unitsToTrain, then check other stuff
-				if (!((JohnDoe)this.handler).unitsToTrain.contains(this.unit)){
-					return State.FAILURE;
-				}
+//				if (!((JohnDoe)this.handler).unitsToTrain.contains(this.unit)){
+//					return State.FAILURE;
+//				}
 				//1 Medic for each 5 marine+fire_bat
 				if (unit == UnitType.Terran_Medic && (marines+fire_bat < medic*4 || marines+fire_bat == 0)) {
 					return State.FAILURE;

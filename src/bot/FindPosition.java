@@ -19,10 +19,10 @@ public class FindPosition extends Conditional {
 	public State execute() {
 		try{
 			//Check if the total supplies are not 200 or used supplies are less than the 70% of the total. 
-			if (building == UnitType.Terran_Supply_Depot &&
-				( ((JohnDoe)this.handler).supplies < ((JohnDoe)this.handler).totalSupplies*0.7 || 
-					((JohnDoe)this.handler).totalSupplies >= 400 || 
-					(((JohnDoe)this.handler).barracks == 0 && ((JohnDoe)this.handler).totalSupplies > 10)) ){
+			if (building == UnitType.Terran_Supply_Depot && 
+				( ((JohnDoe)this.handler).barracks == 0 || 
+				((JohnDoe)this.handler).supplies < ((JohnDoe)this.handler).totalSupplies-6 || 
+					((JohnDoe)this.handler).totalSupplies >= 400) ){
 				return State.FAILURE;
 			}
 			//Decorator for barracks. 2 per CC
@@ -38,20 +38,18 @@ public class FindPosition extends Conditional {
 			}
 			//Decorator for academy. Only after have built the barracks and only 1.
 			if (building == UnitType.Terran_Academy &&
-					(((JohnDoe)this.handler).barracks == 0 || 
+					(((JohnDoe)this.handler).barracks < 2 || 
 					((JohnDoe)this.handler).academy > 0)) {
 				return State.FAILURE;
 			}
 			//Decorator for engineering bay. Only after have built the barracks and only 1
 			if (building == UnitType.Terran_Engineering_Bay &&
-					(((JohnDoe)this.handler).barracks == 0 ||
-					((JohnDoe)this.handler).bay > 0)) {
+				((JohnDoe)this.handler).starport == 0 || ((JohnDoe)this.handler).bay > 0) {
 				return State.FAILURE;
 			}
 			//Decorator for factory. Only after have built the barracks, 1 per CC and only after have at least 15 units.
 			if (building == UnitType.Terran_Factory && (((JohnDoe)this.handler).barracks == 0 ||
-					((JohnDoe)this.handler).factory >= ((JohnDoe)this.handler).CCs.size() ||
-					((JohnDoe)this.handler).militaryUnits.size() < 15)) {
+					((JohnDoe)this.handler).factory >= ((JohnDoe)this.handler).CCs.size()) ) {
 				return State.FAILURE;
 			}
 			//Decorator for expansions.
@@ -82,7 +80,8 @@ public class FindPosition extends Conditional {
 			//Decorator for starport. Only 1.
 			if (building == UnitType.Terran_Starport &&
 					(((JohnDoe)this.handler).starport == 1 && ((JohnDoe)this.handler).lab_cient == 0 ||
-					((JohnDoe)this.handler).starport >= 2)) {
+					((JohnDoe)this.handler).starport >= 2 ||
+					!((JohnDoe)this.handler).expanded)) {
 				return State.FAILURE;
 			}
 			if (((JohnDoe)this.handler).detector_first && 
