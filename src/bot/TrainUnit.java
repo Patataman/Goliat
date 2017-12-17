@@ -30,21 +30,20 @@ public class TrainUnit extends Action {
 			}
 			if (unit == UnitType.Terran_SCV){
 				//Checks if it's possible train new SCVs
-				if (((JohnDoe)this.handler).CCs.size() > 2 || 
+				if (((JohnDoe)this.handler).CCs.size() > 3 || 
+					(((JohnDoe)this.handler).barracks == 0 && !((JohnDoe)this.handler).remainingBuildings.contains(UnitType.Terran_Barracks)) ||
 					(((JohnDoe)this.handler).VCEs.get(
 							((JohnDoe)this.handler).CCs.indexOf(
 									((JohnDoe)this.handler).cc_select)
 														).size() >= ((JohnDoe)this.handler).max_vce)) {
 					return State.FAILURE; 					
 				}
-			} else if ( (!((JohnDoe)this.handler).expanded) && 
-					((JohnDoe)this.handler).supplies > ((JohnDoe)this.handler).totalSupplies*0.9) {
-				return State.FAILURE;
-			} else {
+			}
+			else {
 				//If unit to train it's contained in the unitsToTrain, then check other stuff
-				if (!((JohnDoe)this.handler).unitsToTrain.contains(this.unit)){
-					return State.FAILURE;
-				}
+//				if (!((JohnDoe)this.handler).unitsToTrain.contains(this.unit)){
+//					return State.FAILURE;
+//				}
 				//1 Medic for each 5 marine+fire_bat
 				if (unit == UnitType.Terran_Medic && (marines+fire_bat < medic*4 || marines+fire_bat == 0)) {
 					return State.FAILURE;
@@ -57,6 +56,11 @@ public class TrainUnit extends Action {
 				if (unit == UnitType.Terran_Science_Vessel && vessel >= ((JohnDoe)this.handler).assaultTroop.size()) {
 					return State.FAILURE;
 				}
+				if (unit != UnitType.Terran_Science_Vessel && 
+						((JohnDoe)this.handler).canTrain(UnitType.Terran_Science_Vessel) &&
+						((JohnDoe)this.handler).militaryUnits.size() > 20) {
+					return State.FAILURE;
+				}
 				//1 siege tank for each 8 marines+fire_bat
 				if (unit == UnitType.Terran_Siege_Tank_Tank_Mode && tank > (marines+fire_bat+medic)/8) {
 					return State.FAILURE;
@@ -66,9 +70,6 @@ public class TrainUnit extends Action {
 					return State.FAILURE;
 				}
 			}
-//			if (unit == UnitType.Terran_Science_Vessel && vessel>=((JohnDoe)this.handler).assaultTroop.size()) {
-//				return State.FAILURE;
-//			}
 			if (((JohnDoe)this.handler).trainUnit(building, unit)) {
 				return State.SUCCESS;
 			} else {

@@ -2,6 +2,7 @@ package bot;
 
 import java.io.BufferedWriter;
 //import java.io.File;
+//import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -16,6 +17,7 @@ import java.nio.file.Paths;
 //import java.nio.file.Paths;
 import java.util.ArrayList;
 //import java.util.function.Predicate;
+import java.util.function.Predicate;
 
 import org.iaie.btree.BehavioralTree;
 import org.iaie.btree.task.composite.Selector;
@@ -64,7 +66,7 @@ public class Goliat implements BWEventListener {
 	public void onStart() {
 		
         game = mirror.getGame();
-        game.setLocalSpeed(10);
+        game.setLocalSpeed(6);
         self = game.self();
         
 //        System.out.println("Analyzing map...");
@@ -192,7 +194,6 @@ public class Goliat implements BWEventListener {
 
 		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVessel, TrainGoliat, TrainSiegeTank, 
 															TrainVulture, TrainMedic, TrainFirebat, TrainMarine, TrainVCE);
-//		Selector<Sequence> selectorTrain = new Selector<>("Selector train", TrainVCE);
 		// ----------- END TRAIN ---------
 
 		game.sendText("Secuencia edificios");
@@ -282,9 +283,9 @@ public class Goliat implements BWEventListener {
 		buildLab.addChild(new MoveTo("Move builder", gh));
 		buildLab.addChild(new Build("Build facility", gh, UnitType.Terran_Science_Facility));
 		
-		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks, buildBay,
-															buildRefinery, buildTurret, buildBunker, buildAcademy, 
-															buildFactory, buildCC, buildStarport, buildLab, buildArmory);
+		Selector<Sequence> selectorBuild = new Selector<>("Selector build", buildSupply, buildBarracks, buildRefinery,
+															buildBay, buildTurret, buildBunker, buildAcademy,
+															buildFactory, buildStarport, buildLab, buildCC, buildArmory);
 		// ---------- END BUILD -----------
 		
 		game.sendText("Secuencia addons");
@@ -304,8 +305,13 @@ public class Goliat implements BWEventListener {
 		addonStarport.addChild(new CheckResources("Check resources addon", gh, UnitType.Terran_Control_Tower));
 		addonStarport.addChild(new FindBuilding("Find building", gh, UnitType.Terran_Starport));
 		addonStarport.addChild(new BuildAddon("Build starport's addon", gh, UnitType.Terran_Control_Tower));
+		//Control tower addon
+		Sequence addonComsat = new Sequence("Comsat addon");
+		addonComsat.addChild(new CheckResources("Check resources addon", gh, UnitType.Terran_Comsat_Station));
+		addonComsat.addChild(new FindBuilding("Find building", gh, UnitType.Terran_Command_Center));
+		addonComsat.addChild(new BuildAddon("Build CC's addon", gh, UnitType.Terran_Comsat_Station));
 		
-		Selector<Sequence> selectorAddons = new Selector<>("Selector addon", addonFactory, addonFacility, addonStarport);
+		Selector<Sequence> selectorAddons = new Selector<>("Selector addon", addonFactory, addonFacility, addonStarport, addonComsat);
 		// ---------- END addons ----------
 		
 		game.sendText("Secuencia tropas");
@@ -425,9 +431,9 @@ public class Goliat implements BWEventListener {
     public void onFrame() {
     	if (this.game.elapsedTime() > 0) {
     		CollectTree.run();
+    		TrainTree.run();
     		BuildTree.run();
     		AddonTree.run();
-    		TrainTree.run();
     		DefenseTree.run();
     		if (gh.militaryUnits.size() > 0) {
     			UpdateTroopsTree.run();
@@ -452,6 +458,11 @@ public class Goliat implements BWEventListener {
 			if (unit.getType().isBuilding()){
 				gh.remainingBuildings.add(unit.getType());
 				gh.posBuild = null;
+				if (unit.getType() == UnitType.Terran_Command_Center) {
+					gh.CCs.add(unit);
+				}
+			} else {
+				gh.remainingUnits.add(unit);
 			}
 		}
 	}
@@ -459,16 +470,24 @@ public class Goliat implements BWEventListener {
 	public void onUnitDestroy(Unit unit) {
 		gh.dah_map.removeUnitDead(unit.getID());
 		
+		if (unit.getType().isMineralField()) {
+			for(ArrayList<Unit> mineralNode : gh.mineralNodes) {
+				Predicate<Unit> removeNode = mn-> mn.getID() == unit.getID();
+				mineralNode.removeIf(removeNode);
+				if (mineralNode.isEmpty()) {
+					gh.workersMineral.get(gh.mineralNodes.indexOf(mineralNode)).clear();
+				}
+			}
+//			Predicate<ArrayList<Unit>> clearNodes = m-> m.isEmpty();
+//			gh.mineralNodes.removeIf(clearNodes);			
+		}
+		
 		if (gh.intruders.contains(unit)) {
 			gh.intruders.remove(unit);
 		} else if (unit.getPlayer().getID() == self.getID() && game.elapsedTime() > 0) {
-			
 			//List control (Buildings)
 			if (unit.getType().isBuilding()) {
 				for(Unit u : gh.finishedBuildings) {
-					//Remove unit from lists and update variables
-					gh.finishedBuildings.remove(u);
-					
 					if (gh.bunkers.contains(u)) { gh.bunkers.remove(u);}
 					else if (u.getType() == UnitType.Terran_Academy) gh.academy--;
 					else if (u.getType() == UnitType.Terran_Barracks) gh.barracks--;
@@ -486,14 +505,26 @@ public class Goliat implements BWEventListener {
 						gh.CCs.remove(unit);
 					}
 				}
+				//Remove unit from lists and update variables
+				gh.finishedBuildings.remove(unit);
 			} else {
+				if (gh.scouter != null &&
+						gh.scouter.getID() == unit.getID()){
+					gh.scouter = null;
+				}
+				if (gh.militia.contains(unit)) {
+					gh.militia.remove(unit);
+				}
 				if (unit.getType().isWorker()) {
 					if (gh.workers.contains(unit)){
 						gh.workers.remove(unit);
 					}
+					if (gh.repairer.contains(unit)) {
+						gh.repairer.remove(unit);
+					}
 					for(ArrayList<Unit> vces_cc : gh.VCEs){
 						if (vces_cc.contains(unit)) {
-							gh.VCEs.get(gh.VCEs.indexOf(vces_cc)).remove(unit);
+							vces_cc.remove(unit);
 							gh.supplies -= unit.getType().supplyRequired();
 							break;
 						}
@@ -511,14 +542,7 @@ public class Goliat implements BWEventListener {
 						}
 					}
 					
-				} else if (unit.getType().isNeutral()) {
-					for(ArrayList<Unit> mineralNode : gh.mineralNodes) {
-						if (mineralNode.contains(unit)) {
-							mineralNode.remove(unit);
-							break;
-						}
-					}
-				} else {
+				} else {					
 					if (gh.militaryUnits.contains(unit)) {
 						gh.supplies -= unit.getType().supplyRequired();
 						gh.militaryUnits.remove(unit);
@@ -531,9 +555,6 @@ public class Goliat implements BWEventListener {
 					}
 					if (gh.defendGroup.units.contains(unit)) {
 						gh.defendGroup.units.remove(unit);
-					}
-					if (gh.militia.contains(unit)) {
-						gh.militia.remove(unit);
 					}
 					for (Troop tropa: gh.assaultTroop){
 						if (tropa.units.contains(unit)) {
@@ -567,8 +588,8 @@ public class Goliat implements BWEventListener {
 			}
 			
 			//Remove the unit from the remaining list.
-			if (gh.remainingUnits.contains(unit.getType())){
-				gh.remainingUnits.remove(unit.getType());
+			if (gh.remainingUnits.contains(unit)){
+				gh.remainingUnits.remove(unit);
 				gh.supplies += unit.getType().supplyRequired();
 				
 				if (unit.getType() != UnitType.Terran_SCV) {
@@ -600,9 +621,8 @@ public class Goliat implements BWEventListener {
 				if (unit.getType() == UnitType.Terran_Command_Center) {
 					//If it's a CC, need to add control lists.
 					gh.totalSupplies += UnitType.Terran_Command_Center.supplyProvided();
-					if (!gh.CCs.contains(unit)){
+					if (gh.CCs.contains(unit)){
 						gh.expanded = true;
-						gh.CCs.add(unit);
 						gh.addCC(unit);
 					}
 				}
@@ -620,6 +640,8 @@ public class Goliat implements BWEventListener {
 	
 	public void onUnitShow(Unit unit) {
 		//Enemy player
+		gh.updateMap(unit.getTilePosition(), unit.getType());
+		
 		if (unit.getPlayer().getID() != self.getID() &&
 				!unit.getType().isNeutral() && 
 				!unit.getType().isSpecialBuilding()){
@@ -642,7 +664,7 @@ public class Goliat implements BWEventListener {
 				gh.enemyRace = unit.getType().getRace();
 			}
 			
-			if (gh.scouter != null) {
+			if (gh.scouter != null && gh.scouter.isIdle()) {
 				gh.scouter = null;
 //				String workingDirectory = System.getProperty("user.dir");
 //				String path = workingDirectory + File.separator + "mapaInfluencia.txt";
@@ -691,6 +713,7 @@ public class Goliat implements BWEventListener {
 			if (unit.getType() == UnitType.Terran_Refinery) {
 				gh.remainingBuildings.add(unit.getType());
 				gh.refinery++;
+				gh.posBuild = null;
 			}
 		}
 	}

@@ -12,7 +12,8 @@ public class CheckTime extends Conditional {
 
 	public State execute() {
 		try{
-			if (((JohnDoe)this.handler).scouter != null) {
+			if (((JohnDoe)this.handler).scouter != null ||
+					((JohnDoe)this.handler).barracks == 0) {
 				return State.FAILURE;
 			}
 			if (((JohnDoe)this.handler).checkTime()) {

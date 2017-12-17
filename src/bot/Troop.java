@@ -2,8 +2,10 @@ package bot;
 
 import java.util.ArrayList;
 
+import bwapi.Game;
 import bwapi.TilePosition;
 import bwapi.Unit;
+import bwapi.UnitType;
 
 public class Troop {
 	
@@ -37,7 +39,7 @@ public class Troop {
 	 * @return true if they are in destination, false otherwise
 	 */
 	public boolean isInPosition() {
-		if (destination == null) return true;
+		if (destination == null || units.size() > 20) return true;
 		int dist = 0;
 		for (Unit u : units) {
 			dist += u.getTilePosition().getDistance(destination);
@@ -58,14 +60,34 @@ public class Troop {
 	 * @return true if > 50, false if not.
 	 */
 	public boolean tooFar() {
+		if (units.size() > 20 || units.isEmpty()) return false;
 		int dist = 0;
 		TilePosition dest = units.get((int) units.size()/2).getTilePosition();
 		for (Unit u : units) {
 			dist += u.getTilePosition().getDistance(dest);
 		}
 		dist /= units.size();
-		if (dist > 4) {
+		if (dist > 3) {
 			return true;
+		}
+		return false;
+	}
+
+	public boolean surrounded(Game connector) {
+		if (units.size() > 0) {
+			int allies = 0, enemies = 0;
+			for (Unit u : connector.getUnitsInRadius(units.get(0).getPosition(), 300)) {
+				if (units.get(0).getPlayer().getUnits().contains(u)) allies++;
+				else if (u.getPlayer().getID() != units.get(0).getPlayer().getID() && 
+						!u.getType().isNeutral() && (!u.getType().isBuilding() || 
+													u.getType() == UnitType.Protoss_Photon_Cannon ||
+													u.getType() == UnitType.Zerg_Spore_Colony ||
+													u.getType() == UnitType.Zerg_Sunken_Colony))
+					enemies++;
+			}
+			
+			if (allies > enemies) return false;
+			else return true;
 		}
 		return false;
 	}
