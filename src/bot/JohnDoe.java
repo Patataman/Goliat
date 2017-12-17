@@ -204,7 +204,7 @@ public class JohnDoe extends GameHandler {
 					return true;
 				}
 			}
-			if (workersMineral.size() > 0) {
+			if (workersMineral.size() > 0 && cc_select != null) {
 				for (Unit vce : workersMineral.get(CCs.indexOf(cc_select))) {
 					//If it isn't in the "workers" list...
 					if (!workers.contains(vce) && scouter != vce) {
@@ -218,46 +218,7 @@ public class JohnDoe extends GameHandler {
 			//There isn't any free SCV
 			return false;
 		}
-//		if (workers.size() < 2){
-			//If there's a free SCV from the list "workers", return true
-//			for (Unit vce : workers) {
-//				//If SCV in workers is idle, return true
-//                if (vce.isIdle() || vce.getOrder() == Order.PlaceBuilding || vce.getOrder() == Order.Move){
-//                	System.out.println("True");
-//                	workers.remove(vce);
-//					workers.add(0, vce);
-//                	return true;
-//                }
-//                //Checks if the worker is in mineral lists, return true and remove him from the list
-//            	for (ArrayList<Unit> mineralField : workersMineral){
-//            		if (mineralField.contains(vce) && scouter != vce){
-//            			mineralField.remove(vce);
-//            			//Go out of the loop
-//            			break;
-//            		}
-//            	}
-//				if (vce.getOrder() == Order.ConstructingBuilding ||
-//						vce.getOrder() == Order.PlaceBuilding){
-//					workers.remove(vce);
-//					workers.add(0, vce);
-//					return true;
-//				}
-//			}
-			//Chooses 1 SCV from the "workersMineral" list (from the selected CC).
-//			if (workersMineral.size() > 0) {
-//				for (Unit vce : workersMineral.get(CCs.indexOf(cc_select))) {
-//					//If it isn't in the "workers" list...
-//					if (!workers.contains(vce) && scouter != vce) {
-//						//Adds the SCV to the "workers" list
-//						workersMineral.get(0).remove(vce);
-//						workers.add(0, vce);
-//						return true;					
-//					}
-//				}				
-//			}
-//			//There isn't any free SCV
-//			return false;
-//		}
+
 		//If "workers" is full, check if there's any free SCV
 		else if (workers.size() == 2){
 			for (Unit vce : workers) {
@@ -289,7 +250,7 @@ public class JohnDoe extends GameHandler {
 	public boolean checkTime() {
 		if ((enemyRace == null) ||
 				(this.connector.elapsedTime() > 10 &&
-				this.connector.elapsedTime()/60 % 10 == 0))
+				this.connector.elapsedTime()/100 % 10 == 0))
 			return true;
 		else
 			return false;
@@ -335,7 +296,7 @@ public class JohnDoe extends GameHandler {
 				}
 			}
 		}
-		scouter.move(this.self.getStartLocation().toPosition().makeValid(), true);
+		scouter.move(cc_select.getPosition().makeValid(), true);
 		return true;
 	}
 
@@ -442,7 +403,7 @@ public class JohnDoe extends GameHandler {
 	 * @return True if can move the SCV, false if not
 	 */
 	public boolean moveTo() {
-		if (workers.get(0) != null){
+		if (workers.get(0) != null && !workers.get(0).getOrderTargetPosition().equals(posBuild.toPosition())){
 			if (workers.get(0).getTilePosition().getDistance(posBuild) > 13)
 				return workers.get(0).move(posBuild.toPosition().makeValid(), false);
 			else
@@ -1609,6 +1570,7 @@ public class JohnDoe extends GameHandler {
 		}
 		for (Unit u : workers){
 			connector.drawCircleMap(u.getPosition(), 4, Color.Orange, true);
+			connector.drawTextMap(new Position(u.getPosition().getX(),u.getPosition().getY()+10), ""+u.getOrder());
 		}
 		if (posBuild != null) {
 			connector.drawBoxMap(posBuild.toPosition(), new Position(posBuild.toPosition().getX()+32,
