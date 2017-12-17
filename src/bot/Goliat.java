@@ -508,6 +508,10 @@ public class Goliat implements BWEventListener {
 				//Remove unit from lists and update variables
 				gh.finishedBuildings.remove(unit);
 			} else {
+				if (gh.scouter != null &&
+						gh.scouter.getID() == unit.getID()){
+					gh.scouter = null;
+				}
 				if (gh.militia.contains(unit)) {
 					gh.militia.remove(unit);
 				}

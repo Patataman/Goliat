@@ -159,11 +159,6 @@ public class JohnDoe extends GameHandler {
 	public boolean getWorker() {
 		for (ArrayList<Unit> vces_cc : VCEs) {
 			for (Unit vce : vces_cc) {
-				//Checks if the unit type equals SCV and is idle
-//				if (!vce.equals(scouter) && vce.isIdle() && vce.isCompleted() && CCs.size() > 0 && !militia.contains(vce)) {
-//					current_worker = vce;
-//					return true;
-//				}
 				if ((!workersMineral.get(VCEs.indexOf(vces_cc)).contains(vce) &&
 						 !workersVespin.get(VCEs.indexOf(vces_cc)).contains(vce)) &&
 						 vce.isIdle() &&
@@ -173,7 +168,6 @@ public class JohnDoe extends GameHandler {
 						 !militia.contains(vce)) {
 						if (workers.contains(vce)) workers.remove(vce);
 						current_worker = vce;
-//						cc_select = this.connector.getUnit(CCs.get(VCEs.indexOf(vces_cc)));
 						return true;
 				}
 			}
@@ -187,26 +181,35 @@ public class JohnDoe extends GameHandler {
 	 * @return
 	 */
 	public boolean getMasterBuilder() {
-		if (workers.size() < 2){
-			//If there's a free SCV from the list "workers", return true
-//			for (Unit vce : workers) {
-//				
-//				if (vce.getOrder() != Order.ConstructingBuilding ||
-//						vce.getOrder() != Order.PlaceBuilding ||
-//						vce.getOrder() != Order.Move){
-//					workers.remove(vce);
-//					workers.add(0, vce);
-//					return true;
-//				}
-//			}
-			//Chooses 1 SCV from the "workersMineral" list (from the original CC).
+		if (workers.size() < 2) {
+			for (Unit vce : workers){
+				//If SCV in workers is idle, return true
+				if (vce.isIdle() || vce.getOrder() == Order.PlaceBuilding || vce.getOrder() == Order.Move){
+					workers.remove(vce);
+					workers.add(0, vce);
+					return true;
+				}
+				//Checks if the worker is in mineral lists, return true and remove him from the list
+				for (ArrayList<Unit> mineralField : workersMineral){
+					if (mineralField.contains(vce) && scouter != vce){
+						mineralField.remove(vce);
+						//Go out of the loop
+						break;
+					}
+				}
+				if (vce.getOrder() == Order.ConstructingBuilding ||
+						vce.getOrder() == Order.PlaceBuilding){
+					workers.remove(vce);
+					workers.add(0, vce);
+					return true;
+				}
+			}
 			if (workersMineral.size() > 0) {
-				for (Unit vce : workersMineral.get(0)) {
+				for (Unit vce : workersMineral.get(CCs.indexOf(cc_select))) {
 					//If it isn't in the "workers" list...
-					if (!workers.contains(vce)) {
+					if (!workers.contains(vce) && scouter != vce) {
 						//Adds the SCV to the "workers" list
 						workersMineral.get(0).remove(vce);
-						workers.remove(vce);
 						workers.add(0, vce);
 						return true;					
 					}
@@ -215,13 +218,59 @@ public class JohnDoe extends GameHandler {
 			//There isn't any free SCV
 			return false;
 		}
+//		if (workers.size() < 2){
+			//If there's a free SCV from the list "workers", return true
+//			for (Unit vce : workers) {
+//				//If SCV in workers is idle, return true
+//                if (vce.isIdle() || vce.getOrder() == Order.PlaceBuilding || vce.getOrder() == Order.Move){
+//                	System.out.println("True");
+//                	workers.remove(vce);
+//					workers.add(0, vce);
+//                	return true;
+//                }
+//                //Checks if the worker is in mineral lists, return true and remove him from the list
+//            	for (ArrayList<Unit> mineralField : workersMineral){
+//            		if (mineralField.contains(vce) && scouter != vce){
+//            			mineralField.remove(vce);
+//            			//Go out of the loop
+//            			break;
+//            		}
+//            	}
+//				if (vce.getOrder() == Order.ConstructingBuilding ||
+//						vce.getOrder() == Order.PlaceBuilding){
+//					workers.remove(vce);
+//					workers.add(0, vce);
+//					return true;
+//				}
+//			}
+			//Chooses 1 SCV from the "workersMineral" list (from the selected CC).
+//			if (workersMineral.size() > 0) {
+//				for (Unit vce : workersMineral.get(CCs.indexOf(cc_select))) {
+//					//If it isn't in the "workers" list...
+//					if (!workers.contains(vce) && scouter != vce) {
+//						//Adds the SCV to the "workers" list
+//						workersMineral.get(0).remove(vce);
+//						workers.add(0, vce);
+//						return true;					
+//					}
+//				}				
+//			}
+//			//There isn't any free SCV
+//			return false;
+//		}
 		//If "workers" is full, check if there's any free SCV
-		else if (workers.size() <= 2){
+		else if (workers.size() == 2){
 			for (Unit vce : workers) {
-				workersMineral.get(0).remove(vce);
+				if (vce.isIdle() || vce.getOrder() == Order.PlaceBuilding || vce.getOrder() == Order.Move){
+					workers.remove(vce);
+					workers.add(0, vce);
+					return true;
+				}
+            	//If the vce is idle, move him to the beginning of the list
 				if (vce.getOrder() != Order.ConstructingBuilding &&
 						vce.getOrder() != Order.PlaceBuilding &&
-						vce.getOrder() != Order.Move){
+						vce.getOrder() != Order.Move || 
+						vce.isIdle()){
 					workers.remove(vce);
 					workers.add(0, vce);
 					return true;
@@ -238,8 +287,8 @@ public class JohnDoe extends GameHandler {
 	 * @return
 	 */
 	public boolean checkTime() {
-		if (barracks != 0 && 
-				(this.connector.elapsedTime() < 10 ||
+		if ((enemyRace == null) ||
+				(this.connector.elapsedTime() > 10 &&
 				this.connector.elapsedTime()/60 % 10 == 0))
 			return true;
 		else
@@ -252,11 +301,12 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean chooseScouter() {
 		if (scouter == null) {
-			if (workersMineral.get(0) != null && !workersMineral.get(0).isEmpty()) {
-				for (Unit u : workersMineral.get(0)) {
+			if (workersMineral.get(CCs.indexOf(cc_select)) != null &&
+					!workersMineral.get(CCs.indexOf(cc_select)).isEmpty()) {
+				for (Unit u : workersMineral.get(CCs.indexOf(cc_select))) {
 					if (!workers.contains(u)) {
 						scouter = u;
-						workersMineral.get(0).remove(u);
+						workersMineral.get(CCs.indexOf(cc_select)).remove(u);
 						break;
 					}
 				}
@@ -818,8 +868,8 @@ public class JohnDoe extends GameHandler {
 						u.getTilePosition().getDistance(defendGroup.destination) > 5) {
 					if (number_chokePoints == 1) {
 						defendGroup.destination = (Math.random() < 0.5) ? 
-													BWTA.getNearestChokepoint(cc.getPosition()).getSides().first.toTilePosition().makeValid():
-													BWTA.getNearestChokepoint(cc.getPosition()).getSides().second.toTilePosition().makeValid(); 
+													BWTA.getNearestChokepoint(cc_select.getPosition()).getCenter().toTilePosition().makeValid() : 
+													BWTA.getNearestChokepoint(cc_select.getPosition()).getSides().second.toTilePosition().makeValid(); 
 					}
 					u.attack(defendGroup.destination.makeValid().toPosition(), true);					
 				}
@@ -1126,7 +1176,7 @@ public class JohnDoe extends GameHandler {
 		if (number_chokePoints == 1) {
 			Chokepoint cp = BWTA.getNearestChokepoint(cc_select.getPosition());
 			TilePosition cp_position = cp.getCenter().toTilePosition();
-			for (int i=1; i<4; i++){
+			for (int i=4; i<1; i--){
 				for (int j=0; j<pruebas.length; j++) {
 					//Point origen, Point maximo, UnitType building
 					TilePosition pos = findPlace(new Point(cp_position.getX(), cp_position.getY()),
@@ -1137,15 +1187,18 @@ public class JohnDoe extends GameHandler {
 					if (pos.getX() != -1) {
 						//The bunkers/turrets have to be spread.
 						for (Unit u : finishedBuildings) { 
-							if (u.getType() == building && 
-									u.getTilePosition().getDistance(pos) < 5) {
+							if (pos.getDistance(cp_position) < 20 ||
+									(u.getType() == building && 
+									u.getTilePosition().getDistance(pos) < 15)) {
 								pass = true;
+								break;
 							}	
 						}
 						//If the position is valid...
 						if (!pass && this.connector.canBuildHere(pos, building) && 
 								this.connector.isBuildable(pos, true) &&
 								dah_map.mapa[pos.getY()][pos.getX()] < 8){
+							System.out.println(pos.getDistance(cp_position));
 							posBuild = pos;
 							buildingType = building;
 							return true;
@@ -1165,7 +1218,7 @@ public class JohnDoe extends GameHandler {
 					//The bunkers/turrets have to be spread.
 					for (Unit u : finishedBuildings) { 
 						if (u.getType() == building && 
-								u.getTilePosition().getDistance(pos) < 5) {
+								u.getTilePosition().getDistance(pos) < 10) {
 							pass = true;
 						}	
 					}
