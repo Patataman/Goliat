@@ -81,7 +81,7 @@ public class JohnDoe extends GameHandler {
 		cc_select 				= null;
 		scouter					= null;
 		addonBuilding			= null;
-		enemyRace 				= null;
+		enemyRace 				= bwapi.enemy().getRace();
 		buildingType			= null;
 		workers 				= new ArrayList<Unit>(2);
 		militaryUnits			= new ArrayList<Unit>(0);
@@ -248,7 +248,8 @@ public class JohnDoe extends GameHandler {
 	 * @return
 	 */
 	public boolean checkTime() {
-		if ((enemyRace == null) ||
+		// Quitar condicion de raza enemiga si se desea hacer scout siempre
+		if ((enemyRace == Race.Unknown) ||
 				(this.connector.elapsedTime() > 10 &&
 				this.connector.elapsedTime()/100 % 10 == 0))
 			return true;
@@ -1137,7 +1138,8 @@ public class JohnDoe extends GameHandler {
 		if (number_chokePoints == 1) {
 			Chokepoint cp = BWTA.getNearestChokepoint(cc_select.getPosition());
 			TilePosition cp_position = cp.getCenter().toTilePosition();
-			for (int i=4; i<1; i--){
+			
+			for (int i=0; i<4; i++){
 				for (int j=0; j<pruebas.length; j++) {
 					//Point origen, Point maximo, UnitType building
 					TilePosition pos = findPlace(new Point(cp_position.getX(), cp_position.getY()),
@@ -1145,6 +1147,7 @@ public class JohnDoe extends GameHandler {
 													(cp_position.getY()+pruebas[j][1]*building.tileHeight()*i) ),
 											building);
 					boolean pass = false;
+					
 					if (pos.getX() != -1) {
 						//The bunkers/turrets have to be spread.
 						for (Unit u : finishedBuildings) { 
@@ -1159,7 +1162,7 @@ public class JohnDoe extends GameHandler {
 						if (!pass && this.connector.canBuildHere(pos, building) && 
 								this.connector.isBuildable(pos, true) &&
 								dah_map.mapa[pos.getY()][pos.getX()] < 8){
-							System.out.println(pos.getDistance(cp_position));
+							//System.out.println(pos.getDistance(cp_position));
 							posBuild = pos;
 							buildingType = building;
 							return true;
@@ -1168,7 +1171,7 @@ public class JohnDoe extends GameHandler {
 				}
 			}
 		} else {
-			for (int i=4; i>1; i--){
+			for (int i=0; i<4; i++){
 				for (int j=0; j<pruebas.length; j++) {
 					//Point origen, Point maximo, UnitType building
 					TilePosition pos = findPlace(new Point(cc_select.getTilePosition().getX(), cc_select.getTilePosition().getY()),
