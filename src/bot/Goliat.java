@@ -25,11 +25,13 @@ import org.iaie.btree.task.composite.Sequence;
 import org.iaie.btree.util.GameHandler;
 
 import bwapi.BWEventListener;
+import bwapi.Color;
 import bwapi.Game;
 import bwapi.Mirror;
 import bwapi.Player;
 import bwapi.Position;
 import bwapi.Race;
+import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitType;
 import bwapi.UpgradeType;
@@ -106,10 +108,21 @@ public class Goliat implements BWEventListener {
 			add(UnitType.Terran_Goliath);
 			add(UnitType.Terran_Science_Vessel);
         }};
-        
-        //Default
-        gh.unitsToTrain = TvsT;
-		
+
+        if(gh.enemyRace == Race.Terran) {
+        	 gh.unitsToTrain.addAll(TvsT);
+        }
+        else if(gh.enemyRace == Race.Zerg) {
+        	 gh.unitsToTrain.addAll(TvsZ);
+        }
+        else if(gh.enemyRace == Race.Protoss) {
+        	 gh.unitsToTrain.addAll(TvsP);
+        }
+        else {
+        	 //Default
+        	 gh.unitsToTrain.addAll(TvsT);
+        }
+
         //Initialize CC variables.
 		for (Unit cc : self.getUnits()){
 			if (cc.getType() == UnitType.Terran_Command_Center){
@@ -439,7 +452,6 @@ public class Goliat implements BWEventListener {
     			UpdateTroopsTree.run();
     			AttackTree.run();
     		}
-    		
     		if (game.getFrameCount() % 200 == 0) { //Each 200 frames, recalculate influences
     			gh.updateInfluences();
     		}
@@ -447,7 +459,6 @@ public class Goliat implements BWEventListener {
     			gh.mineral = self.minerals();
     			gh.vespin_gas = self.gas();
     		}
-    		
     		gh.debug();
     	}
     }
@@ -647,21 +658,24 @@ public class Goliat implements BWEventListener {
 				!unit.getType().isSpecialBuilding()){
 			
 			if (game.getFrameCount() > 0) {
-				//Updates unitsToTrain
-				if (unit.getType().getRace() == Race.Protoss) {
-					gh.unitsToTrain = TvsP;
-					if (gh.vessels == 0) {
-						gh.detector_first = true;	
+				if(gh.enemyRace == Race.Unknown) {
+					//Updates unitsToTrain
+					if (unit.getType().getRace() == Race.Protoss) {
+						gh.unitsToTrain = TvsP;
+						if (gh.vessels == 0) {
+							gh.detector_first = true;	
+						}
+					} else if (unit.getType().getRace() == Race.Zerg) {
+						gh.unitsToTrain = TvsZ;
+						if (gh.vessels == 0) {
+							gh.detector_first = true;	
+						}
+					} else {
+						gh.unitsToTrain = TvsT;
 					}
-				} else if (unit.getType().getRace() == Race.Zerg) {
-					gh.unitsToTrain = TvsZ;
-					if (gh.vessels == 0) {
-						gh.detector_first = true;	
-					}
-				} else {
-					gh.unitsToTrain = TvsT;
+					gh.enemyRace = unit.getType().getRace();
 				}
-				gh.enemyRace = unit.getType().getRace();
+				
 			}
 			
 			if (gh.scouter != null && gh.scouter.isIdle()) {
