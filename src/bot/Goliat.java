@@ -24,6 +24,39 @@ import org.iaie.btree.task.composite.Selector;
 import org.iaie.btree.task.composite.Sequence;
 import org.iaie.btree.util.GameHandler;
 
+import bot.attack.CheckStateTroops;
+import bot.attack.CheckStateUnits;
+import bot.attack.ChooseDestination;
+import bot.attack.CreateTroop;
+import bot.attack.RedistribuiteTroops;
+import bot.attack.SelectGroup;
+import bot.attack.SendAttack;
+import bot.attack.SendRegroup;
+import bot.attack.TrainUnit;
+import bot.attack.Troop;
+import bot.build.Build;
+import bot.build.BuildAddon;
+import bot.build.FindBuilding;
+import bot.build.FindPosition;
+import bot.build.FreeBuilder;
+import bot.build.FreeWorker;
+import bot.build.MoveTo;
+import bot.defense.AttackIntruders;
+import bot.defense.CheckPerimeter;
+import bot.defense.FillBunker;
+import bot.defense.SendDefend;
+import bot.others.CheckResearch;
+import bot.others.ChooseBuilding;
+import bot.others.FindDamageBuildings;
+import bot.others.RepairBuilding;
+import bot.others.Research;
+import bot.others.SelectCC;
+import bot.resources.CheckResources;
+import bot.resources.CollectGas;
+import bot.resources.CollectMineral;
+import bot.scout.CheckTime;
+import bot.scout.ChooseSCV;
+import bot.scout.SendSCV;
 import bwapi.BWEventListener;
 import bwapi.Game;
 import bwapi.Mirror;
@@ -81,6 +114,7 @@ public class Goliat implements BWEventListener {
 //		self.setGameSpeed(0);
 		
 		gh = new JohnDoe(game, self);
+		
 			
 		TvsT = new ArrayList<UnitType>(5) {{
 			add(UnitType.Terran_Marine);
@@ -114,10 +148,11 @@ public class Goliat implements BWEventListener {
 		for (Unit cc : self.getUnits()){
 			if (cc.getType() == UnitType.Terran_Command_Center){
 				gh.cc = cc;
-				gh.cc_select = cc;
+				gh.ccSelect = cc;
 				gh.CCs.add(cc);
 				gh.addCC(cc);
 				gh.finishedBuildings.add(cc);
+				gh.newBuildingInfluence(cc, true);
 				break;
 			}
 		}
@@ -440,12 +475,16 @@ public class Goliat implements BWEventListener {
     			AttackTree.run();
     		}
     		
-    		if (game.getFrameCount() % 200 == 0) { //Each 200 frames, recalculate influences
+    		//Each 150 frames clean the temporal influences map
+    		if (game.getFrameCount() % 150 == 0) {
     			gh.updateInfluences();
+    			if (gh.scouter != null && gh.scouter.isIdle()) {
+    				gh.scouter = null;
+    			}
     		}
     		if (game.getFrameCount() % 5 == 0) {
     			gh.mineral = self.minerals();
-    			gh.vespin_gas = self.gas();
+    			gh.vespinGas = self.gas();
     		}
     		
     		gh.debug();
@@ -468,7 +507,12 @@ public class Goliat implements BWEventListener {
 	}
 	
 	public void onUnitDestroy(Unit unit) {
-		gh.dah_map.removeUnitDead(unit.getID());
+		
+		if (unit.getType().isBuilding()) {
+			gh.removeInfluenceBuilding(unit);			
+		} else if (unit.getPlayer().getID() != self.getID()){
+//			gh.removeInfluenceUnit(unit);
+		}
 		
 		if (unit.getType().isMineralField()) {
 			for(ArrayList<Unit> mineralNode : gh.mineralNodes) {
@@ -495,7 +539,7 @@ public class Goliat implements BWEventListener {
 					else if (u.getType() == UnitType.Terran_Engineering_Bay) gh.bay--;
 					else if (u.getType() == UnitType.Terran_Armory) gh.armory--;
 					else if (u.getType() == UnitType.Terran_Refinery) gh.refinery--;
-					else if (u.getType() == UnitType.Terran_Science_Facility) gh.lab_cient--;
+					else if (u.getType() == UnitType.Terran_Science_Facility) gh.labCient--;
 					else if (u.getType() == UnitType.Terran_Starport) gh.starport--;
 					else if (u.getType() == UnitType.Terran_Supply_Depot) {
 						gh.totalSupplies -= UnitType.Terran_Supply_Depot.supplyProvided();
@@ -508,8 +552,7 @@ public class Goliat implements BWEventListener {
 				//Remove unit from lists and update variables
 				gh.finishedBuildings.remove(unit);
 			} else {
-				if (gh.scouter != null &&
-						gh.scouter.getID() == unit.getID()){
+				if (gh.scouter != null && gh.scouter.getID() == unit.getID()){
 					gh.scouter = null;
 				}
 				if (gh.militia.contains(unit)) {
@@ -568,23 +611,11 @@ public class Goliat implements BWEventListener {
 	}
 	
 	public void onUnitComplete(Unit unit) {
-		
 		//Update list, variables, etc...
 		if (unit.getPlayer().getID() == self.getID()) {
-			
-			//Updates influence map
-			gh.dah_map.newUnit(unit, 1, 
-								unit.getTilePosition().getX(), 
-								unit.getTilePosition().getY(), true);
-			/////////////////////////////////////
-			
-			//This 3 lines write in a file the influence map -- FOR DEBUGGING
-//			String workingDirectory = System.getProperty("user.dir");
-//			String path = workingDirectory + File.separator + "mapaInfluencia.txt";
-//			createANDwriteInfluencia(path);
 			//Add the unit to its list.
 			if (unit.getType() == UnitType.Terran_SCV){
-				gh.VCEs.get(gh.CCs.indexOf(gh.cc_select)).add(unit);
+				gh.VCEs.get(gh.CCs.indexOf(gh.ccSelect)).add(unit);
 			}
 			
 			//Remove the unit from the remaining list.
@@ -597,7 +628,7 @@ public class Goliat implements BWEventListener {
 					gh.boredSoldiers.add(unit);
 					if (unit.getType() == UnitType.Terran_Science_Vessel) {
 						gh.vessels++;
-						gh.detector_first = false;
+						gh.detectorFirst = false;
 					}
 				}
 			}
@@ -616,7 +647,7 @@ public class Goliat implements BWEventListener {
 				if (unit.getType() == UnitType.Terran_Factory) gh.factory++;
 				if (unit.getType() == UnitType.Terran_Armory) gh.armory++;
 				if (unit.getType() == UnitType.Terran_Bunker) gh.bunkers.add(unit);
-				if (unit.getType() == UnitType.Terran_Science_Facility) gh.lab_cient++;
+				if (unit.getType() == UnitType.Terran_Science_Facility) gh.labCient++;
 				if (unit.getType() == UnitType.Terran_Starport) gh.starport++;
 				if (unit.getType() == UnitType.Terran_Command_Center) {
 					//If it's a CC, need to add control lists.
@@ -628,50 +659,50 @@ public class Goliat implements BWEventListener {
 				}
 				
 				//Updates influence map.
+				gh.newBuildingInfluence(unit, true);
 				gh.updateMap(unit.getTilePosition(), unit.getType());
-				
-				//This 3 lines write in a file the construction map -- FOR DEBUGGING
-//				String workingDirectory = System.getProperty("user.dir");
-//				String path = workingDirectory + File.separator + "mapa.txt";
-//				createANDwrite(path);
 			}
 		}
 	}
 	
 	public void onUnitShow(Unit unit) {
 		//Enemy player
-		gh.updateMap(unit.getTilePosition(), unit.getType());
-		
 		if (unit.getPlayer().getID() != self.getID() &&
 				!unit.getType().isNeutral() && 
 				!unit.getType().isSpecialBuilding()){
 			
+			//Case building and not resource container
+			if (unit.getType().isBuilding() && !unit.getType().isResourceContainer()){
+			    gh.newBuildingInfluence(unit, false);
+			}
+			/////////////////////////////////////
+
 			if (game.getFrameCount() > 0) {
 				//Updates unitsToTrain
 				if (unit.getType().getRace() == Race.Protoss) {
 					gh.unitsToTrain = TvsP;
 					if (gh.vessels == 0) {
-						gh.detector_first = true;	
+						gh.detectorFirst = true;	
 					}
 				} else if (unit.getType().getRace() == Race.Zerg) {
 					gh.unitsToTrain = TvsZ;
 					if (gh.vessels == 0) {
-						gh.detector_first = true;	
+						gh.detectorFirst = true;	
 					}
 				} else {
 					gh.unitsToTrain = TvsT;
 				}
 				gh.enemyRace = unit.getType().getRace();
+				
+				//Stop going to the other base locations
+				if (gh.scouter != null && (
+						unit.getType() == UnitType.Terran_Command_Center ||
+						unit.getType() == UnitType.Protoss_Nexus ||
+						unit.getType() == UnitType.Zerg_Hatchery)) {
+					gh.scouter.stop();
+					gh.scouter.move(gh.ccSelect.getPosition());
+				}
 			}
-			
-			if (gh.scouter != null && gh.scouter.isIdle()) {
-				gh.scouter = null;
-//				String workingDirectory = System.getProperty("user.dir");
-//				String path = workingDirectory + File.separator + "mapaInfluencia.txt";
-//				createANDwriteInfluencia(path);
-			}
-			
-
 		}
 	}
 	
@@ -691,21 +722,11 @@ public class Goliat implements BWEventListener {
 
 	public void onSendText(String arg0) {}
 
-	public void onUnitDiscover(Unit unit) {
-		if (unit.getPlayer().getID() != self.getID() 
-				&& !unit.getType().isNeutral()
-				&& !unit.getType().isSpecialBuilding()){
-			//Updates influence map
-			gh.dah_map.newUnit(unit, -1, 
-								unit.getTilePosition().getX(), 
-								unit.getTilePosition().getY(), false);
-			/////////////////////////////////////
-		}
-	}
+	public void onUnitDiscover(Unit unit) {}
 
-	public void onUnitEvade(Unit arg0) {}
+	public void onUnitEvade(Unit unit) {}
 
-	public void onUnitHide(Unit arg0) {}
+	public void onUnitHide(Unit unit) {}
 
 	public void onUnitMorph(Unit unit) {
 		//Refinery it's an especial case.
@@ -719,68 +740,5 @@ public class Goliat implements BWEventListener {
 	}
 
 	public void onUnitRenegade(Unit arg0) {}
-
-	
-	/**
-	 * Método que crea un archivo nuevo,
-	 * si ya existía lo resetea y escribe en él
-	 * @param path: ruta donde se localiza el archivo
-	 * @param texto: texto a escribir
-	 * @return 0 -> Correcto; 1 -> Error
-	 * @throws IOException
-	 */
-	public int createANDwriteInfluencia(String path) {
-		double mydah_map[][] = gh.dah_map.getmap();
-		try {
-			Path p = Paths.get(path);
-			Charset charset = Charset.forName("UTF-8");
-			//Por defecto trae CREATE y TRUNCATE
-			BufferedWriter writer = Files.newBufferedWriter(p, charset);
-			for(int f = 0; f < mydah_map.length; f++){
-				for (int c=0; c < mydah_map[f].length; c++){			
-					writer.write(mydah_map[f][c]+";");
-				}
-				writer.write("\n");
-			}
-			//Importante cerrar el escritor, ya que si no, no escribe
-			writer.close();
-			return 0;
-		} catch (IOException e) {
-			System.out.println(e);
-			return 1;
-		}
-	}
-	
-	public int createANDwrite(String path) {
-		try {
-			Path p = Paths.get(path);
-			Charset charset = Charset.forName("UTF-8");
-			//Por defecto trae CREATE y TRUNCATE
-			BufferedWriter writer = Files.newBufferedWriter(p, charset);
-			for(int f = 0; f < gh.map.length; f++){
-				for (int c=0; c < gh.map[f].length; c++){
-					if (gh.map[f][c] == -1){
-						writer.write("M;");
-					}
-					else if (gh.map[f][c] == -2){
-						writer.write("V;");
-					}
-					else if (gh.map[f][c] < 10){
-						writer.write("0"+gh.map[f][c]+";");
-					} 
-					else {						
-						writer.write(gh.map[f][c]+";");
-					}
-				}
-				writer.write("\n");
-			}
-			//Importante cerrar el escritor, ya que si no, no escribe
-			writer.close();
-			return 0;
-		} catch (IOException e) {
-			System.out.println(e);
-			return 1;
-		}
-	}
 
 }

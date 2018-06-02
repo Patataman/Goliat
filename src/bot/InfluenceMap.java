@@ -2,25 +2,29 @@ package bot;
 
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
 import bwapi.Game;
+import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitType;
 
 public class InfluenceMap {
 
 	double mapa[][];
-	final byte umbral = 3;
+	double temp_map[][][]; //High, Height, Width
 	final byte radio = 2;
 	
 	// array de las unidades que están en juego, cada posición es una tupla de tres posiciones con
 	// el id de la unidad, y sus coordenadas x e y para un momento dado
-	List<ArrayList<Integer>> unidades;
+	ArrayList<Object[]> unidades;
+	ArrayList<Object[]> edificios;
 	
 	public InfluenceMap(int alto, int ancho) {
 		mapa = new double[alto][ancho];
-		unidades = new ArrayList<ArrayList<Integer>>();
+		temp_map = new double[3][alto][ancho];
+		unidades = new ArrayList<Object[]>();
+		edificios = new ArrayList<Object[]>();
 	}
 	
 	
@@ -32,7 +36,7 @@ public class InfluenceMap {
 	 * Hay que tener en cuenta que la modificación de la influencia de una casilla supone también la propagación
 	 * de la influencia a las casillas que la rodean
 	 */
-	public void updateCellInfluence_building(Point punto, int influencia){
+	public void updateCellInfluence_building(TilePosition punto, int influencia){
 		// Obtenemos el area de efecto limitada a la dimensión del mapa en esa posición.
 		int n = ((int)punto.getY()-radio>0) ? (int)punto.getY()-radio : 0;
 		int s = ((int)punto.getY()+radio<mapa.length) ? (int)punto.getY()+radio : mapa.length-1;
@@ -46,16 +50,15 @@ public class InfluenceMap {
 		}
 	}
 	
-	public void updateCellInfluence_unit(Point punto, int influencia){
+	public void updateCellInfluence_unit(TilePosition punto, int height, int influencia){
 		// Obtenemos el area de efecto limitada a la dimensión del mapa en esa posición.
 		int n = ((int)punto.getY()-radio>0) ? (int)punto.getY()-radio : 0;
-		int s = ((int)punto.getY()+radio<mapa.length) ? (int)punto.getY()+radio : mapa.length-1;
+		int s = ((int)punto.getY()+radio<temp_map.length) ? (int)punto.getY()+radio : temp_map.length-1;
 		int w = ((int)punto.getX()-radio>0) ? (int)punto.getX()-radio : 0;
-		int e = ((int)punto.getX()+radio<mapa.length) ? (int)punto.getX()+radio : mapa[0].length-1;
-		
+		int e = ((int)punto.getX()+radio<temp_map.length) ? (int)punto.getX()+radio : temp_map[0].length-1;
 		for(int i = n; i<s; i++) {
 			for(int j = w; j<e; j++) {
-				mapa[i][j] = influencia/Math.pow((1+distanciaEuclidea(punto, i, j)),2);
+				temp_map[height][i][j] = influencia/Math.pow((1+distanciaEuclidea(punto, i, j)),2);
 			}
 		}
 	}
@@ -68,11 +71,11 @@ public class InfluenceMap {
 	 * será un valor de tipo int. La modificación de la influencia de cada una de las 
 	 * casillas se realizará mediante una llamada al método updateCellInfluence
 	 */
-	public void updateCellsInfluence(List<Point> puntos, int influencia){
-		for(Point p : puntos){
-			updateCellInfluence_unit(p, influencia);
-		}
-	}
+//	public void updateCellsInfluence(TilePosition puntos, int height, int influencia){
+//		for(Point p : puntos){
+//			updateCellInfluence_unit(p, height, influencia);
+//		}
+//	}
 	
 	/**
 	 * Este método devolverá el valor de influencia de una casilla.
@@ -86,7 +89,7 @@ public class InfluenceMap {
 	/**
 	 * Auto-explicativo
 	 */
-	public double distanciaEuclidea(Point inicio, int i, int j){
+	public double distanciaEuclidea(TilePosition inicio, int i, int j){
 		return Math.sqrt(Math.pow((int)inicio.getX() - j,2)+(Math.pow((int)inicio.getY() - i,2)));
 	}
 	
@@ -181,54 +184,71 @@ public class InfluenceMap {
 	 * @param x: coordenada x para el im
 	 * @param y: coordenada y para el im
 	 */
-	public void newUnit(Unit unit, int influencia, int x, int y, boolean ally) {
-		ArrayList<Integer> tupla = new ArrayList<Integer>(4);
-		tupla.add(unit.getID());
-		tupla.add(x);
-		tupla.add(y);
+	public void newUnit(Unit unit, int influencia, int height, boolean ally) {
+		for (Object[] o : unidades){
+			if (o[0].equals(unit))
+				return;
+		}
+		Object[] tupla = new Object[3];
+		tupla[0] = unit;
+		tupla[2] = height;
+		// Los edificios hacen cosas de edificios
+		if (unit.getType().isBuilding() && !unit.getType().isResourceContainer()){
+			
+			if (!unit.getType().isWorker()) {
+				//Las unidades ofensivas hacen cosas de unidades, no de edificios
+				if (unit.getType().isMechanical()) {
+					updateCellInfluence_unit(unit.getTilePosition(), height, 2*influencia);
+					tupla[1] = 2*influencia;
+					unidades.add(tupla);
+				} else if (unit.getType().isFlyer()) {
+					updateCellInfluence_unit(unit.getTilePosition(), height, 3*influencia);
+					tupla[1] = 3*influencia;
+					unidades.add(tupla);
+				} else {
+					//Si no es mecánica ni voladora, es normal
+					updateCellInfluence_unit(unit.getTilePosition(), height, 1*influencia);
+					tupla[1] = 1*influencia;
+					unidades.add(tupla);
+				}
+			}
+		}
+		
+	}
+	
+	public void newBuilding(Unit unit, int influencia, boolean ally) {
+		for (Object[] o : edificios){
+			if (o[0].equals(unit))
+				return;
+		}
+		Object[] tupla = new Object[2];
+		tupla[0] = unit;
 		// Los edificios hacen cosas de edificios
 		if (unit.getType().isBuilding() && !unit.getType().isResourceContainer()){
 			if (unit.getType() == UnitType.Protoss_Pylon ||
 					unit.getType() == UnitType.Terran_Bunker ||
 					unit.getType() == UnitType.Zerg_Spore_Colony || 
 					unit.getType() == UnitType.Zerg_Sunken_Colony) {
-				updateCellInfluence_building(new Point(x,y), 5*influencia);
-				tupla.add(5*influencia);
-				if (ally) unidades.add(tupla);
+				updateCellInfluence_building(unit.getTilePosition(), 5*influencia);
+				tupla[1] = 5*influencia;
+				edificios.add(tupla);
 			} else if (unit.canAttack()) {
-				updateCellInfluence_building(new Point(x,y), 4*influencia);
-				tupla.add(4*influencia);
-				if (ally) unidades.add(tupla);
+				updateCellInfluence_building(unit.getTilePosition(), 4*influencia);
+				tupla[1] = 4*influencia;
+				unidades.add(tupla);
 			}  else if (unit.getType() == UnitType.Terran_Command_Center ||
 					unit.getType() == UnitType.Zerg_Hatchery ||
 					unit.getType() == UnitType.Protoss_Nexus) {
-				updateCellInfluence_building(new Point(x,y), 10*influencia);
-				tupla.add(7*influencia);
-				if (ally) unidades.add(tupla);
+				updateCellInfluence_building(unit.getTilePosition(), 10*influencia);
+				tupla[1] = 7*influencia;
+				unidades.add(tupla);
 			} else {
-				updateCellInfluence_building(new Point(x,y), 3*influencia);
-				tupla.add(3*influencia);
-				if (ally) unidades.add(tupla);
+				updateCellInfluence_building(unit.getTilePosition(), 3*influencia);
+				tupla[1] = 3*influencia;
+				unidades.add(tupla);
 				
 			}
-		} else if (!unit.getType().isWorker()) {
-			//Las unidades ofensivas hacen cosas de unidades, no de edificios
-			if (unit.getType().isMechanical()) {
-				updateCellInfluence_unit(new Point(x,y), 2*influencia);
-				tupla.add(2*influencia);
-				if (ally) unidades.add(tupla);
-			} else if (unit.getType().isFlyer()) {
-				updateCellInfluence_unit(new Point(x,y), 3*influencia);
-				tupla.add(3*influencia);
-				if (ally) unidades.add(tupla);
-			} else {
-				//Si no es mecánica ni voladora, es normal
-				updateCellInfluence_unit(new Point(x,y), 1*influencia);
-				tupla.add(1*influencia);
-				if (ally) unidades.add(tupla);
-			}
 		}
-		
 	}
 	
 	
@@ -237,50 +257,68 @@ public class InfluenceMap {
 	}
 	
 	public void updateMap(Game connector){
-		Unit currentUnit;
-		int x;
-		int y;
-		for(ArrayList<Integer> unitTupla : unidades){
-			currentUnit = connector.getUnit(unitTupla.get(0));
+		//Clear temp_map
+		for (int i = 0; i<temp_map.length; i++){
+			for (int j=0; j<temp_map[0].length; j++){
+				Arrays.fill(temp_map[i][j], 0);
+			}
+		}
+		for(Object[] unitTupla : unidades){
+			Unit currentUnit = (Unit) unitTupla[0];
 			if (currentUnit != null) {
-				x = currentUnit.getTilePosition().getX();
-				y = currentUnit.getTilePosition().getY();
+				int z = connector.getGroundHeight(currentUnit.getTilePosition());
 //				if(x != unitTupla.get(1) || y != unitTupla.get(2)){ // Y se ha desplazado, se actualiza la influencia
-				updateCellInfluence_unit(new Point(unitTupla.get(1),unitTupla.get(2)), 0);// Retiramos la influencia anterior
-				updateCellInfluence_unit(new Point(x,y), unitTupla.get(3));// Actualizamos la nueva influencia
-				unitTupla.set(1, x); // actualizamos la nueva posición de la unidad.
-				unitTupla.set(2, y);
+				updateCellInfluence_unit(currentUnit.getTilePosition(), z, (Integer) unitTupla[1]);// Actualizamos la nueva influencia
 //				}	
 			}
 		}
 	}
+
 	
-	public int findUnitDead(int id){
-		int i = 0;
-		for(ArrayList<Integer> unitTupla : unidades){
-			if(unitTupla.get(0) == id){
-				return i;
+	public void removeUnitDead(Unit u){
+		ArrayList<Object[]> aux = null;
+		
+		if (u.getType().isBuilding()){
+			aux = (ArrayList<Object[]>)edificios.clone();
+			for (Object[] b_aux : aux){
+				if (b_aux[0].equals(u)) {
+					edificios.remove(aux.indexOf(b_aux));
+					updateCellInfluence_building(u.getTilePosition(), 0);
+					return;
+				}
+			}	
+		} else {
+            aux = (ArrayList<Object[]>)unidades.clone();
+			for (Object[] u_aux : aux){
+				if (u_aux[0].equals(u)) {
+					unidades.remove(aux.indexOf(u_aux));
+					updateCellInfluence_unit(u.getTilePosition(), (Integer)u_aux[2], 0);
+					return;
+				}
 			}
-			i++;
 		}
-		return -1;
+		
 	}
-	
-	public void removeUnitDead(int id){
-		int indice = findUnitDead(id);
-		if(indice == -1){
-			return;
-		}
-		updateCellInfluence_unit(new Point(unidades.get(indice).get(1),unidades.get(indice).get(2)), 0);// Retiramos la influencia anterior
-		unidades.remove(indice);
-	}
-	
+
 	//Devuelve las casillas enemigas
 	public ArrayList<int[]> getEnemyPositions() {
 		ArrayList<int[]> ret = new ArrayList<int[]>();
 		for(int i = 0; i<mapa.length; i++){
 			for(int j = 0; j<mapa[0].length; j++){
 				if(mapa[i][j]<0) {
+					int[] pos = new int[]{i,j};
+					ret.add(pos);
+				}
+			}
+		}
+		return ret;
+	}
+	
+	public ArrayList<int[]> getTempEnemyPositions(int height) {
+		ArrayList<int[]> ret = new ArrayList<int[]>();
+		for(int i = 0; i<temp_map[height].length; i++){
+			for(int j = 0; j<temp_map[height][0].length; j++){
+				if(temp_map[height][i][j]<0) {
 					int[] pos = new int[]{i,j};
 					ret.add(pos);
 				}

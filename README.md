@@ -1,7 +1,7 @@
 # _"Goliat online"_
 
 StarCraft Terran Bot developed with [BWAPI](https://github.com/bwapi/bwapi) using [JNIBWAPI](https://github.com/JNIBWAPI/JNIBWAPI) (before V4.1)
-and [BWMirror](https://github.com/vjurenka/BWMirror) (after V4.1 (included)).
+and [BWMirror 2.5](https://github.com/vjurenka/BWMirror) (after V4.1 (included)).
 If you want see the bot playing against the game's AI go to this [Youtube list](https://www.youtube.com/playlist?list=PL9JgBzni37CJBxh18jNsubarZSZKtdO2Y).
 If you want see it playing against other real bots, go to the [SSCAIT](http://sscaitournament.com/) page! 
 
