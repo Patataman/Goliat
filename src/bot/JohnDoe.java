@@ -1732,12 +1732,12 @@ public class JohnDoe extends GameHandler {
 //    		}
 //    	}
     	//Draw construction spaces
-		for (int y=0; y<map.length; y++) {
-			for (int x=0; x<map[0].length; x++){
-				if (map[y][x] != 0)
-					connector.drawTextMap(x*32, y*32, Utils.formatText(""+map[y][x],Utils.Brown));
-			}
-		}
+//		for (int y=0; y<map.length; y++) {
+//			for (int x=0; x<map[0].length; x++){
+//				if (map[y][x] != 0)
+//					connector.drawTextMap(x*32, y*32, Utils.formatText(""+map[y][x],Utils.Brown));
+//			}
+//		}
     	
     }
 
