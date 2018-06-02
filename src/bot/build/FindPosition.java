@@ -19,17 +19,19 @@ public class FindPosition extends Conditional {
 	@Override
 	public State execute() {
 		try{
-			//Check if the total supplies are not 200 or used supplies are less than the 70% of the total. 
+			//Check if the total supplies are not 200.
 			if (building == UnitType.Terran_Supply_Depot && 
 				( ((JohnDoe)this.handler).barracks == 0 || 
 				((JohnDoe)this.handler).supplies < ((JohnDoe)this.handler).totalSupplies-6 || 
 					((JohnDoe)this.handler).totalSupplies >= 400) ){
 				return State.FAILURE;
 			}
-			//Decorator for barracks. 2 per CC
+			//Decorator for barracks.
+			//2 per CC, Only 1 before refinery and academy
 			if (building == UnitType.Terran_Barracks && 
 					(((JohnDoe)this.handler).barracks >= ((JohnDoe)this.handler).CCs.size()+2 ||
-					(((JohnDoe)this.handler).barracks != 0 && ((JohnDoe)this.handler).refinery == 0))) {
+					(((JohnDoe)this.handler).barracks != 0 && ((JohnDoe)this.handler).refinery == 0) ||
+					(((JohnDoe)this.handler).barracks > 1 && ((JohnDoe)this.handler).academy == 0))) {
 				return State.FAILURE;
 			}
 			//Decorator for refinery. Only after have built the barracks.

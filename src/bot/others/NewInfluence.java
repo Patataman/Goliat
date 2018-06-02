@@ -3,6 +3,8 @@ package bot.others;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.iaie.btree.util.GameHandler;
+
 import bwapi.Color;
 import bwapi.Game;
 import bwapi.TilePosition;
@@ -42,7 +44,10 @@ public class NewInfluence {
 		}		
 		//Now sets the visible units influence
 		for (Unit u : connector.enemy().getUnits()) {
-			if (!u.getType().isBuilding() && u.isVisible() && u.getType() != UnitType.Unknown) {
+			if (!u.getType().isBuilding() && 
+					u.isVisible() && 
+					u.getType() != UnitType.Unknown &&
+					connector.isBuildable(u.getTilePosition())) {
 				newUnit(u);
 			}
 		}
@@ -133,7 +138,7 @@ public class NewInfluence {
 	 * @param b
 	 */
 	public void removeBuilding(Unit building) {
-		applyBuildingInfluence((byte)0, building.getTilePosition());
+		applyBuildingInfluence((byte)0, building.getTilePosition(), null);
 	}
 
 	/**
@@ -141,28 +146,28 @@ public class NewInfluence {
 	 * @param unit: Building finished
 	 * @param b: true: ally - false: enemy
 	 */
-	public void newBuilding(Unit unit, boolean b) {
+	public void newBuilding(Unit unit, boolean b, Game connector) {
 		byte influence = (byte) ((b) ? 1 : -1);
 		//Check important buildings
 		if (unit.getType() == UnitType.Protoss_Pylon ||
 				unit.getType() == UnitType.Terran_Bunker ||
 				unit.getType() == UnitType.Zerg_Spore_Colony || 
 				unit.getType() == UnitType.Zerg_Sunken_Colony) {
-			applyBuildingInfluence((byte)(5*influence), unit.getTilePosition());
+			applyBuildingInfluence((byte)(5*influence), unit.getTilePosition(), connector);
 		}
 		//Check bases
 		else if (unit.getType() == UnitType.Terran_Command_Center ||
 				unit.getType() == UnitType.Zerg_Hatchery ||
 				unit.getType() == UnitType.Protoss_Nexus) {
-			applyBuildingInfluence((byte)(7*influence), unit.getTilePosition());
+			applyBuildingInfluence((byte)(7*influence), unit.getTilePosition(), connector);
 		}
 		//Check other types of buildings which can attack
 		else if (unit.canAttack()) {
-			applyBuildingInfluence((byte)(4*influence), unit.getTilePosition());
+			applyBuildingInfluence((byte)(4*influence), unit.getTilePosition(), connector);
 		}
 		//Anything else
 		else {
-			applyBuildingInfluence((byte)(3*influence), unit.getTilePosition());
+			applyBuildingInfluence((byte)(3*influence), unit.getTilePosition(), connector);
 		}
 	}
 
@@ -190,7 +195,7 @@ public class NewInfluence {
 	 * @param influence: influence to apply
 	 * @param pos: position where apply the influence
 	 */
-	public void applyBuildingInfluence(byte influence, TilePosition pos) {
+	public void applyBuildingInfluence(byte influence, TilePosition pos, Game connector) {
 		// Obtenemos el area de efecto limitada a la dimensión del mapa en esa posición.
 		byte n = (byte) ((pos.getY()-distance>0) ? pos.getY()-distance : 0);
 		byte s = (byte) ((pos.getY()+distance<buildMap.length) ? pos.getY()+distance : buildMap.length-1);
@@ -198,6 +203,7 @@ public class NewInfluence {
 		byte e = (byte) ((pos.getX()+distance<buildMap.length) ? pos.getX()+distance : buildMap[0].length-1);
 		for(byte i = n; i<s; i++) {
 			for(byte j = w; j<e; j++) {
+				if (influence == 0 || connector.isBuildable(pos))
 				buildMap[i][j] = influence/Math.pow((1+euclideanDistance(pos, i, j)),2);
 			}
 		}
