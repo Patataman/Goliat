@@ -166,6 +166,7 @@ public class Goliat implements BWEventListener {
 				gh.addCC(cc);
 				gh.finishedBuildings.add(cc);
 				gh.newBuildingInfluence(cc, true);
+				gh.totalSupplies += UnitType.Terran_Command_Center.supplyProvided();
 				break;
 			}
 		}

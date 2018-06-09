@@ -192,11 +192,19 @@ public class JohnDoe extends GameHandler {
 	 * @return
 	 */
 	public boolean getMasterBuilder() {
+		//Remove workers from vespin and minerals
+		for (Unit u : workers) {
+			if (u.getOrder() == Order.HarvestGas || u.getOrder() == Order.MoveToMinerals) {
+				u.stop();
+				u.move(ccSelect.getPosition());
+			}
+		}
 		if (workers.size() < 2) {
 			for (Unit vce : workers){
 				//If SCV in workers is idle, return true
 				if (vce.getOrder() != Order.ConstructingBuilding ||
-						vce.getOrder() == Order.PlaceBuilding){
+						vce.getOrder() == Order.PlaceBuilding || 
+						vce.getOrder() != Order.Move){
 					workers.remove(vce);
 					workers.add(0, vce);
 					return true;
@@ -224,7 +232,8 @@ public class JohnDoe extends GameHandler {
 			for (Unit vce : workers) {
 				//If the vce is idle, move him to the beginning of the list
 				if (vce.getOrder() == Order.PlaceBuilding || 
-						vce.getOrder() != Order.ConstructingBuilding){
+						vce.getOrder() != Order.ConstructingBuilding || 
+						vce.getOrder() != Order.Move){
 					workers.remove(vce);
 					workers.add(0, vce);
 					return true;
@@ -296,7 +305,7 @@ public class JohnDoe extends GameHandler {
 
 	
 	/**
-	 * Send to gather minerals to the "current_worker" 
+	 * Send to gather minerals to the "currentWorker" 
 	 * @return true if can, false otherwise
 	 */
 	public boolean gatherMinerals(){
@@ -324,12 +333,12 @@ public class JohnDoe extends GameHandler {
 	 */
 	public boolean gatherGas(){
 		//Remove workers from vespin
-		for (Unit u : workers) {
-			if (u.getOrder() == Order.HarvestGas) {
-				u.stop();
-				u.move(ccSelect.getPosition());
-			}
-		}
+//		for (Unit u : workers) {
+//			if (u.getOrder() == Order.HarvestGas) {
+//				u.stop();
+//				u.move(ccSelect.getPosition());
+//			}
+//		}
 		if (!workersVespin.get(CCs.indexOf(ccSelect)).contains(currentWorker) &&
 				workersVespin.get(CCs.indexOf(ccSelect)).size() < 2 && 
 				currentWorker.isCompleted() && !workers.contains(currentWorker)) {
@@ -1170,7 +1179,7 @@ public class JohnDoe extends GameHandler {
 		if (numberChokePoints == 1) {
 			Chokepoint cp = BWTA.getNearestChokepoint(ccSelect.getPosition());
 			TilePosition cp_position = cp.getCenter().toTilePosition();
-			for (int i=1; i<=4; i++){
+			for (int i=1; i<=3; i++){
 				for (int j=0; j<pruebas.length; j++) {
 					//Point origen, Point maximo, UnitType building
 					TilePosition pos = findPlace(new Point(cp_position.getX(), cp_position.getY()),
@@ -1201,7 +1210,7 @@ public class JohnDoe extends GameHandler {
 				}
 			}
 		} else {
-			for (int i=1; i<=1; i++){
+			for (int i=1; i<=3; i++){
 				for (int j=0; j<pruebas.length; j++) {
 					//Point origen, Point maximo, UnitType building
 					TilePosition pos = findPlace(new Point(ccSelect.getTilePosition().getX(), ccSelect.getTilePosition().getY()),
