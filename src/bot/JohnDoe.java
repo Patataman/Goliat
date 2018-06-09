@@ -47,7 +47,7 @@ public class JohnDoe extends GameHandler {
 	public Troop defendGroup;							//Group of defending units.
 	public List<UnitType> remainingBuildings;			//List to know which buildings are being builded.
 	public List<UpgradeType> researching;				//List to know which researches are being researched.
-	public Unit current_worker;						    //Variable to know which SCV is currently selected.
+	public Unit currentWorker;						    //Variable to know which SCV is currently selected.
 	public Unit addonBuilding;							//Variable to get (without searching again) the building which addon we're going to build
 	
 	public List<UnitType> unitsToTrain;				    //This list contains all military units that can be trained 
@@ -69,7 +69,7 @@ public class JohnDoe extends GameHandler {
 	//Position where the last building is going to be built.
 	public TilePosition posBuild;
 	//Position to attack.
-	public TilePosition objective;
+	private TilePosition objective;
 	
 	private int[][] map;
 	
@@ -83,7 +83,7 @@ public class JohnDoe extends GameHandler {
 		scouter					= null;
 		addonBuilding			= null;
 		buildingType			= null;
-		enemyRace 				= Race.Unknown;
+		enemyRace 				= bwapi.enemy().getRace();
 		workers 				= new ArrayList<Unit>(2);
 		militaryUnits			= new ArrayList<Unit>(0);
 		boredSoldiers			= new ArrayList<Unit>(0);
@@ -119,6 +119,16 @@ public class JohnDoe extends GameHandler {
 		byte number_cp = (byte) BWTA.getRegion(BWTA.getStartLocation(this.self).getTilePosition()).getChokepoints().size();
 		return number_cp;
 	}
+	
+	/**
+	 * Getter for influence map
+	 * @return
+	 */
+	public NewInfluence getInfluenceMap(){
+		return this.influenceMap;
+	}
+	
+	
 
 	/**
 	 * Adds the corresponding lists to the new CC
@@ -168,7 +178,7 @@ public class JohnDoe extends GameHandler {
 						 !vce.equals(scouter) &&
 						 !militia.contains(vce)) {
 						if (workers.contains(vce)) workers.remove(vce);
-						current_worker = vce;
+						currentWorker = vce;
 						return true;
 				}
 			}
@@ -230,9 +240,10 @@ public class JohnDoe extends GameHandler {
 	 * @return
 	 */
 	public boolean checkTime() {
-		if ((enemyRace == Race.Unknown) ||
-				(this.connector.elapsedTime() > 10 &&
-				this.connector.elapsedTime()/60 % 10 == 0))
+		if ( ((enemyRace == Race.Unknown) && 
+				this.influenceMap.getEnemyPositions().size() == 0) ||
+			 ((this.connector.elapsedTime() > 10 &&
+				this.connector.elapsedTime()/60 % 10 == 0)) )
 			return true;
 		else
 			return false;
@@ -291,15 +302,15 @@ public class JohnDoe extends GameHandler {
 	public boolean gatherMinerals(){
 		//Verifies that the number of SCVs is less than the 3 per mineral node.
 		//The scv must be completed
-		if (!workersMineral.get(CCs.indexOf(ccSelect)).contains(current_worker) &&
+		if (!workersMineral.get(CCs.indexOf(ccSelect)).contains(currentWorker) &&
 				(workersMineral.get(CCs.indexOf(ccSelect)).size() < maxVce-workers.size()) && 
-				current_worker.isCompleted()){
+				currentWorker.isCompleted()){
 			//Gets mineral nodes
 			for (Unit mineralNode : mineralNodes.get(CCs.indexOf(ccSelect))) {
 				//Send the SCV to gather it
-				if (current_worker.rightClick(mineralNode, false)) {
-					workersMineral.get(CCs.indexOf(ccSelect)).add(current_worker);
-					current_worker = null;
+				if (currentWorker.rightClick(mineralNode, false)) {
+					workersMineral.get(CCs.indexOf(ccSelect)).add(currentWorker);
+					currentWorker = null;
 					return true;					
 				}
 			}	
@@ -319,17 +330,17 @@ public class JohnDoe extends GameHandler {
 				u.move(ccSelect.getPosition());
 			}
 		}
-		if (!workersVespin.get(CCs.indexOf(ccSelect)).contains(current_worker) &&
+		if (!workersVespin.get(CCs.indexOf(ccSelect)).contains(currentWorker) &&
 				workersVespin.get(CCs.indexOf(ccSelect)).size() < 2 && 
-				current_worker.isCompleted() && !workers.contains(current_worker)) {
+				currentWorker.isCompleted() && !workers.contains(currentWorker)) {
 			for (Unit refinery : this.finishedBuildings) {
 				if (refinery.getType() == UnitType.Terran_Refinery &&
 						BWTA.getRegion(refinery.getPosition()) == 
 						BWTA.getRegion(ccSelect.getPosition()) &&
 						refinery.isCompleted()) {
-					if (current_worker.rightClick(refinery, false)) {
-						workersVespin.get(CCs.indexOf(ccSelect)).add(current_worker);
-						current_worker = null;
+					if (currentWorker.rightClick(refinery, false)) {
+						workersVespin.get(CCs.indexOf(ccSelect)).add(currentWorker);
+						currentWorker = null;
 						return true;	
 					}
 				}
@@ -1255,7 +1266,6 @@ public class JohnDoe extends GameHandler {
 	 * @return true if can, false otherwise
 	 */
 	public boolean repair() {
-		byte cont = 0;
 		for (Unit vce : repairer) {
 			if (vce.rightClick(damageBuildings.get(0),false)) {
 				//If it's going to be repaired, removes it from the list
@@ -1283,7 +1293,6 @@ public class JohnDoe extends GameHandler {
      * @param unit: unit whose influence will be add
      */
 	public void newUnitInfluence(Unit unit) {
-		byte gh = (byte) this.connector.getGroundHeight(unit.getTilePosition());
 		this.influenceMap.newUnit(unit);
 	}
 
@@ -1723,12 +1732,10 @@ public class JohnDoe extends GameHandler {
 //    		}
 //    	}
     	//Draw units influence
-//    	for (int y=0; y<influenceMap.unitMap.length; y++) {    //Height in 3d
+//    	for (int y=0; y<influenceMap.unitMap.length; y++) {    //Height
 //    		for (int x=0; x<influenceMap.unitMap[y].length; x++){    //width 
-//				for (int z=0; z<influenceMap.unitMap[y][x].length; z++){    //height in 2d
-//	    			if (influenceMap.unitMap[y][x][z] > 0 || influenceMap.unitMap[y][x][z] < 0 )
-//	    				connector.drawTextMap(x*32, z*32, Utils.formatText(""+influenceMap.unitMap[y][x][z],Utils.Orange));
-//    			}
+//    			if (influenceMap.unitMap[y][x] > 0 || influenceMap.unitMap[y][x] < 0 )
+//    				connector.drawTextMap(x*32, y*32, Utils.formatText(""+influenceMap.unitMap[y][x], Utils.Orange));
 //    		}
 //    	}
     	//Draw construction spaces

@@ -3,23 +3,17 @@ package bot.others;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.iaie.btree.util.GameHandler;
-
-import bwapi.Color;
 import bwapi.Game;
 import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitType;
-import bwapi.Utils;
 
 public class NewInfluence {
 	
-	public double buildMap[][];
-	public double unitMap[][]; //High, Height, Width
+	public double buildMap[][];  //Height, Width
+	public double unitMap[][];   //Height, Width
 	private float threshold;
-	private byte distance; //Max distance to spread the influence
-//	private ArrayList<Unit> unitsOnSight; //Enemy units on sight
-//	private ArrayList<ArrayList<Object>> controlList;
+	private byte distance;   //Max distance to spread the influence
 	
 	/**
 	 * Constructor
@@ -75,7 +69,6 @@ public class NewInfluence {
 
 	/**
 	 * Returns a list of enemy units positions at the specific ground height
-	 * @param gh GroundDistance (ground height) - values 0, 1 or 2
 	 * @return ArrayList<TilePosition> with the enemy positions in that height
 	 */
 	public ArrayList<TilePosition> getTempEnemyPositions() {
@@ -102,6 +95,8 @@ public class NewInfluence {
 		//with have an influence bigger than the threshold.
 		for (int h=0; h<buildMap.length; h++) {
 			for (int w=0; w<buildMap[0].length; w++) {
+//				if (buildMap[h][w] != 0)
+//					System.out.println(""+buildMap[h][w]+", "+ -threshold +", "+ (buildMap[h][w] < -threshold));
 				if (buildMap[h][w] < -threshold) {
 					retList.add(new TilePosition(w, h));
 				}
@@ -196,6 +191,7 @@ public class NewInfluence {
 	 * @param pos: position where apply the influence
 	 */
 	public void applyBuildingInfluence(byte influence, TilePosition pos, Game connector) {
+		System.out.println(pos);
 		// Obtenemos el area de efecto limitada a la dimensión del mapa en esa posición.
 		byte n = (byte) ((pos.getY()-distance>0) ? pos.getY()-distance : 0);
 		byte s = (byte) ((pos.getY()+distance<buildMap.length) ? pos.getY()+distance : buildMap.length-1);
@@ -204,7 +200,7 @@ public class NewInfluence {
 		for(byte i = n; i<s; i++) {
 			for(byte j = w; j<e; j++) {
 				if (influence == 0 || connector.isBuildable(pos))
-				buildMap[i][j] = influence/Math.pow((1+euclideanDistance(pos, i, j)),2);
+					buildMap[i][j] += influence/Math.pow((1+euclideanDistance(pos, i, j)),2);
 			}
 		}
 	}

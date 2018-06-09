@@ -1,13 +1,13 @@
 package bot;
 
-import java.io.BufferedWriter;
+//import java.io.BufferedWriter;
 //import java.io.File;
 //import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+//import java.io.IOException;
+//import java.nio.charset.Charset;
+//import java.nio.file.Files;
+//import java.nio.file.Path;
+//import java.nio.file.Paths;
 //import java.io.BufferedWriter;
 //import java.io.File;
 //import java.io.IOException;
@@ -67,6 +67,7 @@ import bwapi.Unit;
 import bwapi.UnitType;
 import bwapi.UpgradeType;
 import bwta.BWTA;
+import bwta.BaseLocation;
 
 public class Goliat implements BWEventListener {
 	
@@ -114,7 +115,6 @@ public class Goliat implements BWEventListener {
 //		self.setGameSpeed(0);
 		
 		gh = new JohnDoe(game, self);
-		
 			
 		TvsT = new ArrayList<UnitType>(5) {{
 			add(UnitType.Terran_Marine);
@@ -141,8 +141,21 @@ public class Goliat implements BWEventListener {
 			add(UnitType.Terran_Science_Vessel);
         }};
         
-        //Default
-        gh.unitsToTrain = TvsT;
+        if(gh.enemyRace == Race.Terran) {
+        	 gh.unitsToTrain.addAll(TvsT);
+        }
+        else if(gh.enemyRace == Race.Zerg) {
+        	 gh.unitsToTrain.addAll(TvsZ);
+        	 gh.detectorFirst = true;
+        }
+        else if(gh.enemyRace == Race.Protoss) {
+        	 gh.unitsToTrain.addAll(TvsP);
+        	 gh.detectorFirst = true;
+        }
+        else {
+        	 //Default
+        	 gh.unitsToTrain.addAll(TvsT);
+        }
 		
         //Initialize CC variables.
 		for (Unit cc : self.getUnits()){
@@ -162,8 +175,16 @@ public class Goliat implements BWEventListener {
 		
 		//Number of supplies
 		gh.supplies = self.supplyUsed();
-		//Influence map
+		//Construction map
 		gh.createMap();
+		
+		if (BWTA.getStartLocations().size() == 2) {
+			for (BaseLocation b : BWTA.getStartLocations()){
+				if (!game.getPlayer(0).getStartLocation().equals(b)) {
+					gh.getInfluenceMap().applyBuildingInfluence((byte)-7, b.getTilePosition(), game);
+				}
+			}
+		}
 
 		game.sendText("Secuencia recoleccion");
 		
@@ -678,21 +699,24 @@ public class Goliat implements BWEventListener {
 			/////////////////////////////////////
 
 			if (game.getFrameCount() > 0) {
-				//Updates unitsToTrain
-				if (unit.getType().getRace() == Race.Protoss) {
-					gh.unitsToTrain = TvsP;
-					if (gh.vessels == 0) {
-						gh.detectorFirst = true;	
+				
+				if(gh.enemyRace == Race.Unknown) {
+					//Updates unitsToTrain
+					if (unit.getType().getRace() == Race.Protoss) {
+						gh.unitsToTrain = TvsP;
+						if (gh.vessels == 0) {
+							gh.detectorFirst = true;	
+						}
+					} else if (unit.getType().getRace() == Race.Zerg) {
+						gh.unitsToTrain = TvsZ;
+						if (gh.vessels == 0) {
+							gh.detectorFirst = true;	
+						}
+					} else {
+						gh.unitsToTrain = TvsT;
 					}
-				} else if (unit.getType().getRace() == Race.Zerg) {
-					gh.unitsToTrain = TvsZ;
-					if (gh.vessels == 0) {
-						gh.detectorFirst = true;	
-					}
-				} else {
-					gh.unitsToTrain = TvsT;
+					gh.enemyRace = unit.getType().getRace();
 				}
-				gh.enemyRace = unit.getType().getRace();
 				
 				//Stop going to the other base locations
 				if (gh.scouter != null && (
