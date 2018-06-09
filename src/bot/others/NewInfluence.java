@@ -191,7 +191,6 @@ public class NewInfluence {
 	 * @param pos: position where apply the influence
 	 */
 	public void applyBuildingInfluence(byte influence, TilePosition pos, Game connector) {
-		System.out.println(pos);
 		// Obtenemos el area de efecto limitada a la dimensión del mapa en esa posición.
 		byte n = (byte) ((pos.getY()-distance>0) ? pos.getY()-distance : 0);
 		byte s = (byte) ((pos.getY()+distance<buildMap.length) ? pos.getY()+distance : buildMap.length-1);

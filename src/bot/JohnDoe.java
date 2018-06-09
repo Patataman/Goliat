@@ -505,7 +505,14 @@ public class JohnDoe extends GameHandler {
 	 * @return true if there's more than 10, false otherwise
 	 */
 	public boolean checkStateUnits(){
-		if (boredSoldiers.size() > 10) {
+		byte inside_bunker = 0;
+		//Check if units in boredSoldiers are inside bunkers (they can't move)
+		for (Unit u : boredSoldiers) {
+			if (u.isLoaded()){
+				inside_bunker++;
+			}
+		}
+		if (boredSoldiers.size() - inside_bunker > 10) {
 			return true;
 		}
 		return false;
@@ -875,13 +882,16 @@ public class JohnDoe extends GameHandler {
 		};
 		//Checks if some bunker has room for 1 more marine
 		for (Unit b : bunkers) {
-			if (b.getLoadedUnits().size() < 4) {
+			if (b.isCompleted() && b.getLoadedUnits().size() < 4) {
 				for (Object u : boredSoldiers.stream().filter(predicate).toArray()) {
-					b.load((Unit) u, false);
-					for (Troop t : assaultTroop) {
-						if (t.units.contains((Unit) u)) {t.units.remove((Unit) u ); }
+					//Check if unit is inside bunker., otherwise it alwayus send the same unit
+					if ( !((Unit) u).isLoaded() ){
+						b.load((Unit) u, false);
+						for (Troop t : assaultTroop) {
+							if (t.units.contains((Unit) u)) { t.units.remove((Unit) u ); }
+						}
+						return true;
 					}
-					return true;
 				}
 			}
 			
