@@ -194,7 +194,8 @@ public class JohnDoe extends GameHandler {
 	public boolean getMasterBuilder() {
 		//Remove workers from vespin and minerals
 		for (Unit u : workers) {
-			if (u.getOrder() == Order.HarvestGas || u.getOrder() == Order.MoveToMinerals) {
+			if (u.getOrder() == Order.MoveToGas || u.getOrder() == Order.MoveToMinerals ||
+					u.getOrder() == Order.ReturnGas || u.getOrder() == Order.WaitForGas) {
 				u.stop();
 				u.move(ccSelect.getPosition());
 			}
@@ -202,9 +203,9 @@ public class JohnDoe extends GameHandler {
 		if (workers.size() < 2) {
 			for (Unit vce : workers){
 				//If SCV in workers is idle, return true
-				if (vce.getOrder() != Order.ConstructingBuilding ||
-						vce.getOrder() == Order.PlaceBuilding || 
-						vce.getOrder() != Order.Move){
+				if (vce.getOrder() == Order.PlaceBuilding ||
+						vce.getOrder() != Order.ConstructingBuilding ||
+						vce.getOrder() == Order.Move){
 					workers.remove(vce);
 					workers.add(0, vce);
 					return true;
@@ -233,7 +234,7 @@ public class JohnDoe extends GameHandler {
 				//If the vce is idle, move him to the beginning of the list
 				if (vce.getOrder() == Order.PlaceBuilding || 
 						vce.getOrder() != Order.ConstructingBuilding || 
-						vce.getOrder() != Order.Move){
+						vce.getOrder() == Order.Move){
 					workers.remove(vce);
 					workers.add(0, vce);
 					return true;
@@ -302,10 +303,56 @@ public class JohnDoe extends GameHandler {
 		scouter.move(ccSelect.getPosition().makeValid(), true);
 		return true;
 	}
+	
+	/**
+	 * This function evaluates a lot of conditions to know
+	 * if it is worth gather gas in this moment.
+	 * 
+	 * If it is not a good moment, remove all workers from a
+	 * vespin gas
+	 * @return true if it is a good moment, false otherwise
+	 */
+	public boolean clearGathering() {
+		//Had a refinery, but less minerals than gas and
+		//SCvs gathering gas || not academy built yet
+		if ( refinery > 0 && self.minerals() < self.gas() &&
+				workersVespin.get(CCs.indexOf(ccSelect)).size() > 0) {
+			ArrayList<Unit> remove_w = new ArrayList<Unit>(0);
+			for (Unit w : workersVespin.get(CCs.indexOf(ccSelect))) {
+				if (w.getOrder() == Order.ReturnGas) {
+					w.stop(false);
+					if (w.rightClick(mineralNodes.get(CCs.indexOf(ccSelect)).get(0), false)) {
+						workersMineral.get(CCs.indexOf(ccSelect)).add(w);
+						remove_w.add(w);
+						System.out.println("Clear");
+					}
+				}
+			}
+			workersVespin.get(CCs.indexOf(ccSelect)).removeAll(remove_w);
+		}
+		return true;
+	}
+	
+	/**
+	 * This function evaluates a lot of conditions to know
+	 * if it is worth gather gas in this moment.
+	 * 
+	 * @return true if it is a good moment, false otherwise
+	 */
+	public boolean evaluateGathering() {
+		//Had a refinery, but less minerals than gas and
+		//SCvs gathering gas || not academy built yet
+		if ( refinery > 0 && self.minerals() < self.gas() &&
+				workersVespin.get(CCs.indexOf(ccSelect)).size() > 0) {
+			return false;
+		} else if (refinery == 0) return false;
+		
+		return true;
+	}
 
 	
 	/**
-	 * Send to gather minerals to the "currentWorker" 
+	 * Send to gather minerals to the "currentWorker"
 	 * @return true if can, false otherwise
 	 */
 	public boolean gatherMinerals(){

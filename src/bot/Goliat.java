@@ -15,8 +15,8 @@ package bot;
 //import java.nio.file.Files;
 //import java.nio.file.Path;
 //import java.nio.file.Paths;
-import java.util.ArrayList;
 //import java.util.function.Predicate;
+import java.util.ArrayList;
 import java.util.function.Predicate;
 
 import org.iaie.btree.BehavioralTree;
@@ -52,8 +52,10 @@ import bot.others.RepairBuilding;
 import bot.others.Research;
 import bot.others.SelectCC;
 import bot.resources.CheckResources;
+import bot.resources.ClearGathering;
 import bot.resources.CollectGas;
 import bot.resources.CollectMineral;
+import bot.resources.EvaluateGathering;
 import bot.scout.CheckTime;
 import bot.scout.ChooseSCV;
 import bot.scout.SendSCV;
@@ -82,7 +84,6 @@ public class Goliat implements BWEventListener {
 	JohnDoe gh;
 	//int frames;
 	ArrayList<UnitType> TvsT, TvsP, TvsZ;
-
 
 
     public void run() {
@@ -197,11 +198,16 @@ public class Goliat implements BWEventListener {
 		// --------- END scout -------------
 		
 		// --------- Resources sequence ---------
+		Sequence CollectGas = new Sequence("Gather Gas");
+		CollectGas.addChild(new EvaluateGathering("Evaluate gas", gh));
+		CollectGas.addChild(new CollectGas("Vespin gas", gh));
+		
 		Selector<GameHandler> CollectResources = new Selector<>("Minerals or Vespin gas");
-		CollectResources.addChild(new CollectGas("Vespin gas", gh));
+		CollectResources.addChild(CollectGas);
 		CollectResources.addChild(new CollectMineral("Minerals", gh));
 		
 		Sequence collect = new Sequence("Gather");
+		collect.addChild(new ClearGathering("Evaluate gas", gh));
 		collect.addChild(new FreeWorker("Free Worker", gh));
 		collect.addChild(CollectResources);
 		// --------- END resources -------------
