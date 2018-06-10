@@ -593,7 +593,7 @@ public class Goliat implements BWEventListener {
 					if (gh.repairer.contains(unit)) {
 						gh.repairer.remove(unit);
 					}
-					for(ArrayList<Unit> vces_cc : gh.VCEs){
+					for(ArrayList<Unit> vces_cc : gh.SCVs){
 						if (vces_cc.contains(unit)) {
 							vces_cc.remove(unit);
 							gh.supplies -= unit.getType().supplyRequired();
@@ -643,7 +643,7 @@ public class Goliat implements BWEventListener {
 		if (unit.getPlayer().getID() == self.getID()) {
 			//Add the unit to its list.
 			if (unit.getType() == UnitType.Terran_SCV){
-				gh.VCEs.get(gh.CCs.indexOf(gh.ccSelect)).add(unit);
+				gh.SCVs.get(gh.CCs.indexOf(gh.ccSelect)).add(unit);
 			}
 			
 			//Remove the unit from the remaining list.

@@ -33,10 +33,10 @@ public class TrainUnit extends Action {
 				//Checks if it's possible train new SCVs
 				if (((JohnDoe)this.handler).CCs.size() > 3 || 
 					(((JohnDoe)this.handler).barracks == 0 && !((JohnDoe)this.handler).remainingBuildings.contains(UnitType.Terran_Barracks)) ||
-					(((JohnDoe)this.handler).VCEs.get(
+					(((JohnDoe)this.handler).SCVs.get(
 							((JohnDoe)this.handler).CCs.indexOf(
 									((JohnDoe)this.handler).ccSelect)
-														).size() >= ((JohnDoe)this.handler).maxVce)) {
+														).size() >= ((JohnDoe)this.handler).maxSCV)) {
 					return State.FAILURE; 					
 				}
 			}
